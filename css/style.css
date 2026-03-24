@@ -1,1 +1,32 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
+/* VARIABLES */
+:root {
+  --text: #ffffff;
+  --muted: #c9d4e7;
+  --dark-text: #111827;
+  --primary: #2563eb;
+  --accent: #22c55e;
+  --accent-dark: #16a34a;
+  --border: rgba(255,255,255,0.08);
+  --shadow: 0 12px 30px rgba(0,0,0,0.25);
+  --card: #ffffff;
+}
+
+/* BODY + BACKGROUND */
+body {
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #1e3a8a 0%, #0c1830 40%, #050b18 100%);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* CONTAINER */
+.container {
+  width: min(1180px, 92%);
+  margin
