@@ -4,5 +4,5 @@ price: "420 KD"
 months: "18 months installment"
 image: "/images/laptops/macbookairm2.png"
 available: true
-hot_offer: false
+hot_offer: true
 ---
