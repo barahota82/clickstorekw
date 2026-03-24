@@ -1017,5 +1017,38 @@ ${lines.join("\n\n")}
     updateCartUI();
     loadHotOffers();
   </script>
+  <script>
+async function loadWhatsAppSettings() {
+  try {
+    const res = await fetch("/settings/whatsapp.md");
+    const text = await res.text();
+
+    const data = {};
+    text.split("\n").forEach(line => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+      }
+    });
+
+    const phone = "965" + (data.phone || "");
+    const name = data.employee_name || "Support";
+    
+    const message = `Welcome to Click Company 👋\n\n👤 ${name} - Sales Representative\n\nHow can I assist you today?`;
+    
+    const encoded = encodeURIComponent(message);
+
+    const btn = document.getElementById("whatsappBtn");
+    if (btn) {
+      btn.href = `https://wa.me/${phone}?text=${encoded}`;
+    }
+
+  } catch (e) {
+    console.log("WhatsApp error", e);
+  }
+}
+
+loadWhatsAppSettings();
+</script>
 </body>
 </html>
