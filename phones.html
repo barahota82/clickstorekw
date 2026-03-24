@@ -122,7 +122,7 @@
     }
 
     .page-head {
-      padding: 34px 0 18px;
+      padding: 24px 0 12px;
     }
 
     .page-head h2 {
@@ -132,11 +132,12 @@
 
     .page-head p {
       color: var(--muted);
+      font-size: 15px;
     }
 
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: 1fr;
       gap: 18px;
       padding-bottom: 30px;
     }
@@ -144,42 +145,51 @@
     .product-card {
       background: var(--card);
       color: var(--dark-text);
-      border-radius: 26px;
+      border-radius: 28px;
       overflow: hidden;
       box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
-      min-height: 100%;
+      width: 100%;
     }
 
     .product-image {
       background: #fff;
       width: 100%;
-      height: 360px;
+      height: 560px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 18px;
+      padding: 22px;
       border-bottom: 1px solid #eef2f7;
     }
 
     .product-image img {
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
       display: block;
     }
 
     .product-body {
-      padding: 18px 20px 20px;
+      padding: 18px 18px 20px;
+    }
+
+    .price-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .price-box {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      flex: 1;
+      gap: 4px;
     }
 
     .price {
-      font-size: 28px;
+      font-size: 34px;
       color: var(--primary);
       font-weight: bold;
       line-height: 1;
@@ -188,21 +198,14 @@
     .months {
       color: #6b7280;
       font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    .product-actions {
-      margin-top: 0;
-      padding-top: 0;
     }
 
     .cart-add-btn {
-      display: block;
-      width: 100%;
+      min-width: 225px;
       text-align: center;
       background: var(--accent);
       color: white;
-      padding: 14px 16px;
+      padding: 16px 18px;
       border-radius: 16px;
       font-weight: bold;
       border: 0;
@@ -243,17 +246,24 @@
       right: 18px;
       bottom: 84px;
       z-index: 1001;
-      background: var(--primary);
+      background: #2f6df1;
       color: white;
       border: 0;
       border-radius: 999px;
       box-shadow: 0 12px 24px rgba(0,0,0,0.25);
       font-weight: bold;
-      padding: 14px 16px;
+      width: 112px;
+      height: 64px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 10px;
       cursor: pointer;
+      font-size: 24px;
+    }
+
+    .floating-cart span {
+      font-size: 18px;
     }
 
     .floating-whatsapp {
@@ -263,10 +273,11 @@
       z-index: 999;
       background: #25D366;
       color: white;
-      padding: 14px 18px;
+      padding: 18px 28px;
       border-radius: 999px;
       box-shadow: 0 12px 24px rgba(0,0,0,0.25);
       font-weight: bold;
+      font-size: 18px;
     }
 
     .cart-panel-overlay {
@@ -351,13 +362,6 @@
       padding: 6px;
     }
 
-    .cart-item-title {
-      font-size: 14px;
-      font-weight: bold;
-      line-height: 1.2;
-      margin-bottom: 4px;
-    }
-
     .cart-item-meta {
       font-size: 12px;
       color: #6b7280;
@@ -411,7 +415,7 @@
       }
 
       .page-head {
-        padding: 24px 0 14px;
+        padding: 18px 0 10px;
       }
 
       .page-head h2 {
@@ -422,24 +426,43 @@
         height: 42px;
       }
 
-      .products-grid {
-        grid-template-columns: 1fr;
+      .product-card {
+        border-radius: 22px;
       }
 
       .product-image {
-        height: 300px;
+        height: 360px;
         padding: 14px;
       }
 
       .product-body {
-        padding: 16px 16px 18px;
+        padding: 14px 14px 16px;
+      }
+
+      .price-row {
+        align-items: stretch;
+        flex-direction: row;
+        gap: 14px;
       }
 
       .price {
-        font-size: 26px;
+        font-size: 30px;
       }
 
       .cart-add-btn {
+        min-width: 170px;
+        padding: 14px 16px;
+        font-size: 17px;
+      }
+
+      .floating-cart {
+        width: 100px;
+        height: 58px;
+        bottom: 92px;
+      }
+
+      .floating-whatsapp {
+        padding: 16px 24px;
         font-size: 17px;
       }
     }
@@ -532,7 +555,7 @@
 
       cartItems.innerHTML = cart.map((item, index) => `
         <div class="cart-item">
-          <img src="${item.image}" alt="${item.title}">
+          <img src="${item.image}" alt="Product">
           <div>
             <div class="cart-item-meta">${item.price}</div>
             <div class="cart-item-meta">${item.months}</div>
@@ -625,7 +648,6 @@
           rendered++;
 
           const safeItem = {
-            title: data.title || "Product",
             price: data.price || "",
             months: data.months || "",
             image: data.image ? data.image.trim() : "/images/logo.png"
@@ -635,12 +657,14 @@
           card.className = "product-card";
           card.innerHTML = `
             <div class="product-image">
-              <img src="${safeItem.image}" alt="${safeItem.title}">
+              <img src="${safeItem.image}" alt="Product">
             </div>
             <div class="product-body">
-              <div class="price">${safeItem.price}</div>
-              <div class="months">${safeItem.months}</div>
-              <div class="product-actions">
+              <div class="price-row">
+                <div class="price-box">
+                  <div class="price">${safeItem.price}</div>
+                  <div class="months">${safeItem.months}</div>
+                </div>
                 <button class="cart-add-btn">+ Add</button>
               </div>
             </div>
