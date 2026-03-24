@@ -814,7 +814,7 @@ async function loadWhatsAppSettings() {
   const btn = document.getElementById("whatsappBtn");
 
   if (btn) {
-    btn.href = `https://wa.me/${phone}`;
+    btn.href = `https://wa.me/${phone}?text=${encoded}`;
     console.log("BUTTON UPDATED");
   } else {
     console.log("BUTTON NOT FOUND");
