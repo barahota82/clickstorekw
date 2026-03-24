@@ -694,7 +694,23 @@ ${lines.join("\n\n")}
 
 📍 Please confirm availability & total price.`;
 
-      window.open(`https://wa.me/96567680877?text=${encodeURIComponent(msg)}`, "_blank");
+      fetch("/settings/whatsapp.md")
+  .then(res => res.text())
+  .then(text => {
+    const data = {};
+    text.split("\n").forEach(line => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+      }
+    });
+
+    const phone = "965" + (data.phone || "");
+    window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+  })
+  .catch(() => {
+    window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
+  });
     }
 
     async function get(path) {
