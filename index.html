@@ -260,6 +260,23 @@
   <footer>
     © 2026 Click Store KW — You can Depend on Us
   </footer>
+  <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
+<script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.init();
 
+    if (window.location.hash.includes("recovery_token")) {
+      window.netlifyIdentity.open("recovery");
+    }
+
+    if (window.location.hash.includes("invite_token")) {
+      window.netlifyIdentity.open("signup");
+    }
+
+    window.netlifyIdentity.on("login", function() {
+      window.location.href = "/admin/";
+    });
+  }
+</script>
 </body>
 </html>
