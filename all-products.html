@@ -1,1 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Products - Click Store KW</title>
 
+<style>
+* { box-sizing: border-box; margin:0; padding:0; }
+
+:root {
+  --text:#fff;
+  --muted:#c9d4e7;
+  --dark:#111827;
+  --primary:#2563eb;
+  --accent:#22c55e;
+  --accent-dark:#16a34a;
+  --border:rgba(255,255,255,0.08);
+  --shadow:0 12px 30px rgba(0,0,0,0.25);
+  --card:#fff;
+}
+
+body {
+  font-family: Arial;
+  background: radial-gradient(circle at top,#17346f,#08111f);
+  color:var(--text);
+}
+
+.container { width:min(1180px,92%); margin:auto; }
+
+header {
+  position:sticky; top:0;
+  backdrop-filter:blur(14px);
+  background:rgba(8,17,31,0.8);
+  border-bottom:1px solid var(--border);
+  padding:14px 0;
+}
+
+header h1 { font-size:20px; }
+
+.page-head { padding:20px 0; }
+
+.products-grid {
+  display:grid;
+  grid-template-columns:1fr;
+  gap:20px;
+  padding-bottom:30px;
+}
+
+.product-card {
+  background:#fff;
+  color:#111;
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+
+.product-image {
+  height:420px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10px;
+  background:#fff;
+}
+
+.product-image img {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+.product-body { padding:18px; }
+
+.row {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+}
+
+.price {
+  font-size:30px;
+  color:var(--primary);
+  font-weight:bold;
+}
+
+.months { color:#666; }
+
+.btn {
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:12px 18px;
+  border-radius:14px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.floating-cart {
+  position:fixed;
+  left:18px;
+  bottom:18px;
+  background:#2f6df1;
+  color:#fff;
+  padding:14px 18px;
+  border-radius:999px;
+  cursor:pointer;
+}
+
+.floating-whatsapp {
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  background:#25D366;
+  color:#fff;
+  padding:14px 18px;
+  border-radius:999px;
+}
+
+.cart-panel {
+  position:fixed;
+  right:-400px;
+  top:0;
+  width:350px;
+  height:100%;
+  background:#fff;
+  color:#000;
+  transition:.3s;
+  display:flex;
+  flex-direction:column;
+}
+
+.cart-panel.open { right:0; }
+
+.cart-items {
+  flex:1;
+  overflow:auto;
+  padding:15px;
+}
+
+.send-order-btn {
+  background:#25D366;
+  border:none;
+  color:#fff;
+  padding:12px;
+  margin:10px;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+@media (min-width:900px){
+  .products-grid {
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <h1>Start Your Order</h1>
+  </div>
+</header>
+
+<section class="container page-head">
+  <p>Choose from all categories and add to cart.</p>
+</section>
+
+<section class="container">
+  <div class="products-grid" id="grid"></div>
+</section>
+
+<button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
+<a class="floating-whatsapp" href="https://wa.me/96567680877">WhatsApp</a>
+
+<aside class="cart-panel" id="cartPanel">
+  <div class="cart-items" id="cartItems"></div>
+  <button class="send-order-btn" onclick="sendOrder()">Send Order</button>
+</aside>
+
+<script>
+let cart=[];
+
+function update(){
+ document.getElementById("count").innerText=cart.length;
+ const box=document.getElementById("cartItems");
+
+ if(!cart.length){
+  box.innerHTML="Cart empty";
+  return;
+ }
+
+ box.innerHTML=cart.map((i,idx)=>`
+ <div>
+ ${i.title}<br>
+ ${i.price}<br>
+ <button onclick="remove(${idx})">X</button>
+ </div>`).join("");
+}
+
+function remove(i){ cart.splice(i,1); update(); }
+
+function openCart(){
+ document.getElementById("cartPanel").classList.toggle("open");
+}
+
+function sendOrder(){
+ if(!cart.length)return;
+
+ const base=location.origin;
+
+ const msg=cart.map((i,n)=>{
+  let img=i.image;
+  if(img.startsWith("/")) img=base+img;
+
+  return `🔹 ${i.title}
+💰 ${i.price}
+📆 ${i.months}
+📸 ${img}`;
+ }).join("\n\n");
+
+ window.open(`https://wa.me/96567680877?text=${encodeURIComponent(msg)}`);
+}
+
+async function get(p){
+ const r=await fetch(p);
+ return await r.text();
+}
+
+function parse(t){
+ const d={};
+ t.split("\n").forEach(l=>{
+  if(l.includes(":")){
+   const [k,...v]=l.split(":");
+   d[k.trim()]=v.join(":").trim().replace(/"/g,"");
+  }
+ });
+ return d;
+}
+
+async function load(){
+ const paths=[
+  "/products/phones/iphone15pro.md",
+  "/products/tablets/ipadair.md",
+  "/products/laptops/macbookairm2.md",
+  "/products/accessories/airpodspro.md"
+ ];
+
+ for(const p of paths){
+  try{
+   const t=await get(p);
+   const d=parse(t);
+
+   if(String(d.available).toLowerCase()=="false") continue;
+
+   const card=document.createElement("div");
+   card.className="product-card";
+
+   card.innerHTML=`
+   <div class="product-image">
+     <img src="${d.image}">
+   </div>
+   <div class="product-body">
+     <div class="row">
+       <div>
+         <div class="price">${d.price}</div>
+         <div class="months">${d.months}</div>
+       </div>
+       <button class="btn">+ Add</button>
+     </div>
+   </div>
+   `;
+
+   card.querySelector(".btn").onclick=()=>{
+    cart.push(d);
+    update();
+   };
+
+   document.getElementById("grid").appendChild(card);
+
+  }catch(e){}
+ }
+}
+
+update();
+load();
+</script>
+
+</body>
+</html>
