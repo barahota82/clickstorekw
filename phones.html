@@ -606,7 +606,7 @@
             title: data.title || "Product",
             price: data.price || "",
             months: data.months || "",
-            image: data.image || "/images/logo.png"
+            image: data.image ? data.image : "/images/logo.png"
           };
 
           const card = document.createElement("div");
