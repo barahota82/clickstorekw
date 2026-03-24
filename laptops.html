@@ -1,1 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Laptops - Click Store KW</title>
 
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+
+    :root{
+      --bg:#08111f;
+      --card:#fff;
+      --text:#fff;
+      --muted:#c9d4e7;
+      --dark:#111827;
+      --primary:#2563eb;
+      --accent:#22c55e;
+      --accent-dark:#16a34a;
+      --border:rgba(255,255,255,0.08);
+      --shadow:0 12px 30px rgba(0,0,0,0.25);
+    }
+
+    body{
+      font-family:Arial;
+      background:radial-gradient(circle,#17346f 0%,#0c1830 40%,#08111f 100%);
+      color:var(--text);
+    }
+
+    .container{width:92%;max-width:1200px;margin:auto;}
+
+    header{
+      position:sticky;
+      top:0;
+      backdrop-filter:blur(12px);
+      background:rgba(0,0,0,.6);
+      border-bottom:1px solid var(--border);
+      z-index:999;
+    }
+
+    .nav{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:12px 0;
+    }
+
+    .brand{display:flex;align-items:center;gap:10px;}
+    .logo{height:45px;}
+    .brand h1{font-size:18px;}
+
+    .nav-links{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .nav-links a,.cart-btn{
+      color:#fff;
+      padding:6px 10px;
+      border-radius:8px;
+      cursor:pointer;
+      background:transparent;
+      border:none;
+    }
+
+    .nav-links a:hover,.cart-btn:hover{
+      background:rgba(255,255,255,.1);
+    }
+
+    .cart-badge{
+      background:var(--accent);
+      border-radius:50%;
+      padding:2px 7px;
+      margin-left:5px;
+      font-size:12px;
+    }
+
+    .page-head{
+      padding:30px 0;
+    }
+
+    .page-head h2{font-size:30px;}
+    .page-head p{color:var(--muted);}
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+      gap:15px;
+      padding-bottom:30px;
+    }
+
+    .card{
+      background:#fff;
+      color:#000;
+      border-radius:15px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      box-shadow:var(--shadow);
+    }
+
+    .card img{
+      width:100%;
+      height:200px;
+      object-fit:contain;
+      background:#fff;
+    }
+
+    .card-body{
+      padding:15px;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+    }
+
+    .title{font-size:20px;font-weight:bold;}
+    .price{font-size:24px;color:var(--primary);}
+    .months{font-size:13px;color:#555;}
+
+    .btn{
+      margin-top:auto;
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+
+    .btn:hover{background:var(--accent-dark);}
+
+    footer{
+      margin-top:40px;
+      padding:30px 0;
+      border-top:1px solid var(--border);
+      text-align:center;
+      color:var(--muted);
+    }
+
+    .floating-cart{
+      position:fixed;
+      right:15px;
+      bottom:80px;
+      background:#2563eb;
+      color:#fff;
+      border:none;
+      border-radius:50px;
+      padding:12px 15px;
+      cursor:pointer;
+    }
+
+    .floating-whatsapp{
+      position:fixed;
+      right:15px;
+      bottom:20px;
+      background:#25D366;
+      color:#fff;
+      padding:12px 15px;
+      border-radius:50px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="container nav">
+    <div class="brand">
+      <img src="/images/logo.png" class="logo" alt="logo">
+      <h1>CLICK STORE KW</h1>
+    </div>
+
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/#hot-offers">Hot Offers</a>
+      <a href="/phones.html">Phones</a>
+      <a href="/tablets.html">Tablets</a>
+      <a href="/laptops.html">Laptop</a>
+      <a href="/accessories.html">Accessories</a>
+
+      <button class="cart-btn" onclick="openCart()">
+        Cart <span class="cart-badge" id="cart-count">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<section class="container page-head">
+  <h2>Laptops</h2>
+  <p>All available laptops</p>
+</section>
+
+<section class="container">
+  <div class="grid" id="products"></div>
+</section>
+
+<footer>
+  © 2026 Click Store KW
+</footer>
+
+<button class="floating-cart" onclick="openCart()">🛒</button>
+<a class="floating-whatsapp" href="#">WhatsApp</a>
+
+<script>
+const cart=[];
+
+function updateCart(){
+  document.getElementById("cart-count").textContent=cart.length;
+}
+
+function add(item){
+  cart.push(item);
+  updateCart();
+  alert("Added to cart");
+}
+
+function openCart(){
+  alert("Cart items: " + cart.length);
+}
+
+async function load(){
+  const res=await fetch("/products/laptops/test.md");
+  const txt=await res.text();
+
+  const data={};
+  txt.split("\n").forEach(l=>{
+    if(l.includes(":")){
+      const [k,...rest]=l.split(":");
+      data[k.trim()]=rest.join(":").trim().replace(/"/g,"");
+    }
+  });
+
+  const html=`
+    <div class="card">
+      <img src="${data.image}">
+      <div class="card-body">
+        <div class="title">${data.title}</div>
+        <div class="price">${data.price}</div>
+        <div class="months">${data.months}</div>
+        <button class="btn" onclick='add(${JSON.stringify(data)})'>Add</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("products").innerHTML=html;
+}
+
+load();
+updateCart();
+</script>
+
+</body>
+</html>
