@@ -11,7 +11,16 @@ collections:
     folder: "products"
     create: true
     slug: "{{slug}}"
+    summary: "{{title}} - {{category}}"
     fields:
-      - { label: "Name", name: "title", widget: "string" }
-      - { label: "Price", name: "price", widget: "string" }
-      - { label: "Image", name: "image", widget: "image" }
+      - { label: "Product Name", name: "title", widget: "string" }
+      - { label: "Category", name: "category", widget: "select", options: ["Phones", "Tablets", "Laptops", "Accessories"] }
+      - { label: "Monthly Price", name: "price", widget: "string" }
+      - { label: "Months to Pay", name: "months", widget: "string" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Image", name: "image", widget: "image", required: false }
+      - label: "Features"
+        name: "features"
+        widget: "list"
+        field: { label: "Feature", name: "feature", widget: "string" }
+      - { label: "Available", name: "available", widget: "boolean", default: true }
