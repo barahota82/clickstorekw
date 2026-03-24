@@ -267,7 +267,6 @@
       display: flex;
       justify-content: center;
       gap: 10px;
-      flex-wrap: nowrap;
       width: 100%;
     }
 
@@ -321,12 +320,6 @@
       margin-bottom: 6px;
     }
 
-    .section-sub {
-      color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 18px;
-    }
-
     .products-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -372,13 +365,6 @@
       gap: 12px;
     }
 
-    .product-title {
-      font-size: 22px;
-      font-weight: bold;
-      line-height: 1.25;
-      margin-bottom: 10px;
-    }
-
     .price {
       font-size: 32px;
       color: var(--primary);
@@ -390,11 +376,6 @@
     .months {
       color: #666;
       font-size: 14px;
-    }
-
-    .product-actions {
-      margin-top: auto;
-      padding-top: 12px;
     }
 
     .cart-add-btn {
@@ -684,10 +665,6 @@
         font-size: 26px;
       }
 
-      .product-title {
-        font-size: 20px;
-      }
-
       .price {
         font-size: 28px;
       }
@@ -707,7 +684,7 @@
       }
 
       .hero-points-row {
-        flex-wrap: nowrap;
+        justify-content: center;
         gap: 8px;
       }
 
@@ -1015,7 +992,6 @@ ${lines.join("\n\n")}
             </div>
 
             <div class="product-body">
-              <div class="product-title">${safeItem.title}</div>
               <div class="row">
                 <div>
                   <div class="price">${safeItem.price}</div>
