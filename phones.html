@@ -798,6 +798,32 @@ ${lines.join("\n\n")}
     update();
     load();
   </script>
+<script>
+async function loadWhatsAppSettings() {
+  try {
+    const data = {
+      phone: "67680877",
+      employee_name: "Shella"
+    };
 
+    const phone = "965" + (data.phone || "");
+    const name = data.employee_name || "Support";
+
+    const message = `Welcome to Click Company 👋\n\n👤 ${name} - Sales Representative\n\nHow can I assist you today?`;
+
+    const encoded = encodeURIComponent(message);
+
+    const btn = document.getElementById("whatsappBtn");
+    if (btn) {
+      btn.href = `https://wa.me/${phone}?text=${encoded}`;
+    }
+
+  } catch (e) {
+    console.log("WhatsApp error", e);
+  }
+}
+
+loadWhatsAppSettings();
+</script>
 </body>
 </html>
