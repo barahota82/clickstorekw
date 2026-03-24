@@ -257,8 +257,18 @@
 
     .hero-points {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
       gap: 10px;
+      margin-top: 8px;
+    }
+
+    .hero-points-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: nowrap;
+      width: 100%;
     }
 
     .hero-points span {
@@ -268,6 +278,8 @@
       border-radius: 999px;
       padding: 8px 12px;
       font-size: 13px;
+      text-align: center;
+      white-space: nowrap;
     }
 
     .hero-side {
@@ -317,60 +329,66 @@
 
     .products-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 18px;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      padding: 20px 0 30px;
     }
 
     .product-card {
       background: var(--card);
       color: var(--dark-text);
-      border-radius: 20px;
+      border-radius: 28px;
       overflow: hidden;
       box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      min-height: 100%;
+      width: 100%;
     }
 
     .product-image {
-      background: #fff;
-      height: 220px;
+      width: 100%;
+      height: 420px;
       display: flex;
-      align-items: center;
       justify-content: center;
-      padding: 16px;
+      align-items: center;
+      padding: 10px;
+      background: #fff;
       border-bottom: 1px solid #eef2f7;
     }
 
     .product-image img {
-      max-width: 100%;
-      max-height: 100%;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
       display: block;
     }
 
     .product-body {
       padding: 18px;
+    }
+
+    .row {
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex: 1;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
     }
 
     .product-title {
       font-size: 22px;
       font-weight: bold;
       line-height: 1.25;
+      margin-bottom: 10px;
     }
 
     .price {
-      font-size: 28px;
+      font-size: 32px;
       color: var(--primary);
       font-weight: bold;
+      line-height: 1;
+      margin-bottom: 6px;
     }
 
     .months {
-      color: #6b7280;
+      color: #666;
       font-size: 14px;
     }
 
@@ -380,17 +398,19 @@
     }
 
     .cart-add-btn {
-      display: block;
-      width: 100%;
-      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       background: var(--accent);
       color: white;
-      padding: 12px 16px;
-      border-radius: 12px;
+      padding: 14px 20px;
+      border-radius: 16px;
       font-weight: bold;
       border: 0;
       cursor: pointer;
       transition: 0.2s ease;
+      min-width: 170px;
+      font-size: 18px;
     }
 
     .cart-add-btn:hover {
@@ -613,6 +633,14 @@
         order: 2;
       }
 
+      .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .product-image {
+        height: 360px;
+      }
+
       .cart-btn {
         display: inline-flex;
         align-items: center;
@@ -661,7 +689,7 @@
       }
 
       .price {
-        font-size: 24px;
+        font-size: 28px;
       }
 
       .logo {
@@ -676,6 +704,22 @@
       .cart-btn {
         font-size: 12px;
         padding: 7px 8px;
+      }
+
+      .hero-points-row {
+        flex-wrap: nowrap;
+        gap: 8px;
+      }
+
+      .hero-points span {
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+
+      .cart-add-btn {
+        min-width: 140px;
+        padding: 13px 16px;
+        font-size: 16px;
       }
 
       .floating-cart {
@@ -736,15 +780,15 @@
         </div>
 
         <div class="hero-points">
-          <span>No Downpayment</span>
-          <span>Easy Monthly Payments</span>
-        </div>
-         </p>
-        
-        <div class="hero-points">
-          <span>Fast Approval</span>
-          <span>Fast Delivery</span>
-          <span>Latest Offers</span>
+          <div class="hero-points-row">
+            <span>No Downpayment</span>
+            <span>Easy Monthly Payments</span>
+          </div>
+          <div class="hero-points-row">
+            <span>Fast Approval</span>
+            <span>Fast Delivery</span>
+            <span>Latest Offers</span>
+          </div>
         </div>
       </div>
 
@@ -969,15 +1013,19 @@ ${lines.join("\n\n")}
             <div class="product-image">
               <img src="${safeItem.image}" alt="${safeItem.title}">
             </div>
+
             <div class="product-body">
               <div class="product-title">${safeItem.title}</div>
-              <div class="price">${safeItem.price}</div>
-              <div class="months">${safeItem.months}</div>
-              <div class="product-actions">
+              <div class="row">
+                <div>
+                  <div class="price">${safeItem.price}</div>
+                  <div class="months">${safeItem.months}</div>
+                </div>
                 <button class="cart-add-btn">+ Add</button>
               </div>
             </div>
           `;
+
           card.querySelector(".cart-add-btn").addEventListener("click", () => addToCart(safeItem));
           grid.appendChild(card);
 
