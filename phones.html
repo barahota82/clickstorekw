@@ -799,27 +799,25 @@ ${lines.join("\n\n")}
     load();
   </script>
 <script>
+console.log("TEST WORKING");
+
 async function loadWhatsAppSettings() {
-  try {
-    const data = {
-      phone: "67680877",
-      employee_name: "Shella"
-    };
+  console.log("WHATSAPP RUNNING");
 
-    const phone = "965" + (data.phone || "");
-    const name = data.employee_name || "Support";
+  const data = {
+    phone: "67680877",
+    employee_name: "Shella"
+  };
 
-    const message = `Welcome to Click Company 👋\n\n👤 ${name} - Sales Representative\n\nHow can I assist you today?`;
+  const phone = "965" + data.phone;
 
-    const encoded = encodeURIComponent(message);
+  const btn = document.getElementById("whatsappBtn");
 
-    const btn = document.getElementById("whatsappBtn");
-    if (btn) {
-      btn.href = `https://wa.me/${phone}?text=${encoded}`;
-    }
-
-  } catch (e) {
-    console.log("WhatsApp error", e);
+  if (btn) {
+    btn.href = `https://wa.me/${phone}`;
+    console.log("BUTTON UPDATED");
+  } else {
+    console.log("BUTTON NOT FOUND");
   }
 }
 
