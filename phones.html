@@ -19,8 +19,11 @@
       --muted: #c9d4e7;
       --dark-text: #111827;
       --primary: #2563eb;
+      --primary-dark: #1d4ed8;
       --accent: #22c55e;
       --accent-dark: #16a34a;
+      --hot-bg: #f59e0b;
+      --hot-text: #ffffff;
       --border: rgba(255,255,255,0.08);
       --shadow: 0 12px 30px rgba(0,0,0,0.25);
     }
@@ -86,9 +89,10 @@
 
     .nav-links {
       display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 8px;
       align-items: center;
+      flex-wrap: nowrap;
+      white-space: nowrap;
     }
 
     .nav-links a,
@@ -96,15 +100,40 @@
       color: #fff;
       font-size: 14px;
       padding: 8px 10px;
-      border-radius: 8px;
+      border-radius: 10px;
       background: transparent;
       border: 0;
       cursor: pointer;
+      transition: 0.2s ease;
+      flex: 0 0 auto;
     }
 
     .nav-links a:hover,
     .cart-btn:hover {
       background: rgba(255,255,255,0.06);
+    }
+
+    .nav-links a.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .nav-links a.hot-link {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      font-weight: bold;
+    }
+
+    .nav-links a.hot-link:hover {
+      background: var(--hot-bg);
+      color: var(--hot-text);
+      border-color: var(--hot-bg);
+    }
+
+    .cart-btn {
+      display: none;
     }
 
     .cart-badge {
@@ -204,6 +233,7 @@
       cursor: pointer;
       font-size: 18px;
       min-width: 170px;
+      transition: 0.2s ease;
     }
 
     .btn:hover {
@@ -412,6 +442,12 @@
       .product-image {
         height: 360px;
       }
+
+      .cart-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
     }
 
     @media (max-width: 640px) {
@@ -480,11 +516,11 @@
 
       <nav class="nav-links">
         <a href="/">Home</a>
-        <a href="/#hot-offers">Hot Offers</a>
-        <a href="/phones.html">Phones</a>
+        <a href="/phones.html" class="active">Phones</a>
         <a href="/tablets.html">Tablets</a>
         <a href="/laptops.html">Laptops</a>
         <a href="/accessories.html">Accessories</a>
+        <a href="/#hot-offers" class="hot-link">Hot Offers</a>
         <button class="cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cart-count-top">0</span></button>
       </nav>
     </div>
@@ -537,7 +573,8 @@
     function update() {
       const count = cart.length;
       document.getElementById("count").innerText = count;
-      document.getElementById("cart-count-top").innerText = count;
+      const topCount = document.getElementById("cart-count-top");
+      if (topCount) topCount.innerText = count;
 
       const cartItems = document.getElementById("cartItems");
 
