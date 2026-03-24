@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Click Store KW</title>
+  <title>Click Company</title>
   <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
 
   <style>
@@ -36,13 +36,45 @@
 
     body {
       font-family: Arial, sans-serif;
-      background: radial-gradient(circle at top, #17346f 0%, #0c1830 35%, #08111f 100%);
+      background: radial-gradient(circle at top, #1e3a8a 0%, #0c1830 40%, #050b18 100%);
       color: var(--text);
       line-height: 1.5;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: -20%;
+      left: -20%;
+      width: 140%;
+      height: 140%;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(59,130,246,0.25), transparent 40%),
+        radial-gradient(circle at 70% 30%, rgba(34,197,94,0.15), transparent 40%);
+      z-index: 0;
+      pointer-events: none;
+      animation: moveLight 10s linear infinite;
+    }
+
+    @keyframes moveLight {
+      0% { transform: translate(0, 0); }
+      50% { transform: translate(40px, 30px); }
+      100% { transform: translate(0, 0); }
     }
 
     a {
       text-decoration: none;
+    }
+
+    .container,
+    header,
+    section,
+    footer {
+      position: relative;
+      z-index: 1;
     }
 
     .container {
@@ -77,7 +109,9 @@
     }
 
     .logo {
-      height: 48px;
+      width: 140px;
+      height: auto;
+      object-fit: contain;
       display: block;
       filter: brightness(1.35);
     }
@@ -215,13 +249,13 @@
       margin-bottom: 22px;
     }
 
-     .hero-actions {
-  display: flex;
-  justify-content: flex-start; 
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 22px;
-}
+    .hero-actions {
+      display: flex;
+      justify-content: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
 
     .btn {
       display: inline-flex;
@@ -247,14 +281,14 @@
     }
 
     .btn-secondary {
-  background: #1d4ed8;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.12);
-}
+      background: #1d4ed8;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
 
     .btn-secondary:hover {
-  background: #1e40af;
-}
+      background: #1e40af;
+    }
 
     .hero-points {
       display: flex;
@@ -346,6 +380,7 @@
       padding: 10px;
       background: #fff;
       border-bottom: 1px solid #eef2f7;
+      overflow: hidden;
     }
 
     .product-image img {
@@ -671,7 +706,7 @@
       }
 
       .logo {
-        height: 42px;
+        width: 120px;
       }
 
       .brand-text span {
@@ -717,9 +752,9 @@
     <div class="container nav">
       <div class="brand">
         <a href="/">
-          <img src="/images/logo.png" alt="Click Store KW Logo" class="logo">
+          <img src="/images/logo.png" alt="Click Company Logo" class="logo">
           <div class="brand-text">
-            <h1>CLICK STORE KW</h1>
+            <h1>CLICK COMPANY</h1>
             <span>Phones • Tablets • Laptops • Accessories</span>
           </div>
         </a>
@@ -797,7 +832,7 @@
 
   <footer>
     <div class="container footer-box">
-      <div>©️ 2026 Click Store KW</div>
+      <div>©️ 2026 Click Company</div>
       <div>You Can Depend on Us</div>
     </div>
   </footer>
@@ -807,8 +842,8 @@
   </button>
 
   <a id="whatsappBtn" class="floating-whatsapp" href="#" target="_blank">
-  WhatsApp
-</a>
+    WhatsApp
+  </a>
 
   <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
@@ -921,24 +956,26 @@ ${imageURL}`;
 ${lines.join("\n\n")}
 
 📍 Please confirm availability & total price.`;
-      const encoded = encodeURIComponent(msg);
-      fetch("/settings/whatsapp.md")
-  .then(res => res.text())
-  .then(text => {
-    const data = {};
-    text.split("\n").forEach(line => {
-      if (line.includes(":")) {
-        const [key, ...rest] = line.split(":");
-        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-      }
-    });
 
-    const phone = "965" + (data.phone || "");
-    window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
-  })
-  .catch(() => {
-    window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
-  });
+      const encoded = encodeURIComponent(msg);
+
+      fetch("/settings/whatsapp.md")
+        .then(res => res.text())
+        .then(text => {
+          const data = {};
+          text.split("\n").forEach(line => {
+            if (line.includes(":")) {
+              const [key, ...rest] = line.split(":");
+              data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+            }
+          });
+
+          const phone = "965" + (data.phone || "");
+          window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+        })
+        .catch(() => {
+          window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
+        });
     }
 
     async function fetchText(path) {
@@ -1035,6 +1072,26 @@ ${lines.join("\n\n")}
 
     updateCartUI();
     loadHotOffers();
+  </script>
+
+  <script>
+    (function () {
+      const phone = "96567680877";
+      const name = "Shella";
+
+      const message = `Welcome to Click Company 👋
+
+👤 ${name} - Sales Representative
+
+How can I assist you today?`;
+
+      const encoded = encodeURIComponent(message);
+
+      const btn = document.getElementById("whatsappBtn");
+      if (btn) {
+        btn.href = `https://wa.me/${phone}?text=${encoded}`;
+      }
+    })();
   </script>
 </body>
 </html>
