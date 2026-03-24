@@ -555,4 +555,161 @@
           <h4>Laptops</h4>
           <p>Selected laptop offers for work, study and daily use.</p>
         </div>
-        <div class="
+        <div class="info-box">
+          <h4>Accessories</h4>
+          <p>Smart watches, earbuds and accessories available on request.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="section" id="phones">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Phones</h2>
+          <div class="section-sub">Latest phone installment offers</div>
+        </div>
+      </div>
+      <div class="products-grid" id="phones-container"></div>
+    </div>
+  </section>
+
+  <section class="section" id="tablets">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Tablets</h2>
+          <div class="section-sub">Tablet offers with installment options</div>
+        </div>
+      </div>
+      <div class="products-grid" id="tablets-container"></div>
+    </div>
+  </section>
+
+  <section class="section" id="laptops">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Laptops</h2>
+          <div class="section-sub">Laptop offers for work and study</div>
+        </div>
+      </div>
+      <div class="products-grid" id="laptops-container"></div>
+    </div>
+  </section>
+
+  <section class="section" id="accessories">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Accessories</h2>
+          <div class="section-sub">Smart accessories and gadgets</div>
+        </div>
+      </div>
+      <div class="products-grid" id="accessories-container"></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-box">
+      <div>© 2026 Click Store KW</div>
+      <div>You Can Depend on Us</div>
+    </div>
+  </footer>
+
+  <a class="floating-whatsapp" href="https://wa.me/96567680877?text=Hello%20I%20want%20to%20know%20today%27s%20offers" target="_blank">
+    WhatsApp
+  </a>
+
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.init();
+
+      if (window.location.hash.includes("recovery_token")) {
+        window.netlifyIdentity.open("recovery");
+      }
+
+      if (window.location.hash.includes("invite_token")) {
+        window.netlifyIdentity.open("signup");
+      }
+
+      window.netlifyIdentity.on("login", function () {
+        window.location.href = "/admin/";
+      });
+    }
+  </script>
+
+  <script>
+    async function loadProducts() {
+      try {
+        const res = await fetch("products/item.md");
+        const text = await res.text();
+
+        const data = {};
+        const lines = text.split("\n");
+
+        for (let line of lines) {
+          line = line.trim();
+
+          if (!line || line === "---") continue;
+          if (line.startsWith("- ")) continue;
+
+          const separatorIndex = line.indexOf(":");
+          if (separatorIndex === -1) continue;
+
+          const key = line.slice(0, separatorIndex).trim();
+          let value = line.slice(separatorIndex + 1).trim();
+
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1);
+          }
+
+          data[key] = value;
+        }
+
+        const category = (data.category || "").toLowerCase();
+        let container = null;
+
+        if (category === "phones") container = document.getElementById("phones-container");
+        else if (category === "tablets") container = document.getElementById("tablets-container");
+        else if (category === "laptops") container = document.getElementById("laptops-container");
+        else if (category === "accessories") container = document.getElementById("accessories-container");
+
+        if (!container) return;
+
+        const productHTML = `
+          <div class="product-card">
+            <div class="product-top">
+              <span class="category-tag">${data.category || "Product"}</span>
+              <div class="product-title">${data.title || "Product"}</div>
+              <div class="product-meta">${data.note || "Dynamic Product"}</div>
+            </div>
+            <div class="product-body">
+              <div class="price">${data.price || ""}</div>
+              <div class="months">${data.months || ""}</div>
+              <div class="features">
+                <span>Fast approval</span>
+                <span>Easy installment</span>
+                <span>Direct WhatsApp order</span>
+              </div>
+              <div class="product-actions">
+                <a class="order-btn" href="${data.whatsapp || "#"}" target="_blank">Order Now</a>
+                <a class="ask-btn" href="${data.whatsapp || "#"}" target="_blank">Ask for Details</a>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.insertAdjacentHTML("beforeend", productHTML);
+
+      } catch (error) {
+        console.error("Error loading product:", error);
+      }
+    }
+
+    loadProducts();
+  </script>
+
+</body>
+</html>
