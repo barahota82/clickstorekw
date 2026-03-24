@@ -4,5 +4,5 @@ price: "180 KD"
 months: "12 months installment"
 image: "/images/tablets/ipadair.png"
 available: true
-hot_offer: false
+hot_offer: true
 ---
