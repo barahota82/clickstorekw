@@ -2,54 +2,807 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Click Store KW</title>
 
   <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
 
   <style>
-    * {margin:0;padding:0;box-sizing:border-box;}
-
-    body {
-      font-family: Arial;
-      background: radial-gradient(circle at top, #17346f 0%, #0c1830 35%, #08111f 100%);
-      color:#fff;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    .container {width:92%;max-width:1180px;margin:auto;}
+    :root {
+      --bg: #08111f;
+      --bg-soft: #0f1d35;
+      --card: #ffffff;
+      --text: #ffffff;
+      --muted: #c9d4e7;
+      --dark-text: #111827;
+      --primary: #2563eb;
+      --primary-2: #1d4ed8;
+      --accent: #22c55e;
+      --accent-dark: #16a34a;
+      --gold: #fbbf24;
+      --border: rgba(255,255,255,0.08);
+      --shadow: 0 12px 30px rgba(0,0,0,0.25);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, #17346f 0%, #0c1830 35%, #08111f 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1180px, 92%);
+      margin: auto;
+    }
 
     header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
       backdrop-filter: blur(14px);
-      background: rgba(8,17,31,0.75);
-      border-bottom:1px solid rgba(255,255,255,0.08);
+      background: rgba(8, 17, 31, 0.82);
+      border-bottom: 1px solid var(--border);
     }
 
     .nav {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:15px 0;
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
     }
 
     .logo {
-      height:42px;
-      filter: brightness(1.4);
-      transition:0.3s;
+      height: 48px;
+      opacity: 0.98;
+      filter: brightness(1.35);
+      transition: 0.3s ease;
+      display: block;
     }
 
-    .logo:hover {transform:scale(1.05);}
+    .logo:hover {
+      transform: scale(1.04);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-text h1 {
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: #fff;
+      margin: 0;
+      line-height: 1.1;
+    }
+
+    .brand-text span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
 
     .nav-links a {
-      color:#fff;
-      margin-left:15px;
-      position:relative;
+      color: #fff;
+      font-size: 14px;
+      opacity: 0.95;
+      padding: 8px 10px;
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .nav-links a:hover {
+      background: rgba(255,255,255,0.06);
     }
 
     .nav-links a::after {
-      content:"";
-      position:absolute;
-      bottom:-4px;
-      left:0;
-      width:0;
-      height:2px;
-      background:#
+      content: "";
+      position: absolute;
+      bottom: 4px;
+      left: 10px;
+      width: 0;
+      height: 2px;
+      background: var(--accent);
+      transition: 0.25s ease;
+    }
+
+    .nav-links a:hover::after {
+      width: calc(100% - 20px);
+    }
+
+    .home-link {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.05);
+      font-weight: bold;
+    }
+
+    .hero {
+      padding: 70px 0 36px;
+    }
+
+    .hero-box {
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .hero-content {
+      background: linear-gradient(135deg, rgba(37,99,235,0.18), rgba(255,255,255,0.04));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 34px;
+      box-shadow: var(--shadow);
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(251,191,36,0.14);
+      color: var(--gold);
+      border: 1px solid rgba(251,191,36,0.26);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .hero h2 {
+      font-size: 48px;
+      line-height: 1.08;
+      margin-bottom: 14px;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 680px;
+      margin-bottom: 22px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 20px;
+      border-radius: 12px;
+      font-weight: bold;
+      transition: 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: white;
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    .hero-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-points span {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+
+    .hero-side {
+      display: grid;
+      gap: 16px;
+    }
+
+    .mini-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .mini-card h3 {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+
+    .mini-card p {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 14px;
+    }
+
+    .mini-highlight {
+      color: var(--gold);
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .section {
+      padding: 22px 0 12px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 30px;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-bottom: 26px;
+    }
+
+    .product-card {
+      background: var(--card);
+      color: var(--dark-text);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    .product-top {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      padding: 18px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .category-tag {
+      display: inline-block;
+      font-size: 12px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 6px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+      font-weight: bold;
+    }
+
+    .product-title {
+      font-size: 24px;
+      font-weight: bold;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .product-meta {
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .product-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .price {
+      font-size: 28px;
+      color: var(--primary);
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .months {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+
+    .features {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .features span {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    .product-actions {
+      margin-top: auto;
+      display: grid;
+      gap: 10px;
+    }
+
+    .order-btn {
+      display: block;
+      text-align: center;
+      background: var(--accent);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .order-btn:hover {
+      background: var(--accent-dark);
+    }
+
+    .ask-btn {
+      display: block;
+      text-align: center;
+      background: #eef2ff;
+      color: var(--primary-2);
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: bold;
+    }
+
+    .wide-banner {
+      margin: 10px 0 28px;
+      background: linear-gradient(135deg, rgba(37,99,235,0.22), rgba(34,197,94,0.12));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .wide-banner h3 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .wide-banner p {
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .category-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      display: block;
+      transition: 0.2s ease;
+      color: white;
+    }
+
+    .category-box:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .category-box h4 {
+      margin-bottom: 8px;
+      font-size: 18px;
+      color: white;
+    }
+
+    .category-box p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .empty-hot-offers {
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 24px;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,0.03);
+    }
+
+    footer {
+      padding: 36px 0 90px;
+      color: var(--muted);
+    }
+
+    .footer-box {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .floating-whatsapp {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 999;
+      background: #25D366;
+      color: white;
+      padding: 14px 18px;
+      border-radius: 999px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+      font-weight: bold;
+    }
+
+    .floating-whatsapp:hover {
+      background: #1ebe5d;
+    }
+
+    @media (max-width: 900px) {
+      .hero-box {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h2 {
+        font-size: 38px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav {
+        padding: 12px 0;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .nav-links {
+        gap: 8px;
+      }
+
+      .hero {
+        padding-top: 34px;
+      }
+
+      .hero-content,
+      .mini-card,
+      .wide-banner {
+        padding: 22px;
+      }
+
+      .hero h2 {
+        font-size: 32px;
+      }
+
+      .section-title {
+        font-size: 26px;
+      }
+
+      .product-title {
+        font-size: 21px;
+      }
+
+      .price {
+        font-size: 24px;
+      }
+
+      .logo {
+        height: 42px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <a href="/">
+          <img src="/images/logo.png" alt="Click Store KW Logo" class="logo">
+          <div class="brand-text">
+            <h1>CLICK STORE KW</h1>
+            <span>Phones • Tablets • Laptops • Accessories</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="nav-links">
+        <a href="/" class="home-link">Home</a>
+        <a href="#hot-offers">Hot Offers</a>
+        <a href="#categories">Categories</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-box">
+      <div class="hero-content">
+        <div class="badge">Easy Installments in Kuwait</div>
+        <h2>Buy Now, Pay Later with Fast Approval</h2>
+        <p>
+          Latest phones, tablets, laptops and accessories with easy monthly payments,
+          fast approval and direct WhatsApp ordering.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://wa.me/96567680877?text=Hello%20I%20want%20to%20know%20today%27s%20offers" target="_blank">Order on WhatsApp</a>
+          <a class="btn btn-secondary" href="#hot-offers">View Hot Offers</a>
+        </div>
+
+        <div class="hero-points">
+          <span>No Bank Hassle</span>
+          <span>Fast Approval</span>
+          <span>Easy Monthly Payments</span>
+          <span>Latest Offers</span>
+        </div>
+      </div>
+
+      <div class="hero-side">
+        <div class="mini-card">
+          <h3>Hot Offers</h3>
+          <p>Featured products you want to focus on in sales or products with special discounts.</p>
+          <div class="mini-highlight">Controlled from admin dashboard</div>
+        </div>
+
+        <div class="mini-card">
+          <h3>Direct Ordering</h3>
+          <p>Every featured product can be ordered instantly through WhatsApp with a ready message.</p>
+          <a class="btn btn-primary" href="https://wa.me/96567680877?text=Hello%20I%20want%20to%20order%20from%20Click%20Store%20KW" target="_blank">Start Order</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="hot-offers">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Hot Offers</h2>
+          <div class="section-sub">Highlighted products and discounted offers managed from admin</div>
+        </div>
+      </div>
+
+      <div class="products-grid" id="hot-offers-container">
+        <div class="empty-hot-offers" id="hot-offers-empty">
+          No hot offers available yet.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container" id="categories">
+    <div class="wide-banner">
+      <h3>Shop by Category</h3>
+      <p>
+        Browse products by category. Each category will open in its own dedicated page.
+      </p>
+
+      <div class="category-grid">
+        <a class="category-box" href="/phones.html">
+          <h4>Phones</h4>
+          <p>Samsung, Honor, Motorola and more with monthly installment plans.</p>
+        </a>
+
+        <a class="category-box" href="/tablets.html">
+          <h4>Tablets</h4>
+          <p>Budget-friendly tablet offers with easy payment options.</p>
+        </a>
+
+        <a class="category-box" href="/laptops.html">
+          <h4>Laptops</h4>
+          <p>Selected laptop offers for work, study and daily use.</p>
+        </a>
+
+        <a class="category-box" href="/accessories.html">
+          <h4>Accessories</h4>
+          <p>Smart watches, earbuds and accessories available on request.</p>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container footer-box">
+      <div>© 2026 Click Store KW</div>
+      <div>You Can Depend on Us</div>
+    </div>
+  </footer>
+
+  <a class="floating-whatsapp" href="https://wa.me/96567680877?text=Hello%20I%20want%20to%20know%20today%27s%20offers" target="_blank">
+    WhatsApp
+  </a>
+
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.init();
+
+      if (window.location.hash.includes("recovery_token")) {
+        window.netlifyIdentity.open("recovery");
+      }
+
+      if (window.location.hash.includes("invite_token")) {
+        window.netlifyIdentity.open("signup");
+      }
+
+      window.netlifyIdentity.on("login", function () {
+        window.location.href = "/admin/";
+      });
+    }
+  </script>
+
+  <script>
+    function parseFrontMatter(text) {
+      const data = {};
+      const features = [];
+      const lines = text.split("\n");
+
+      let inFeatures = false;
+
+      for (let rawLine of lines) {
+        let line = rawLine.trim();
+
+        if (!line || line === "---") continue;
+
+        if (line.startsWith("- ")) {
+          if (inFeatures) {
+            let featureValue = line.replace("- ", "").trim();
+            if (featureValue.startsWith('"') && featureValue.endsWith('"')) {
+              featureValue = featureValue.slice(1, -1);
+            }
+            features.push(featureValue);
+          }
+          continue;
+        }
+
+        const separatorIndex = line.indexOf(":");
+        if (separatorIndex === -1) continue;
+
+        const key = line.slice(0, separatorIndex).trim();
+        let value = line.slice(separatorIndex + 1).trim();
+
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.slice(1, -1);
+        }
+
+        if (key === "features") {
+          inFeatures = true;
+          data[key] = [];
+          continue;
+        } else {
+          inFeatures = false;
+        }
+
+        data[key] = value;
+      }
+
+      data.features = features;
+      return data;
+    }
+
+    async function loadHotOffers() {
+      const container = document.getElementById("hot-offers-container");
+      const emptyState = document.getElementById("hot-offers-empty");
+
+      try {
+        const res = await fetch("products/item.md");
+        const text = await res.text();
+        const data = parseFrontMatter(text);
+
+        const hotOfferValue = (data.hot_offer || "").toString().toLowerCase();
+        const availableValue = (data.available || "").toString().toLowerCase();
+
+        const isAvailable = availableValue === "" || availableValue === "true";
+        const isHotOffer = hotOfferValue === "true" || hotOfferValue === "";
+
+        if (!isAvailable || !isHotOffer) {
+          return;
+        }
+
+        if (emptyState) {
+          emptyState.remove();
+        }
+
+        const featuresHtml = (data.features && data.features.length)
+          ? data.features.slice(0, 3).map(feature => `<span>${feature}</span>`).join("")
+          : `
+            <span>Fast approval</span>
+            <span>Easy installment</span>
+            <span>Direct WhatsApp order</span>
+          `;
+
+        const productHTML = `
+          <div class="product-card">
+            <div class="product-top">
+              <span class="category-tag">${data.category || "Hot Offer"}</span>
+              <div class="product-title">${data.title || "Product"}</div>
+              <div class="product-meta">${data.note || "Featured product"}</div>
+            </div>
+            <div class="product-body">
+              <div class="price">${data.price || ""}</div>
+              <div class="months">${data.months || ""}</div>
+              <div class="features">
+                ${featuresHtml}
+              </div>
+              <div class="product-actions">
+                <a class="order-btn" href="${data.whatsapp || "#"}" target="_blank">Order Now</a>
+                <a class="ask-btn" href="${data.whatsapp || "#"}" target="_blank">Ask for Details</a>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.insertAdjacentHTML("beforeend", productHTML);
+
+      } catch (error) {
+        console.error("Error loading hot offers:", error);
+      }
+    }
+
+    loadHotOffers();
+  </script>
+
+</body>
+</html>
