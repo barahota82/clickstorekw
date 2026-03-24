@@ -2,86 +2,80 @@ backend:
   name: git-gateway
   branch: main
 
-media_folder: "images/uploads"
-public_folder: "/images/uploads"
+local_backend: false
 
-locale: "en"
+media_folder: "images/products"
+public_folder: "/images/products"
+
+site_url: "/"
+display_url: "/"
+logo_url: "/images/logo.png"
 
 collections:
-  - name: "products"
-    label: "Products"
-    label_singular: "Product"
-    folder: "products"
+  - name: "phones"
+    label: "Phones"
+    folder: "products/phones"
     create: true
-    delete: true
     slug: "{{slug}}"
-    summary: "{{title}} — {{category}} — {{price}}"
-    identifier_field: "title"
-
+    extension: "md"
+    format: "frontmatter"
     fields:
-      - label: "Product Name"
-        name: "title"
-        widget: "string"
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Category", name: "category", widget: "hidden", default: "Phones" }
+      - { label: "Price", name: "price", widget: "string", hint: "Example: 10 KD / month" }
+      - { label: "Months", name: "months", widget: "string", hint: "Example: 12 months to pay" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/phones", public_folder: "/images/products/phones" }
+      - { label: "Available", name: "available", widget: "boolean", default: true }
+      - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
 
-      - label: "Category"
-        name: "category"
-        widget: "select"
-        options:
-          - "Phones"
-          - "Tablets"
-          - "Laptops"
-          - "Accessories"
+  - name: "tablets"
+    label: "Tablets"
+    folder: "products/tablets"
+    create: true
+    slug: "{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Category", name: "category", widget: "hidden", default: "Tablets" }
+      - { label: "Price", name: "price", widget: "string" }
+      - { label: "Months", name: "months", widget: "string" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/tablets", public_folder: "/images/products/tablets" }
+      - { label: "Available", name: "available", widget: "boolean", default: true }
+      - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
 
-      - label: "Monthly Price"
-        name: "price"
-        widget: "string"
-        hint: "Example: 10 KD / month"
+  - name: "laptops"
+    label: "Laptops"
+    folder: "products/laptops"
+    create: true
+    slug: "{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Category", name: "category", widget: "hidden", default: "Laptops" }
+      - { label: "Price", name: "price", widget: "string" }
+      - { label: "Months", name: "months", widget: "string" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/laptops", public_folder: "/images/products/laptops" }
+      - { label: "Available", name: "available", widget: "boolean", default: true }
+      - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
 
-      - label: "Months to Pay"
-        name: "months"
-        widget: "string"
-        hint: "Example: 12 months to pay"
-
-      - label: "WhatsApp Link"
-        name: "whatsapp"
-        widget: "string"
-        hint: "Example: https://wa.me/96567680877?text=Hello%20I%20want%20Samsung%20A16"
-
-      - label: "Product Image"
-        name: "image"
-        widget: "image"
-        required: false
-
-      - label: "Features"
-        name: "features"
-        widget: "list"
-        required: false
-        hint: "Add short product features"
-        field:
-          label: "Feature"
-          name: "feature"
-          widget: "string"
-
-      - label: "Available"
-        name: "available"
-        widget: "boolean"
-        default: true
-
-      - label: "Featured Product"
-        name: "featured"
-        widget: "boolean"
-        default: false
-        required: false
-
-      - label: "Sort Order"
-        name: "order"
-        widget: "number"
-        default: 100
-        required: false
-        value_type: "int"
-
-      - label: "Short Note"
-        name: "note"
-        widget: "string"
-        required: false
-        hint: "Example: Fast approval / Limited offer / Best seller"
+  - name: "accessories"
+    label: "Accessories"
+    folder: "products/accessories"
+    create: true
+    slug: "{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Category", name: "category", widget: "hidden", default: "Accessories" }
+      - { label: "Price", name: "price", widget: "string" }
+      - { label: "Months", name: "months", widget: "string" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/accessories", public_folder: "/images/products/accessories" }
+      - { label: "Available", name: "available", widget: "boolean", default: true }
+      - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
