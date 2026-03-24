@@ -22,9 +22,9 @@ collections:
     fields:
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Category", name: "category", widget: "hidden", default: "Phones" }
-      - { label: "Price", name: "price", widget: "string", hint: "Example: 10 KD / month" }
-      - { label: "Months", name: "months", widget: "string", hint: "Example: 12 months to pay" }
-      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Price", name: "price", widget: "string", hint: "Example: 320 KD" }
+      - { label: "Months", name: "months", widget: "string", hint: "Example: 12 months" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string", required: false }
       - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/phones", public_folder: "/images/products/phones" }
       - { label: "Available", name: "available", widget: "boolean", default: true }
       - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
@@ -39,9 +39,9 @@ collections:
     fields:
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Category", name: "category", widget: "hidden", default: "Tablets" }
-      - { label: "Price", name: "price", widget: "string" }
-      - { label: "Months", name: "months", widget: "string" }
-      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Price", name: "price", widget: "string", hint: "Example: 180 KD" }
+      - { label: "Months", name: "months", widget: "string", hint: "Example: 12 months" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string", required: false }
       - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/tablets", public_folder: "/images/products/tablets" }
       - { label: "Available", name: "available", widget: "boolean", default: true }
       - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
@@ -56,9 +56,9 @@ collections:
     fields:
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Category", name: "category", widget: "hidden", default: "Laptops" }
-      - { label: "Price", name: "price", widget: "string" }
-      - { label: "Months", name: "months", widget: "string" }
-      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Price", name: "price", widget: "string", hint: "Example: 250 KD" }
+      - { label: "Months", name: "months", widget: "string", hint: "Example: 18 months" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string", required: false }
       - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/laptops", public_folder: "/images/products/laptops" }
       - { label: "Available", name: "available", widget: "boolean", default: true }
       - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
@@ -73,9 +73,9 @@ collections:
     fields:
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Category", name: "category", widget: "hidden", default: "Accessories" }
-      - { label: "Price", name: "price", widget: "string" }
-      - { label: "Months", name: "months", widget: "string" }
-      - { label: "WhatsApp Link", name: "whatsapp", widget: "string" }
+      - { label: "Price", name: "price", widget: "string", hint: "Example: 25 KD" }
+      - { label: "Months", name: "months", widget: "string", hint: "Example: 3 months" }
+      - { label: "WhatsApp Link", name: "whatsapp", widget: "string", required: false }
       - { label: "Image", name: "image", widget: "image", media_folder: "/images/products/accessories", public_folder: "/images/products/accessories" }
       - { label: "Available", name: "available", widget: "boolean", default: true }
       - { label: "Hot Offer", name: "hot_offer", widget: "boolean", default: false }
