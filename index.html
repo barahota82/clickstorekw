@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Click Store KW</title>
-
   <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
 
   <style>
@@ -16,13 +15,11 @@
 
     :root {
       --bg: #08111f;
-      --bg-soft: #0f1d35;
       --card: #ffffff;
       --text: #ffffff;
       --muted: #c9d4e7;
       --dark-text: #111827;
       --primary: #2563eb;
-      --primary-2: #1d4ed8;
       --accent: #22c55e;
       --accent-dark: #16a34a;
       --gold: #fbbf24;
@@ -36,8 +33,7 @@
 
     body {
       font-family: Arial, sans-serif;
-      background:
-        radial-gradient(circle at top, #17346f 0%, #0c1830 35%, #08111f 100%);
+      background: radial-gradient(circle at top, #17346f 0%, #0c1830 35%, #08111f 100%);
       color: var(--text);
       line-height: 1.5;
     }
@@ -66,12 +62,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 16px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      padding: 10px 0;
     }
 
     .brand a {
@@ -83,26 +74,13 @@
 
     .logo {
       height: 48px;
-      opacity: 0.98;
-      filter: brightness(1.35);
-      transition: 0.3s ease;
       display: block;
-    }
-
-    .logo:hover {
-      transform: scale(1.04);
-    }
-
-    .brand-text {
-      display: flex;
-      flex-direction: column;
+      filter: brightness(1.35);
     }
 
     .brand-text h1 {
       font-size: 22px;
       letter-spacing: 1px;
-      color: #fff;
-      margin: 0;
       line-height: 1.1;
     }
 
@@ -113,47 +91,44 @@
 
     .nav-links {
       display: flex;
-      gap: 14px;
+      gap: 10px;
       flex-wrap: wrap;
       align-items: center;
     }
 
-    .nav-links a {
+    .nav-links a,
+    .cart-btn {
       color: #fff;
       font-size: 14px;
-      opacity: 0.95;
       padding: 8px 10px;
       border-radius: 8px;
-      position: relative;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
     }
 
-    .nav-links a:hover {
+    .nav-links a:hover,
+    .cart-btn:hover {
       background: rgba(255,255,255,0.06);
     }
 
-    .nav-links a::after {
-      content: "";
-      position: absolute;
-      bottom: 4px;
-      left: 10px;
-      width: 0;
-      height: 2px;
+    .cart-badge {
+      display: inline-flex;
+      min-width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      align-items: center;
+      justify-content: center;
       background: var(--accent);
-      transition: 0.25s ease;
-    }
-
-    .nav-links a:hover::after {
-      width: calc(100% - 20px);
-    }
-
-    .home-link {
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.05);
+      color: white;
+      font-size: 12px;
       font-weight: bold;
+      margin-left: 6px;
+      padding: 0 6px;
     }
 
     .hero {
-      padding: 70px 0 36px;
+      padding: 60px 0 30px;
     }
 
     .hero-box {
@@ -183,7 +158,7 @@
     }
 
     .hero h2 {
-      font-size: 48px;
+      font-size: 46px;
       line-height: 1.08;
       margin-bottom: 14px;
     }
@@ -211,6 +186,8 @@
       border-radius: 12px;
       font-weight: bold;
       transition: 0.2s ease;
+      border: 0;
+      cursor: pointer;
     }
 
     .btn-primary {
@@ -279,31 +256,24 @@
     }
 
     .section {
-      padding: 22px 0 12px;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 18px;
+      padding: 20px 0 20px;
     }
 
     .section-title {
       font-size: 30px;
+      margin-bottom: 6px;
     }
 
     .section-sub {
       color: var(--muted);
       font-size: 14px;
+      margin-bottom: 18px;
     }
 
     .products-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 18px;
-      margin-bottom: 26px;
     }
 
     .product-card {
@@ -317,152 +287,72 @@
       min-height: 100%;
     }
 
-    .product-top {
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      padding: 18px;
-      border-bottom: 1px solid #e5e7eb;
+    .product-image {
+      background: #fff;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      border-bottom: 1px solid #eef2f7;
     }
 
-    .category-tag {
-      display: inline-block;
-      font-size: 12px;
-      background: #dbeafe;
-      color: #1d4ed8;
-      padding: 6px 10px;
-      border-radius: 999px;
-      margin-bottom: 12px;
-      font-weight: bold;
-    }
-
-    .product-title {
-      font-size: 24px;
-      font-weight: bold;
-      line-height: 1.2;
-      margin-bottom: 8px;
-    }
-
-    .product-meta {
-      font-size: 14px;
-      color: #4b5563;
+    .product-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
     }
 
     .product-body {
       padding: 18px;
       display: flex;
       flex-direction: column;
+      gap: 8px;
       flex: 1;
+    }
+
+    .product-title {
+      font-size: 22px;
+      font-weight: bold;
+      line-height: 1.25;
     }
 
     .price {
       font-size: 28px;
       color: var(--primary);
       font-weight: bold;
-      margin-bottom: 6px;
     }
 
     .months {
       color: #6b7280;
       font-size: 14px;
-      margin-bottom: 14px;
-    }
-
-    .features {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .features span {
-      background: #f3f4f6;
-      border-radius: 10px;
-      padding: 9px 12px;
-      font-size: 13px;
-      color: #374151;
     }
 
     .product-actions {
       margin-top: auto;
-      display: grid;
-      gap: 10px;
+      padding-top: 12px;
     }
 
-    .order-btn {
+    .cart-add-btn {
       display: block;
+      width: 100%;
       text-align: center;
       background: var(--accent);
       color: white;
       padding: 12px 16px;
       border-radius: 12px;
       font-weight: bold;
+      border: 0;
+      cursor: pointer;
+      transition: 0.2s ease;
     }
 
-    .order-btn:hover {
+    .cart-add-btn:hover {
       background: var(--accent-dark);
     }
 
-    .ask-btn {
-      display: block;
-      text-align: center;
-      background: #eef2ff;
-      color: var(--primary-2);
-      padding: 11px 16px;
-      border-radius: 12px;
-      font-weight: bold;
-    }
-
-    .wide-banner {
-      margin: 10px 0 28px;
-      background: linear-gradient(135deg, rgba(37,99,235,0.22), rgba(34,197,94,0.12));
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: var(--shadow);
-    }
-
-    .wide-banner h3 {
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
-
-    .wide-banner p {
-      color: var(--muted);
-      margin-bottom: 16px;
-    }
-
-    .category-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-top: 12px;
-    }
-
-    .category-box {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 18px;
-      display: block;
-      transition: 0.2s ease;
-      color: white;
-    }
-
-    .category-box:hover {
-      transform: translateY(-2px);
-      background: rgba(255,255,255,0.1);
-    }
-
-    .category-box h4 {
-      margin-bottom: 8px;
-      font-size: 18px;
-      color: white;
-    }
-
-    .category-box p {
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .empty-hot-offers {
+    .empty-state {
       border: 1px dashed rgba(255,255,255,0.18);
       border-radius: 18px;
       padding: 24px;
@@ -485,6 +375,24 @@
       flex-wrap: wrap;
     }
 
+    .floating-cart {
+      position: fixed;
+      right: 18px;
+      bottom: 84px;
+      z-index: 1001;
+      background: var(--primary);
+      color: white;
+      border: 0;
+      border-radius: 999px;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+      font-weight: bold;
+      padding: 14px 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
     .floating-whatsapp {
       position: fixed;
       right: 18px;
@@ -498,8 +406,135 @@
       font-weight: bold;
     }
 
-    .floating-whatsapp:hover {
-      background: #1ebe5d;
+    .cart-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1200;
+      display: none;
+    }
+
+    .cart-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: min(92vw, 380px);
+      height: 100vh;
+      background: #fff;
+      color: #111827;
+      z-index: 1201;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.25);
+      transition: right 0.28s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-panel.open {
+      right: 0;
+    }
+
+    .cart-panel-overlay.open {
+      display: block;
+    }
+
+    .cart-header {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .cart-header h3 {
+      font-size: 22px;
+    }
+
+    .cart-close {
+      background: #f3f4f6;
+      border: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow: auto;
+      padding: 14px 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .cart-item {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 64px 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .cart-item img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #eef2f7;
+      padding: 6px;
+    }
+
+    .cart-item-title {
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .cart-item-meta {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .cart-remove {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .cart-footer {
+      border-top: 1px solid #e5e7eb;
+      padding: 14px 18px 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .send-order-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 48px;
+      border-radius: 12px;
+      background: #25D366;
+      color: white;
+      font-weight: bold;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .cart-empty-text {
+      color: #6b7280;
+      text-align: center;
+      padding: 28px 10px;
     }
 
     @media (max-width: 900px) {
@@ -514,13 +549,12 @@
 
     @media (max-width: 640px) {
       .nav {
-        padding: 12px 0;
         align-items: flex-start;
         flex-direction: column;
       }
 
       .nav-links {
-        gap: 8px;
+        gap: 6px;
       }
 
       .hero {
@@ -528,8 +562,7 @@
       }
 
       .hero-content,
-      .mini-card,
-      .wide-banner {
+      .mini-card {
         padding: 22px;
       }
 
@@ -542,7 +575,7 @@
       }
 
       .product-title {
-        font-size: 21px;
+        font-size: 20px;
       }
 
       .price {
@@ -556,7 +589,6 @@
   </style>
 </head>
 <body>
-
   <header>
     <div class="container nav">
       <div class="brand">
@@ -570,9 +602,13 @@
       </div>
 
       <nav class="nav-links">
-        <a href="/" class="home-link">Home</a>
+        <a href="/">Home</a>
         <a href="#hot-offers">Hot Offers</a>
-        <a href="#categories">Categories</a>
+        <a href="/phones.html">Phones</a>
+        <a href="/tablets.html">Tablets</a>
+        <a href="/laptops.html">Laptops</a>
+        <a href="/accessories.html">Accessories</a>
+        <button class="cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cart-count-top">0</span></button>
       </nav>
     </div>
   </header>
@@ -588,8 +624,8 @@
         </p>
 
         <div class="hero-actions">
-          <a class="btn btn-primary" href="https://wa.me/96567680877?text=Hello%20I%20want%20to%20know%20today%27s%20offers" target="_blank">Order on WhatsApp</a>
-          <a class="btn btn-secondary" href="#hot-offers">View Hot Offers</a>
+          <a class="btn btn-primary" href="#hot-offers">View Hot Offers</a>
+          <button class="btn btn-secondary" onclick="openCart()">Open Cart</button>
         </div>
 
         <div class="hero-points">
@@ -604,13 +640,13 @@
         <div class="mini-card">
           <h3>Hot Offers</h3>
           <p>Featured products you want to focus on in sales or products with special discounts.</p>
-          <div class="mini-highlight">Controlled from admin dashboard</div>
+          <div class="mini-highlight">Managed from admin panel</div>
         </div>
 
         <div class="mini-card">
-          <h3>Direct Ordering</h3>
-          <p>Every featured product can be ordered instantly through WhatsApp with a ready message.</p>
-          <a class="btn btn-primary" href="https://wa.me/96567680877?text=Hello%20I%20want%20to%20order%20from%20Click%20Store%20KW" target="_blank">Start Order</a>
+          <h3>Multi Product Order</h3>
+          <p>Add more than one product to cart and send the order once through WhatsApp.</p>
+          <div class="mini-highlight">Mobile friendly ordering flow</div>
         </div>
       </div>
     </div>
@@ -618,51 +654,13 @@
 
   <section class="section" id="hot-offers">
     <div class="container">
-      <div class="section-head">
-        <div>
-          <h2 class="section-title">Hot Offers</h2>
-          <div class="section-sub">Highlighted products and discounted offers managed from admin</div>
-        </div>
-      </div>
-
-      <div class="products-grid" id="hot-offers-container">
-        <div class="empty-hot-offers" id="hot-offers-empty">
-          No hot offers available yet.
-        </div>
+      <h2 class="section-title">Hot Offers</h2>
+      <div class="section-sub">Highlighted products you want to focus on</div>
+      <div class="products-grid" id="hot-offers-grid">
+        <div class="empty-state" id="hot-offers-empty">No hot offers available yet.</div>
       </div>
     </div>
   </section>
-
-  <div class="container" id="categories">
-    <div class="wide-banner">
-      <h3>Shop by Category</h3>
-      <p>
-        Browse products by category. Each category will open in its own dedicated page.
-      </p>
-
-      <div class="category-grid">
-        <a class="category-box" href="/phones.html">
-          <h4>Phones</h4>
-          <p>Samsung, Honor, Motorola and more with monthly installment plans.</p>
-        </a>
-
-        <a class="category-box" href="/tablets.html">
-          <h4>Tablets</h4>
-          <p>Budget-friendly tablet offers with easy payment options.</p>
-        </a>
-
-        <a class="category-box" href="/laptops.html">
-          <h4>Laptops</h4>
-          <p>Selected laptop offers for work, study and daily use.</p>
-        </a>
-
-        <a class="category-box" href="/accessories.html">
-          <h4>Accessories</h4>
-          <p>Smart watches, earbuds and accessories available on request.</p>
-        </a>
-      </div>
-    </div>
-  </div>
 
   <footer>
     <div class="container footer-box">
@@ -671,9 +669,30 @@
     </div>
   </footer>
 
-  <a class="floating-whatsapp" href="https://wa.me/96567680877?text=Hello%20I%20want%20to%20know%20today%27s%20offers" target="_blank">
+  <button class="floating-cart" onclick="openCart()">
+    🛒 <span id="cart-count-floating">0</span>
+  </button>
+
+  <a class="floating-whatsapp" href="https://wa.me/96567680877?text=Hello%20I%20want%20today%27s%20offers" target="_blank">
     WhatsApp
   </a>
+
+  <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
+
+  <aside class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="cart-close" onclick="closeCart()">×</button>
+    </div>
+
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty-text">Your cart is empty.</div>
+    </div>
+
+    <div class="cart-footer">
+      <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
+    </div>
+  </aside>
 
   <script>
     if (window.netlifyIdentity) {
@@ -691,118 +710,157 @@
         window.location.href = "/admin/";
       });
     }
-  </script>
 
-  <script>
+    const cart = [];
+
+    function updateCartUI() {
+      const count = cart.length;
+      document.getElementById("cart-count-top").textContent = count;
+      document.getElementById("cart-count-floating").textContent = count;
+
+      const cartItems = document.getElementById("cartItems");
+
+      if (!count) {
+        cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+        return;
+      }
+
+      cartItems.innerHTML = cart.map((item, index) => `
+        <div class="cart-item">
+          <img src="${item.image}" alt="${item.title}">
+          <div>
+            <div class="cart-item-title">${item.title}</div>
+            <div class="cart-item-meta">${item.price}</div>
+            <div class="cart-item-meta">${item.months}</div>
+          </div>
+          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+        </div>
+      `).join("");
+    }
+
+    function addToCart(item) {
+      cart.push(item);
+      updateCartUI();
+      openCart();
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function openCart() {
+      document.getElementById("cartPanel").classList.add("open");
+      document.getElementById("cartOverlay").classList.add("open");
+    }
+
+    function closeCart() {
+      document.getElementById("cartPanel").classList.remove("open");
+      document.getElementById("cartOverlay").classList.remove("open");
+    }
+
+    function sendOrderWhatsApp() {
+      if (!cart.length) return;
+
+      const lines = cart.map((item, i) => {
+        return `${i + 1}. ${item.title} - ${item.price} - ${item.months}`;
+      });
+
+      const msg = `Hello, I want to order:%0A%0A${lines.join("%0A")}%0A%0APlease confirm availability and total price.`;
+      window.open(`https://wa.me/96567680877?text=${msg}`, "_blank");
+    }
+
+    async function fetchText(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(path);
+      return await res.text();
+    }
+
     function parseFrontMatter(text) {
       const data = {};
-      const features = [];
       const lines = text.split("\n");
 
-      let inFeatures = false;
-
-      for (let rawLine of lines) {
-        let line = rawLine.trim();
-
+      for (let raw of lines) {
+        const line = raw.trim();
         if (!line || line === "---") continue;
 
-        if (line.startsWith("- ")) {
-          if (inFeatures) {
-            let featureValue = line.replace("- ", "").trim();
-            if (featureValue.startsWith('"') && featureValue.endsWith('"')) {
-              featureValue = featureValue.slice(1, -1);
-            }
-            features.push(featureValue);
-          }
-          continue;
-        }
+        const idx = line.indexOf(":");
+        if (idx === -1) continue;
 
-        const separatorIndex = line.indexOf(":");
-        if (separatorIndex === -1) continue;
-
-        const key = line.slice(0, separatorIndex).trim();
-        let value = line.slice(separatorIndex + 1).trim();
+        const key = line.slice(0, idx).trim();
+        let value = line.slice(idx + 1).trim();
 
         if (value.startsWith('"') && value.endsWith('"')) {
           value = value.slice(1, -1);
         }
 
-        if (key === "features") {
-          inFeatures = true;
-          data[key] = [];
-          continue;
-        } else {
-          inFeatures = false;
-        }
-
         data[key] = value;
       }
 
-      data.features = features;
       return data;
     }
 
     async function loadHotOffers() {
-      const container = document.getElementById("hot-offers-container");
-      const emptyState = document.getElementById("hot-offers-empty");
+      const grid = document.getElementById("hot-offers-grid");
+      const empty = document.getElementById("hot-offers-empty");
 
-      try {
-        const res = await fetch("products/item.md");
-        const text = await res.text();
-        const data = parseFrontMatter(text);
+      const paths = [
+        "/products/phones/test.md",
+        "/products/tablets/test.md",
+        "/products/laptops/test.md",
+        "/products/accessories/test.md"
+      ];
 
-        const hotOfferValue = (data.hot_offer || "").toString().toLowerCase();
-        const availableValue = (data.available || "").toString().toLowerCase();
+      let rendered = 0;
 
-        const isAvailable = availableValue === "" || availableValue === "true";
-        const isHotOffer = hotOfferValue === "true" || hotOfferValue === "";
+      for (const path of paths) {
+        try {
+          const text = await fetchText(path);
+          const data = parseFrontMatter(text);
 
-        if (!isAvailable || !isHotOffer) {
-          return;
-        }
+          const available = String(data.available || "").toLowerCase();
+          const hot = String(data.hot_offer || "").toLowerCase();
 
-        if (emptyState) {
-          emptyState.remove();
-        }
+          if (available === "false") continue;
+          if (hot !== "true") continue;
 
-        const featuresHtml = (data.features && data.features.length)
-          ? data.features.slice(0, 3).map(feature => `<span>${feature}</span>`).join("")
-          : `
-            <span>Fast approval</span>
-            <span>Easy installment</span>
-            <span>Direct WhatsApp order</span>
-          `;
+          rendered++;
 
-        const productHTML = `
-          <div class="product-card">
-            <div class="product-top">
-              <span class="category-tag">${data.category || "Hot Offer"}</span>
-              <div class="product-title">${data.title || "Product"}</div>
-              <div class="product-meta">${data.note || "Featured product"}</div>
+          const safeItem = {
+            title: data.title || "Product",
+            price: data.price || "",
+            months: data.months || "",
+            image: data.image || "/images/logo.png"
+          };
+
+          const card = document.createElement("div");
+          card.className = "product-card";
+          card.innerHTML = `
+            <div class="product-image">
+              <img src="${safeItem.image}" alt="${safeItem.title}">
             </div>
             <div class="product-body">
-              <div class="price">${data.price || ""}</div>
-              <div class="months">${data.months || ""}</div>
-              <div class="features">
-                ${featuresHtml}
-              </div>
+              <div class="product-title">${safeItem.title}</div>
+              <div class="price">${safeItem.price}</div>
+              <div class="months">${safeItem.months}</div>
               <div class="product-actions">
-                <a class="order-btn" href="${data.whatsapp || "#"}" target="_blank">Order Now</a>
-                <a class="ask-btn" href="${data.whatsapp || "#"}" target="_blank">Ask for Details</a>
+                <button class="cart-add-btn">+ Add</button>
               </div>
             </div>
-          </div>
-        `;
+          `;
+          card.querySelector(".cart-add-btn").addEventListener("click", () => addToCart(safeItem));
+          grid.appendChild(card);
 
-        container.insertAdjacentHTML("beforeend", productHTML);
+        } catch (e) {}
+      }
 
-      } catch (error) {
-        console.error("Error loading hot offers:", error);
+      if (rendered && empty) {
+        empty.remove();
       }
     }
 
+    updateCartUI();
     loadHotOffers();
   </script>
-
 </body>
 </html>
