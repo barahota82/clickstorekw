@@ -20,9 +20,12 @@
       --muted: #c9d4e7;
       --dark-text: #111827;
       --primary: #2563eb;
+      --primary-dark: #1d4ed8;
       --accent: #22c55e;
       --accent-dark: #16a34a;
       --gold: #fbbf24;
+      --hot-bg: #f59e0b;
+      --hot-text: #ffffff;
       --border: rgba(255,255,255,0.08);
       --shadow: 0 12px 30px rgba(0,0,0,0.25);
     }
@@ -63,6 +66,7 @@
       justify-content: space-between;
       gap: 16px;
       padding: 10px 0;
+      flex-wrap: wrap;
     }
 
     .brand a {
@@ -87,29 +91,70 @@
     .brand-text span {
       font-size: 12px;
       color: var(--muted);
+      white-space: nowrap;
     }
 
     .nav-links {
       display: flex;
-      gap: 10px;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .nav-row {
+      display: flex;
       flex-wrap: wrap;
+      gap: 6px;
       align-items: center;
+    }
+
+    .nav-row.main-row {
+      justify-content: flex-start;
+    }
+
+    .nav-row.hot-row {
+      justify-content: flex-start;
     }
 
     .nav-links a,
     .cart-btn {
       color: #fff;
-      font-size: 14px;
+      font-size: 13px;
       padding: 8px 10px;
-      border-radius: 8px;
+      border-radius: 10px;
       background: transparent;
       border: 0;
       cursor: pointer;
+      transition: 0.2s ease;
+      flex: 0 0 auto;
     }
 
     .nav-links a:hover,
     .cart-btn:hover {
       background: rgba(255,255,255,0.06);
+    }
+
+    .nav-links a.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .nav-links a.hot-link {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      font-weight: bold;
+    }
+
+    .nav-links a.hot-link:hover {
+      background: var(--hot-bg);
+      color: var(--hot-text);
+      border-color: var(--hot-bg);
+    }
+
+    .cart-btn {
+      display: none;
     }
 
     .cart-badge {
@@ -377,8 +422,8 @@
 
     .floating-cart {
       position: fixed;
-      right: 18px;
-      bottom: 84px;
+      left: 18px;
+      bottom: 18px;
       z-index: 1001;
       background: var(--primary);
       color: white;
@@ -547,14 +592,38 @@
       }
     }
 
+    @media (min-width: 900px) {
+      .nav {
+        flex-wrap: nowrap;
+      }
+
+      .nav-links {
+        width: auto;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .nav-row {
+        flex-wrap: nowrap;
+        gap: 8px;
+      }
+
+      .nav-row.hot-row {
+        order: 2;
+      }
+
+      .cart-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
     @media (max-width: 640px) {
       .nav {
         align-items: flex-start;
         flex-direction: column;
-      }
-
-      .nav-links {
-        gap: 6px;
       }
 
       .hero {
@@ -567,18 +636,18 @@
       }
 
       .cart-panel {
-      top: auto;
-      bottom: -100vh;
-      right: 0;
-      width: 100%;
-     height: 75vh;
-     border-radius: 20px 20px 0 0;
-    }
+        top: auto;
+        bottom: -100vh;
+        right: 0;
+        width: 100%;
+        height: 75vh;
+        border-radius: 20px 20px 0 0;
+      }
 
-    .cart-panel.open {
-     bottom: 0;
-    }
-      
+      .cart-panel.open {
+        bottom: 0;
+      }
+
       .hero h2 {
         font-size: 32px;
       }
@@ -598,6 +667,26 @@
       .logo {
         height: 42px;
       }
+
+      .brand-text span {
+        white-space: normal;
+      }
+
+      .nav-links a,
+      .cart-btn {
+        font-size: 12px;
+        padding: 7px 8px;
+      }
+
+      .floating-cart {
+        left: 14px;
+        bottom: 14px;
+      }
+
+      .floating-whatsapp {
+        right: 14px;
+        bottom: 14px;
+      }
     }
   </style>
 </head>
@@ -615,13 +704,18 @@
       </div>
 
       <nav class="nav-links">
-        <a href="/">Home</a>
-        <a href="#hot-offers">Hot Offers</a>
-        <a href="/phones.html">Phones</a>
-        <a href="/tablets.html">Tablets</a>
-        <a href="/laptops.html">Laptops</a>
-        <a href="/accessories.html">Accessories</a>
-        <button class="cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cart-count-top">0</span></button>
+        <div class="nav-row main-row">
+          <a href="/" class="active">Home</a>
+          <a href="/phones.html">Phones</a>
+          <a href="/tablets.html">Tablets</a>
+          <a href="/laptops.html">Laptops</a>
+          <a href="/accessories.html">Accessories</a>
+          <button class="cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cart-count-top">0</span></button>
+        </div>
+
+        <div class="nav-row hot-row">
+          <a href="#hot-offers" class="hot-link">Hot Offers</a>
+        </div>
       </nav>
     </div>
   </header>
@@ -629,6 +723,7 @@
   <section class="hero">
     <div class="container hero-box">
       <div class="hero-content">
+        <div class="badge">Easy Installments in Kuwait</div>
         <h2>Own It Today, Pay Monthly</h2>
         <p>
           Shop phones, tablets, laptops and accessories with easy monthly payments,
@@ -644,7 +739,8 @@
           <span>No Downpayment</span>
           <span>Easy Monthly Payments</span>
         </div>
-        <p>
+         </p>
+        
         <div class="hero-points">
           <span>Fast Approval</span>
           <span>Fast Delivery</span>
@@ -679,7 +775,7 @@
 
   <footer>
     <div class="container footer-box">
-      <div>© 2026 Click Store KW</div>
+      <div>©️ 2026 Click Store KW</div>
       <div>You Can Depend on Us</div>
     </div>
   </footer>
@@ -777,12 +873,31 @@
     function sendOrderWhatsApp() {
       if (!cart.length) return;
 
+      const baseURL = window.location.origin;
+
       const lines = cart.map((item, i) => {
-        return `${i + 1}. ${item.title} - ${item.price} - ${item.months}`;
+        let imageURL = item.image || "";
+
+        if (imageURL.startsWith("/")) {
+          imageURL = baseURL + imageURL;
+        }
+
+        return `🔹 Product ${i + 1}
+📱 ${item.title || "Product"}
+💰 ${item.price}
+📆 ${item.months}
+📸 View Product Image:
+${imageURL}`;
       });
 
-      const msg = `Hello, I want to order:%0A%0A${lines.join("%0A")}%0A%0APlease confirm availability and total price.`;
-      window.open(`https://wa.me/96567680877?text=${msg}`, "_blank");
+      const msg = `🛒 New Order
+
+${lines.join("\n\n")}
+
+📍 Please confirm availability & total price.`;
+
+      const encoded = encodeURIComponent(msg);
+      window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
     }
 
     async function fetchText(path) {
