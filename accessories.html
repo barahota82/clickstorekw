@@ -701,12 +701,15 @@
 ${imageURL}`;
       });
 
-      const msg = `🛒 New Order
+      const msg = `Welcome to Click Company 👋
+
+👤 Shella - Sales Representative
+
+🛒 New Order
 
 ${lines.join("\n\n")}
 
 📍 Please confirm availability & total price.`;
-
       fetch("/settings/whatsapp.md")
   .then(res => res.text())
   .then(text => {
