@@ -2,7 +2,7 @@
 title: "MacBook Air M2"
 price: "420 KD"
 months: "18 months installment"
-image: "/images/laptops/macbookairm2.png"
+image: "/images/laptops/macbookairm2.jpg"
 available: true
 hot_offer: true
 ---
