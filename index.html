@@ -73,9 +73,37 @@
   display: block;
   text-align: center;
   font-size: 14px;
-  font-weight: bold;
-  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #c9d4e7;
   margin-top: 4px;
+
+  animation: fadeLoop 4s infinite;
+}
+
+@keyframes fadeLoop {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  60% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
     .logo {
