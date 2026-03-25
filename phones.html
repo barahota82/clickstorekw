@@ -5,17 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Phones - Click Company</title>
 
-  <!-- 🔥 ربط ملف التصميم -->
   <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
 
 <header>
   <div class="container nav">
     <div class="brand">
       <a href="/">
-        <img src="/images/logo.png" alt="Click Company Logo" class="logo">
+        <img src="/images/logo.png" class="logo">
         <div class="brand-text">
           <h1>CLICK COMPANY</h1>
           <span>Phones • Tablets • Laptops • Accessories</span>
@@ -30,7 +28,6 @@
         <a href="/tablets.html">Tablets</a>
         <a href="/laptops.html">Laptops</a>
         <a href="/accessories.html">Accessories</a>
-        <button class="cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cart-count-top">0</span></button>
       </div>
     </nav>
   </div>
@@ -45,130 +42,37 @@
 
 <section class="container">
   <div class="products-grid" id="grid">
-    <div class="empty-state" id="empty-state">No products available yet.</div>
+    <div class="empty-state">No products available yet.</div>
   </div>
 </section>
 
-<footer>
-  <div class="container footer-box">
-    <div>©️ 2026 Click Company</div>
-    <div>You Can Depend on Us</div>
-  </div>
-</footer>
-
-<button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
-
-<a id="whatsappBtn" class="floating-whatsapp" href="#" target="_blank">
-  WhatsApp
-</a>
-
-<div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
-
-<aside class="cart-panel" id="cartPanel">
-  <div class="cart-header">
-    <h3>Your Cart</h3>
-    <button class="cart-close" onclick="closeCart()">×</button>
-  </div>
-
-  <div class="cart-items" id="cartItems">
-    <div class="cart-empty-text">Your cart is empty.</div>
-  </div>
-
-  <div class="cart-footer">
-    <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
-  </div>
-</aside>
-
 <script>
-let cart = [];
-
-function update() {
-  const count = cart.length;
-  document.getElementById("count").innerText = count;
-
-  const topCount = document.getElementById("cart-count-top");
-  if (topCount) topCount.innerText = count;
-
-  const cartItems = document.getElementById("cartItems");
-
-  if (!count) {
-    cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
-    return;
-  }
-
-  cartItems.innerHTML = cart.map((item, index) => `
-    <div class="cart-item">
-      <img src="${item.image}" alt="Product">
-      <div>
-        <div class="cart-item-title">${item.title}</div>
-        <div class="cart-item-meta">${item.price}</div>
-        <div class="cart-item-meta">${item.months}</div>
-      </div>
-      <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
-    </div>
-  `).join("");
-}
-
-function removeFromCart(index) {
-  cart.splice(index, 1);
-  update();
-}
-
-function openCart() {
-  document.getElementById("cartPanel").classList.add("open");
-  document.getElementById("cartOverlay").classList.add("open");
-}
-
-function closeCart() {
-  document.getElementById("cartPanel").classList.remove("open");
-  document.getElementById("cartOverlay").classList.remove("open");
-}
-
-function sendOrderWhatsApp() {
-  if (!cart.length) return;
-
-  const msg = cart.map((item,i)=>`
-Product ${i+1}
-${item.title}
-${item.price}
-${item.months}
-${item.image}
-`).join("\n");
-
-  window.open(`https://wa.me/96567680877?text=${encodeURIComponent(msg)}`);
-}
-
-async function get(path){
-  const r = await fetch(path);
-  return await r.text();
-}
-
-function parse(t){
-  const d = {};
-  t.split("\n").forEach(l=>{
-    if(l.includes(":")){
-      const [k,...r]=l.split(":");
-      d[k.trim()] = r.join(":").trim();
-    }
-  });
-  return d;
-}
-
-async function load(){
+async function load() {
   const paths = ["/products/phones/iphone15pro.md"];
   const grid = document.getElementById("grid");
 
-  for(const p of paths){
-    const t = await get(p);
-    const d = parse(t);
+  for (const p of paths) {
+    const r = await fetch(p);
+    const t = await r.text();
+
+    const d = {};
+    t.split("\n").forEach(l => {
+      if (l.includes(":")) {
+        const [k, ...rest] = l.split(":");
+        d[k.trim()] = rest.join(":").trim();
+      }
+    });
+
+    if (String(d.available || "").toLowerCase() === "false") continue;
 
     const card = document.createElement("div");
-    card.className="product-card";
+    card.className = "product-card";
 
-    card.innerHTML=`
+    card.innerHTML = `
       <div class="product-image">
         <img src="${d.image}">
       </div>
+
       <div class="product-body">
         <div class="row">
           <div>
@@ -180,16 +84,13 @@ async function load(){
       </div>
     `;
 
-    card.querySelector(".btn").onclick=()=>{
-      cart.push(d);
-      update();
-    };
+    const empty = grid.querySelector(".empty-state");
+    if (empty) empty.remove();
 
     grid.appendChild(card);
   }
 }
 
-update();
 load();
 </script>
 
