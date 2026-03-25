@@ -1,57 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tablets - Click Company</title>
-<link rel="stylesheet" href="/css/style.css">
-</head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tablets - Click Company</title>
 
+  <link rel="stylesheet" href="css/style.css">
+</head>
 <body>
 
 <header>
-<div class="container nav">
-<div class="brand">
-<a href="/">
-<img src="/images/logo.png" class="logo">
-<div class="brand-text">
-<h1>CLICK COMPANY</h1>
-<span>Phones • Tablets • Laptops • Accessories</span>
-</div>
-</a>
-</div>
+  <div class="container nav">
+    <div class="brand">
+      <a href="/">
+        <img src="/images/logo.png" class="logo">
+        <div class="brand-text">
+          <h1>CLICK COMPANY</h1>
+          <span>Phones • Tablets • Laptops • Accessories</span>
+        </div>
+      </a>
+    </div>
 
-<nav class="nav-links">
-<div class="nav-row main-links">
-<a href="/">Home</a>
-<a href="/phones.html">Phones</a>
-<a href="/tablets.html" class="active">Tablets</a>
-<a href="/laptops.html">Laptops</a>
-<a href="/accessories.html">Accessories</a>
-</div>
-</nav>
-</div>
+    <nav class="nav-links">
+      <div class="nav-row main-links">
+        <a href="/">Home</a>
+        <a href="/phones.html">Phones</a>
+        <a href="/tablets.html" class="active">Tablets</a>
+        <a href="/laptops.html">Laptops</a>
+        <a href="/accessories.html">Accessories</a>
+      </div>
+    </nav>
+  </div>
 </header>
 
 <section class="page-head">
-<div class="container">
-<h2>Tablets</h2>
-<p>Browse all tablet offers.</p>
-</div>
+  <div class="container">
+    <h2>Tablets</h2>
+    <p>Browse all tablet offers.</p>
+  </div>
 </section>
 
 <section class="container">
-<div class="products-grid" id="grid">
-<div class="empty-state">No products available yet.</div>
-</div>
+  <div class="products-grid" id="grid">
+    <div class="empty-state">No products available yet.</div>
+  </div>
 </section>
 
-<footer>
-<div class="container footer-box">
-<div>©️ 2026 Click Company</div>
-<div>You Can Depend on Us</div>
-</div>
-</footer>
+<script>
+async function load() {
+  const paths = ["/products/tablets/ipadair.md"];
+  const grid = document.getElementById("grid");
+
+  for (const p of paths) {
+    const r = await fetch(p);
+    const t = await r.text();
+
+    const d = {};
+    t.split("\n").forEach(l => {
+      if (l.includes(":")) {
+        const [k,...rest] = l.split(":");
+        d[k.trim()] = rest.join(":").trim();
+      }
+    });
+
+    const card = document.createElement("div");
+    card.className = "product-card";
+
+    card.innerHTML = `
+      <div class="product-image">
+        <img src="${d.image}">
+      </div>
+      <div class="product-body">
+        <div class="row">
+          <div>
+            <div class="price">${d.price}</div>
+            <div class="months">${d.months}</div>
+          </div>
+          <button class="btn">+ Add</button>
+        </div>
+      </div>
+    `;
+
+    grid.innerHTML = "";
+    grid.appendChild(card);
+  }
+}
+load();
+</script>
 
 </body>
 </html>
