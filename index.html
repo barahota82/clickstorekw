@@ -69,41 +69,30 @@
       flex-wrap: wrap;
     }
 
-    .brand-text span {
+    .brand-static {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+}
+
+.brand-text span {
   display: block;
   text-align: center;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.5px;
   color: #c9d4e7;
   margin-top: 4px;
-
-  animation: fadeLoop 6s infinite;
+  white-space: nowrap;
+  animation: fadeLoop 4s infinite;
 }
 
 @keyframes fadeLoop {
-  0% {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-
-  20% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  60% {
-    opacity: 1;
-  }
-
-  80% {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-
-  100% {
-    opacity: 0;
-  }
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
     .logo {
