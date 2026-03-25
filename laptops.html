@@ -557,33 +557,38 @@
 <body>
 
   <header>
-    <div class="container nav">
-      <div class="brand">
-        <a href="/">
-          <img src="/images/logo.png" alt="Click Company Logo" class="logo">
-          <div class="brand-text">
-            <h1>CLICK COMPANY</h1>
-            <span>Phones • Tablets • Laptops • Accessories</span>
-          </div>
-        </a>
+  <div class="container nav">
+
+    <div class="brand">
+      <a href="index.html">
+        <img src="images/logo.png" class="logo">
+        <div class="brand-text">
+          <h1>CLICK COMPANY</h1>
+          <span>Phones • Tablets • Laptops • Accessories</span>
+        </div>
+      </a>
+    </div>
+
+    <nav class="nav-links">
+      <div class="nav-row main-row">
+        <a href="index.html">Home</a>
+        <a href="phones.html">Phones</a>
+        <a href="tablets.html">Tablets</a>
+        <a href="laptops.html">Laptops</a>
+        <a href="accessories.html">Accessories</a>
+
+        <button class="cart-btn" onclick="openCart()">
+          Cart <span class="cart-badge" id="cart-count-top">0</span>
+        </button>
       </div>
 
-      <nav class="nav-links">
-        <div class="nav-row main-row">
-          <a href="/">Home</a>
-          <a href="/phones.html">Phones</a>
-          <a href="/tablets.html">Tablets</a>
-          <a href="/laptops.html" class="active">Laptops</a>
-          <a href="/accessories.html">Accessories</a>
-          <button class="cart-btn" onclick="openCart()">Cart <span class="cart-badge" id="cart-count-top">0</span></button>
-        </div>
+      <div class="nav-row hot-row">
+        <a href="#hot-offers" class="hot-link">Hot Offers</a>
+      </div>
+    </nav>
 
-        <div class="nav-row hot-row">
-          <a href="/#hot-offers" class="hot-link">Hot Offers</a>
-        </div>
-      </nav>
-    </div>
-  </header>
+  </div>
+</header>
 
   <section class="page-head">
     <div class="container">
