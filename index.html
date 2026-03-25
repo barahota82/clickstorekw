@@ -1,23 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Click Company</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Click Company</title>
 
-<link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<header class="container">
-<h1>CLICK COMPANY</h1>
+<header>
+  <div class="container nav">
+    <div class="brand">
+      <a href="/">
+        <img src="/images/logo.png" class="logo">
+        <div class="brand-text">
+          <h1>CLICK COMPANY</h1>
+          <span>Phones • Tablets • Laptops • Accessories</span>
+        </div>
+      </a>
+    </div>
+
+    <nav class="nav-links">
+      <div class="nav-row main-links">
+        <a href="/" class="active">Home</a>
+        <a href="/phones.html">Phones</a>
+        <a href="/tablets.html">Tablets</a>
+        <a href="/laptops.html">Laptops</a>
+        <a href="/accessories.html">Accessories</a>
+      </div>
+    </nav>
+  </div>
 </header>
 
-<section class="container">
-<h2>Welcome</h2>
-<p>Start your order now</p>
+<section class="page-head">
+  <div class="container">
+    <h2>Welcome</h2>
+    <p>Start your order now</p>
+  </div>
+</section>
 
-<a href="/phones.html">Browse Phones</a>
+<section class="container">
+  <div class="products-grid">
+    
+    <a href="/phones.html" class="product-card">
+      <div class="product-image">
+        <img src="/images/logo.png">
+      </div>
+      <div class="product-body">
+        <div class="price">Phones</div>
+      </div>
+    </a>
+
+    <a href="/tablets.html" class="product-card">
+      <div class="product-image">
+        <img src="/images/logo.png">
+      </div>
+      <div class="product-body">
+        <div class="price">Tablets</div>
+      </div>
+    </a>
+
+    <a href="/laptops.html" class="product-card">
+      <div class="product-image">
+        <img src="/images/logo.png">
+      </div>
+      <div class="product-body">
+        <div class="price">Laptops</div>
+      </div>
+    </a>
+
+    <a href="/accessories.html" class="product-card">
+      <div class="product-image">
+        <img src="/images/logo.png">
+      </div>
+      <div class="product-body">
+        <div class="price">Accessories</div>
+      </div>
+    </a>
+
+  </div>
 </section>
 
 </body>
