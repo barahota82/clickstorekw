@@ -3,56 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>All Products - Click Company</title>
-<link rel="stylesheet" href="/css/style.css">
-</head>
+<title>All Products</title>
 
+<link rel="stylesheet" href="css/style.css">
+</head>
 <body>
 
-<header>
-<div class="container nav">
-<div class="brand">
-<a href="/">
-<img src="/images/logo.png" class="logo">
-<div class="brand-text">
-<h1>CLICK COMPANY</h1>
-<span>Phones • Tablets • Laptops • Accessories</span>
-</div>
-</a>
-</div>
-
-<nav class="nav-links">
-<div class="nav-row main-links">
-<a href="/">Home</a>
-<a href="/all-products.html" class="active">All Products</a>
-<a href="/phones.html">Phones</a>
-<a href="/tablets.html">Tablets</a>
-<a href="/laptops.html">Laptops</a>
-<a href="/accessories.html">Accessories</a>
-</div>
-</nav>
-</div>
-</header>
-
-<section class="page-head">
-<div class="container">
-<h2>All Products</h2>
-<p>Browse everything in one place.</p>
-</div>
-</section>
-
 <section class="container">
-<div class="products-grid" id="grid">
-<div class="empty-state">No products available yet.</div>
-</div>
+<div class="products-grid" id="grid"></div>
 </section>
 
-<footer>
-<div class="container footer-box">
-<div>©️ 2026 Click Company</div>
-<div>You Can Depend on Us</div>
-</div>
-</footer>
+<script>
+const paths = [
+"/products/phones/iphone15pro.md",
+"/products/tablets/ipadair.md",
+"/products/laptops/macbookairm2.md",
+"/products/accessories/airpodspro.md"
+];
+
+async function load() {
+  const grid = document.getElementById("grid");
+
+  for (const p of paths) {
+    const r = await fetch(p);
+    const t = await r.text();
+
+    const d = {};
+    t.split("\n").forEach(l=>{
+      if(l.includes(":")){
+        const [k,...rest]=l.split(":");
+        d[k.trim()]=rest.join(":").trim();
+      }
+    });
+
+    grid.innerHTML += `
+      <div class="product-card">
+        <div class="product-image">
+          <img src="${d.image}">
+        </div>
+        <div class="product-body">
+          <div class="price">${d.price}</div>
+        </div>
+      </div>
+    `;
+  }
+}
+load();
+</script>
 
 </body>
 </html>
