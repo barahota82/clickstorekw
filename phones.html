@@ -91,8 +91,14 @@
       color: var(--muted);
       white-space: nowrap;
       margin-top: 4px;
-      transition: opacity 0.4s ease;
-      opacity: 1;
+      animation: fadeLoop 4s infinite;
+    }
+
+    @keyframes fadeLoop {
+      0% { opacity: 0; }
+      25% { opacity: 1; }
+      75% { opacity: 1; }
+      100% { opacity: 0; }
     }
 
     .nav-links {
@@ -205,18 +211,21 @@
 
     .product-image {
       width: 100%;
-      height: 420px;
+      aspect-ratio: 1 / 1;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 10px;
       background: #fff;
       border-bottom: 1px solid #eef2f7;
+      overflow: hidden;
     }
 
     .product-image img {
-      width: 100%;
-      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
       display: block;
     }
@@ -481,10 +490,6 @@
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .product-image {
-        height: 360px;
-      }
-
       .cart-btn {
         display: inline-flex;
         align-items: center;
@@ -533,10 +538,6 @@
         padding: 7px 8px;
       }
 
-      .product-image {
-        height: 340px;
-      }
-
       .floating-cart {
         left: 14px;
         bottom: 14px;
@@ -571,7 +572,7 @@
           <img src="/images/logo.png" alt="Click Company Logo" class="logo">
           <div class="brand-text">
             <h1>CLICK COMPANY</h1>
-            <span id="loopText">You Can Depend on Us</span>
+            <span>You Can Depend on Us</span>
           </div>
         </div>
       </div>
@@ -612,9 +613,7 @@
 
   <footer>
     <div class="container footer-box">
-      <div>
-        ©️ 2017–<span id="year"></span> Click Company. All rights reserved.
-      </div>
+      <div>© 2017–<span id="year"></span> Click Company. All rights reserved.</div>
       <div>You Can Depend on Us</div>
     </div>
   </footer>
@@ -643,14 +642,100 @@
   </aside>
 
   <script>
-    window.addEventListener("DOMContentLoaded", function() {
-      document.getElementById("year").textContent = new Date().getFullYear();
-    });
-  </script>
+    let cart = [];
 
-  <script src="/js/cart.js"></script>
+    function update() {
+      const count = cart.length;
+      document.getElementById("count").innerText = count;
 
-  <script>
+      const topCount = document.getElementById("cart-count-top");
+      if (topCount) topCount.innerText = count;
+
+      const cartItems = document.getElementById("cartItems");
+
+      if (!count) {
+        cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+        return;
+      }
+
+      cartItems.innerHTML = cart.map((item, index) => `
+        <div class="cart-item">
+          <img src="${item.image}" alt="Product">
+          <div>
+            <div class="cart-item-title">${item.title || "Product"}</div>
+            <div class="cart-item-meta">${item.price}</div>
+            <div class="cart-item-meta">${item.months}</div>
+          </div>
+          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+        </div>
+      `).join("");
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      update();
+    }
+
+    function openCart() {
+      document.getElementById("cartPanel").classList.add("open");
+      document.getElementById("cartOverlay").classList.add("open");
+    }
+
+    function closeCart() {
+      document.getElementById("cartPanel").classList.remove("open");
+      document.getElementById("cartOverlay").classList.remove("open");
+    }
+
+    function sendOrderWhatsApp() {
+      if (!cart.length) return;
+
+      const baseURL = window.location.origin;
+
+      const lines = cart.map((item, i) => {
+        let imageURL = item.image || "";
+
+        if (imageURL.startsWith("/")) {
+          imageURL = baseURL + imageURL;
+        }
+
+        return `🔹 Product ${i + 1}
+📱 ${item.title || "Product"}
+💰 ${item.price}
+📆 ${item.months}
+📸 View Product Image:
+${imageURL}`;
+      });
+
+      const msg = `Welcome to Click Company 👋
+
+👤 Shella - Sales Representative
+
+🛒 New Order
+
+${lines.join("\n\n")}
+
+📍 Please confirm availability & total price.`;
+      const encoded = encodeURIComponent(msg);
+
+      fetch("/settings/whatsapp.md")
+        .then(res => res.text())
+        .then(text => {
+          const data = {};
+          text.split("\n").forEach(line => {
+            if (line.includes(":")) {
+              const [key, ...rest] = line.split(":");
+              data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+            }
+          });
+
+          const phone = "965" + (data.phone || "");
+          window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+        })
+        .catch(() => {
+          window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
+        });
+    }
+
     async function get(path) {
       const r = await fetch(path);
       return await r.text();
@@ -704,12 +789,13 @@
           `;
 
           card.querySelector(".btn").onclick = () => {
-            addToCart({
+            cart.push({
               title: d.title || "Product",
               price: d.price || "",
               months: d.months || "",
               image: imagePath
             });
+            update();
           };
 
           grid.appendChild(card);
@@ -723,32 +809,36 @@
       }
     }
 
+    update();
     load();
   </script>
-
   <script>
-    const texts = [
-      "You Can Depend on Us",
-      "Best Deals in Kuwait",
-      "Easy Monthly Installments",
-      "Fast Delivery"
-    ];
+    (function () {
+      const phone = "96567680877";
+      const name = "Shella";
 
-    let i = 0;
-    const el = document.getElementById("loopText");
+      const message = `Welcome to Click Company 👋
 
-    setInterval(() => {
-      if (!el) return;
+👤 ${name} - Sales Representative
 
-      el.style.opacity = 0;
+How can I assist you today?`;
 
-      setTimeout(() => {
-        i = (i + 1) % texts.length;
-        el.textContent = texts[i];
-        el.style.opacity = 1;
-      }, 400);
-    }, 3000);
+      const encoded = encodeURIComponent(message);
+
+      const btn = document.getElementById("whatsappBtn");
+
+      if (btn) {
+        btn.href = `https://wa.me/${phone}?text=${encoded}`;
+      }
+    })();
   </script>
-
+  <script>
+    window.addEventListener("DOMContentLoaded", function() {
+      const yearEl = document.getElementById("year");
+      if (yearEl) {
+        yearEl.textContent = new Date().getFullYear();
+      }
+    });
+  </script>
 </body>
 </html>
