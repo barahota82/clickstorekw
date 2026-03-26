@@ -871,30 +871,39 @@
     const cart = [];
 
     function updateCartUI() {
-      const count = cart.length;
-      document.getElementById("cart-count-top").textContent = count;
-      document.getElementById("cart-count-floating").textContent = count;
+  // 🔥 حفظ السلة في localStorage
+  localStorage.setItem("cart", JSON.stringify(cart));
 
-      const cartItems = document.getElementById("cartItems");
+  const count = cart.length;
 
-      if (!count) {
-        cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
-        return;
-      }
+  // تحديث الأرقام
+  const topCount = document.getElementById("cart-count-top");
+  const floatingCount = document.getElementById("cart-count-floating");
 
-      cartItems.innerHTML = cart.map((item, index) => `
-        <div class="cart-item">
-          <img src="${item.image}" alt="${item.title}">
-          <div>
-            <div class="cart-item-title">${item.title}</div>
-            <div class="cart-item-meta">${item.price}</div>
-            <div class="cart-item-meta">${item.months}</div>
-          </div>
-          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
-        </div>
-      `).join("");
-    }
+  if (topCount) topCount.textContent = count;
+  if (floatingCount) floatingCount.textContent = count;
 
+  const cartItems = document.getElementById("cartItems");
+
+  // لو السلة فاضية
+  if (!count) {
+    cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+    return;
+  }
+
+  // عرض المنتجات
+  cartItems.innerHTML = cart.map((item, index) => `
+    <div class="cart-item">
+      <img src="${item.image}" alt="${item.title}">
+      <div>
+        <div class="cart-item-title">${item.title}</div>
+        <div class="cart-item-meta">${item.price}</div>
+        <div class="cart-item-meta">${item.months}</div>
+      </div>
+      <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+    </div>
+  `).join("");
+}
     function addToCart(item) {
       cart.push(item);
       updateCartUI();
