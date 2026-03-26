@@ -686,7 +686,7 @@
   </aside>
 
   <script>
-    let cart = [];
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
     function update() {
       const count = cart.length;
