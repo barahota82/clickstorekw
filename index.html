@@ -905,9 +905,19 @@
   `).join("");
 }
     function addToCart(item) {
-      cart.push(item);
-      updateCartUI();
-    }
+  const existingItem = cart.find(cartItem => cartItem.title === item.title);
+
+  if (existingItem) {
+    existingItem.quantity = (existingItem.quantity || 1) + 1;
+  } else {
+    cart.push({
+      ...item,
+      quantity: 1
+    });
+  }
+
+  updateCartUI();
+}
 
     function removeFromCart(index) {
       cart.splice(index, 1);
