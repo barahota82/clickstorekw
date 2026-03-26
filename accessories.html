@@ -656,7 +656,7 @@
     function update() {
   localStorage.setItem("cart", JSON.stringify(cart)); // 🔥 مهم جدا
 
-  const count = cart.length;
+  const count = cart.reduce((total, item) => total + (item.quantity || 1), 0);
   document.getElementById("count").innerText = count;
 
   const topCount = document.getElementById("cart-count-top");
@@ -670,22 +670,41 @@
   }
 
   cartItems.innerHTML = cart.map((item, index) => `
-    <div class="cart-item">
-      <img src="${item.image}" alt="Product">
-      <div>
-        <div class="cart-item-title">${item.title || "Product"}</div>
-        <div class="cart-item-meta">${item.price}</div>
-        <div class="cart-item-meta">${item.months}</div>
-      </div>
-      <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+  <div class="cart-item">
+    <img src="${item.image}" alt="${item.title}">
+    <div>
+      <div class="cart-item-title">${item.title} × ${item.quantity || 1}</div>
+      <div class="cart-item-meta">${item.price}</div>
+      <div class="cart-item-meta">${item.months}</div>
     </div>
-  `).join("");
+    <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+  </div>
+`).join("");
 }
+function addToCart(item) {
+  const existingItem = cart.find(cartItem => cartItem.title === item.title);
 
+  if (existingItem) {
+    existingItem.quantity = (existingItem.quantity || 1) + 1;
+  } else {
+    cart.push({
+      ...item,
+      quantity: 1
+    });
+  }
+
+  updateCartUI();
+}
+    
     function removeFromCart(index) {
-      cart.splice(index, 1);
-      update();
-    }
+  if ((cart[index].quantity || 1) > 1) {
+    cart[index].quantity -= 1;
+  } else {
+    cart.splice(index, 1);
+  }
+
+  updateCartUI();
+}
 
     function openCart() {
       document.getElementById("cartPanel").classList.add("open");
@@ -703,16 +722,19 @@
       const baseURL = window.location.origin;
 
       const lines = cart.map((item, i) => {
-        let imageURL = item.image || "";
-        if (imageURL.startsWith("/")) imageURL = baseURL + imageURL;
+  let imageURL = item.image || "";
 
-        return `🔹 Product ${i + 1}
-📱 ${item.title || "Product"}
+  if (imageURL.startsWith("/")) {
+    imageURL = baseURL + imageURL;
+  }
+
+  return `🔹 Product ${i + 1}
+📱 ${item.title || "Product"} × ${item.quantity || 1}
 💰 ${item.price}
 📆 ${item.months}
 📸 View Product Image:
 ${imageURL}`;
-      });
+});
 
       const msg = `Welcome to Click Company 👋
 
@@ -798,14 +820,13 @@ ${lines.join("\n\n")}
           `;
 
           card.querySelector(".btn").onclick = () => {
-            cart.push({
-              title: d.title || "Product",
-              price: d.price || "",
-              months: d.months || "",
-              image: imagePath
-            });
-            update();
-          };
+          addToCart({
+          title: d.title || "Product",
+          price: d.price || "",
+          months: d.months || "",
+          image: imagePath
+        });
+     };
 
           grid.appendChild(card);
           rendered++;
