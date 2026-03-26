@@ -17,9 +17,9 @@ jobs:
       - name: 📂 Upload to server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-        protocol: ftp
-        secure: false # جرب false أولاً ثم true إذا لم تنجح
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /httpdocs/
+          server-dir: ./httpdocs/
+          protocol: ftp
+          port: 21
