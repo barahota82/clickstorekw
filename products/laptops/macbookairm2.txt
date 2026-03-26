@@ -1,6 +1,6 @@
 ---
 title: "MacBook Air M2"
-price: "250 KD"
+price: "550 KD"
 months: "18 months installment"
 image: "/images/laptops/macbookairm2.jpg"
 available: true
