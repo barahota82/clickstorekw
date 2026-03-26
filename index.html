@@ -70,38 +70,19 @@
     }
 
     .brand-static {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: white;
-}
-
-.brand-text span {
-  display: block;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #c9d4e7;
-  margin-top: 4px;
-  white-space: nowrap;
-  animation: fadeLoop 4s infinite;
-}
-
-@keyframes fadeLoop {
-  0% { opacity: 0; }
-  25% { opacity: 1; }
-  75% { opacity: 1; }
-  100% { opacity: 0; }
-}
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+    }
 
     .logo {
-  height: 55px;
-  width: auto;
-  display: block;
-  object-fit: contain;
-  filter: brightness(1.35);
-}
+      height: 55px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+      filter: brightness(1.35);
+    }
 
     .brand-text h1 {
       font-size: 22px;
@@ -110,9 +91,15 @@
     }
 
     .brand-text span {
-      font-size: 12px;
+      display: block;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
       color: var(--muted);
       white-space: nowrap;
+      margin-top: 4px;
+      transition: opacity 0.4s ease;
+      opacity: 1;
     }
 
     .nav-links {
@@ -236,13 +223,13 @@
       margin-bottom: 22px;
     }
 
-     .hero-actions {
-  display: flex;
-  justify-content: flex-start; 
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 22px;
-}
+    .hero-actions {
+      display: flex;
+      justify-content: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
 
     .btn {
       display: inline-flex;
@@ -268,14 +255,14 @@
     }
 
     .btn-secondary {
-  background: #1d4ed8;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.12);
-}
+      background: #1d4ed8;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
 
     .btn-secondary:hover {
-  background: #1e40af;
-}
+      background: #1e40af;
+    }
 
     .hero-points {
       display: flex;
@@ -738,14 +725,14 @@
   <div class="container nav">
 
     <div class="brand">
-  <div class="brand-static">
-    <img src="/images/logo.png" alt="Click Company Logo" class="logo">
-    <div class="brand-text">
-      <h1>CLICK COMPANY</h1>
-      <span>You Can Depend on Us</span>
+      <div class="brand-static">
+        <img src="/images/logo.png" alt="Click Company Logo" class="logo">
+        <div class="brand-text">
+          <h1>CLICK COMPANY</h1>
+          <span id="loopText">You Can Depend on Us</span>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
     <nav class="nav-links">
       <div class="nav-row main-row">
@@ -822,19 +809,30 @@
   </section>
 
   <footer>
-    <div class="container footer-box">
-      <div>©️ 2026 Click Company</div>
-      <div>You Can Depend on Us</div>
+  <div class="container footer-box">
+
+    <div>
+      © 2017–<span id="year"></span> Click Company. All rights reserved.
     </div>
-  </footer>
+
+    <div>You Can Depend on Us</div>
+
+  </div>
+</footer>
+
+<script>
+  window.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("year").textContent = new Date().getFullYear();
+  });
+</script>
 
   <button class="floating-cart" onclick="openCart()">
     🛒 <span id="cart-count-floating">0</span>
   </button>
 
   <a id="whatsappBtn" class="floating-whatsapp" href="#" target="_blank">
-  WhatsApp
-</a>
+    WhatsApp
+  </a>
 
   <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
@@ -948,23 +946,24 @@ ${lines.join("\n\n")}
 
 📍 Please confirm availability & total price.`;
       const encoded = encodeURIComponent(msg);
-      fetch("/settings/whatsapp.md")
-  .then(res => res.text())
-  .then(text => {
-    const data = {};
-    text.split("\n").forEach(line => {
-      if (line.includes(":")) {
-        const [key, ...rest] = line.split(":");
-        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-      }
-    });
 
-    const phone = "965" + (data.phone || "");
-    window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
-  })
-  .catch(() => {
-    window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
-  });
+      fetch("/settings/whatsapp.md")
+        .then(res => res.text())
+        .then(text => {
+          const data = {};
+          text.split("\n").forEach(line => {
+            if (line.includes(":")) {
+              const [key, ...rest] = line.split(":");
+              data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+            }
+          });
+
+          const phone = "965" + (data.phone || "");
+          window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+        })
+        .catch(() => {
+          window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
+        });
     }
 
     async function fetchText(path) {
@@ -1061,6 +1060,30 @@ ${lines.join("\n\n")}
 
     updateCartUI();
     loadHotOffers();
+  </script>
+
+  <script>
+    const texts = [
+      "You Can Depend on Us",
+      "Best Deals in Kuwait",
+      "Easy Monthly Installments",
+      "Fast Delivery"
+    ];
+
+    let i = 0;
+    const el = document.getElementById("loopText");
+
+    setInterval(() => {
+      if (!el) return;
+
+      el.style.opacity = 0;
+
+      setTimeout(() => {
+        i = (i + 1) % texts.length;
+        el.textContent = texts[i];
+        el.style.opacity = 1;
+      }, 400);
+    }, 3000);
   </script>
 </body>
 </html>
