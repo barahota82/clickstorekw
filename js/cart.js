@@ -125,7 +125,7 @@ ${lines.join("\n\n")}
 
   const encoded = encodeURIComponent(msg);
 
-  fetch("/settings/whatsapp.md")
+  fetch("/settings/whatsapp.txt")
     .then(res => res.text())
     .then(text => {
       const data = {};
