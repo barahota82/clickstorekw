@@ -91,14 +91,8 @@
       color: var(--muted);
       white-space: nowrap;
       margin-top: 4px;
-      animation: fadeLoop 4s infinite;
-    }
-
-    @keyframes fadeLoop {
-      0% { opacity: 0; }
-      25% { opacity: 1; }
-      75% { opacity: 1; }
-      100% { opacity: 0; }
+      transition: opacity 0.4s ease;
+      opacity: 1;
     }
 
     .nav-links {
@@ -577,7 +571,7 @@
           <img src="/images/logo.png" alt="Click Company Logo" class="logo">
           <div class="brand-text">
             <h1>CLICK COMPANY</h1>
-            <span>You Can Depend on Us</span>
+            <span id="loopText">You Can Depend on Us</span>
           </div>
         </div>
       </div>
@@ -624,7 +618,6 @@
   </footer>
 
   <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
-
   <a id="whatsappBtn" class="floating-whatsapp" href="#" target="_blank">
     WhatsApp
   </a>
@@ -652,7 +645,6 @@
     function update() {
       const count = cart.length;
       document.getElementById("count").innerText = count;
-
       const topCount = document.getElementById("cart-count-top");
       if (topCount) topCount.innerText = count;
 
@@ -698,10 +690,7 @@
 
       const lines = cart.map((item, i) => {
         let imageURL = item.image || "";
-
-        if (imageURL.startsWith("/")) {
-          imageURL = baseURL + imageURL;
-        }
+        if (imageURL.startsWith("/")) imageURL = baseURL + imageURL;
 
         return `🔹 Product ${i + 1}
 📱 ${item.title || "Product"}
@@ -720,6 +709,7 @@ ${imageURL}`;
 ${lines.join("\n\n")}
 
 📍 Please confirm availability & total price.`;
+
       const encoded = encodeURIComponent(msg);
 
       fetch("/settings/whatsapp.md")
@@ -817,25 +807,30 @@ ${lines.join("\n\n")}
     update();
     load();
   </script>
+
   <script>
-    (function () {
-      const phone = "96567680877";
-      const name = "Shella";
+    const texts = [
+      "You Can Depend on Us",
+      "Best Deals in Kuwait",
+      "Easy Monthly Installments",
+      "Fast Delivery"
+    ];
 
-      const message = `Welcome to Click Company 👋
+    let i = 0;
+    const el = document.getElementById("loopText");
 
-👤 ${name} - Sales Representative
+    setInterval(() => {
+      if (!el) return;
 
-How can I assist you today?`;
+      el.style.opacity = 0;
 
-      const encoded = encodeURIComponent(message);
-
-      const btn = document.getElementById("whatsappBtn");
-
-      if (btn) {
-        btn.href = `https://wa.me/${phone}?text=${encoded}`;
-      }
-    })();
+      setTimeout(() => {
+        i = (i + 1) % texts.length;
+        el.textContent = texts[i];
+        el.style.opacity = 1;
+      }, 400);
+    }, 3000);
   </script>
+
 </body>
 </html>
