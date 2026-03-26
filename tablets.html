@@ -611,24 +611,16 @@
   </section>
 
   <footer>
-  <div class="container footer-box">
-
-    <div>
-      © 2017–<span id="year"></span> Click Company. All rights reserved.
+    <div class="container footer-box">
+      <div>
+        ©️ 2017–<span id="year"></span> Click Company. All rights reserved.
+      </div>
+      <div>You Can Depend on Us</div>
     </div>
-
-    <div>You Can Depend on Us</div>
-
-  </div>
-</footer>
-
-<script>
-  window.addEventListener("DOMContentLoaded", function() {
-    document.getElementById("year").textContent = new Date().getFullYear();
-  });
-</script>
+  </footer>
 
   <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
+
   <a id="whatsappBtn" class="floating-whatsapp" href="#" target="_blank">
     WhatsApp
   </a>
@@ -651,100 +643,14 @@
   </aside>
 
   <script>
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    window.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("year").textContent = new Date().getFullYear();
+    });
+  </script>
 
-    function update() {
-  localStorage.setItem("cart", JSON.stringify(cart)); // 🔥 مهم جدا
+  <script src="/js/cart.js"></script>
 
-  const count = cart.length;
-  document.getElementById("count").innerText = count;
-
-  const topCount = document.getElementById("cart-count-top");
-  if (topCount) topCount.innerText = count;
-
-  const cartItems = document.getElementById("cartItems");
-
-  if (!count) {
-    cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
-    return;
-  }
-
-  cartItems.innerHTML = cart.map((item, index) => `
-    <div class="cart-item">
-      <img src="${item.image}" alt="Product">
-      <div>
-        <div class="cart-item-title">${item.title || "Product"}</div>
-        <div class="cart-item-meta">${item.price}</div>
-        <div class="cart-item-meta">${item.months}</div>
-      </div>
-      <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
-    </div>
-  `).join("");
-}
-
-    function removeFromCart(index) {
-      cart.splice(index, 1);
-      update();
-    }
-
-    function openCart() {
-      document.getElementById("cartPanel").classList.add("open");
-      document.getElementById("cartOverlay").classList.add("open");
-    }
-
-    function closeCart() {
-      document.getElementById("cartPanel").classList.remove("open");
-      document.getElementById("cartOverlay").classList.remove("open");
-    }
-
-    function sendOrderWhatsApp() {
-      if (!cart.length) return;
-
-      const baseURL = window.location.origin;
-
-      const lines = cart.map((item, i) => {
-        let imageURL = item.image || "";
-        if (imageURL.startsWith("/")) imageURL = baseURL + imageURL;
-
-        return `🔹 Product ${i + 1}
-📱 ${item.title || "Product"}
-💰 ${item.price}
-📆 ${item.months}
-📸 View Product Image:
-${imageURL}`;
-      });
-
-      const msg = `Welcome to Click Company 👋
-
-👤 Shella - Sales Representative
-
-🛒 New Order
-
-${lines.join("\n\n")}
-
-📍 Please confirm availability & total price.`;
-
-      const encoded = encodeURIComponent(msg);
-
-      fetch("/settings/whatsapp.md")
-        .then(res => res.text())
-        .then(text => {
-          const data = {};
-          text.split("\n").forEach(line => {
-            if (line.includes(":")) {
-              const [key, ...rest] = line.split(":");
-              data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-            }
-          });
-
-          const phone = "965" + (data.phone || "");
-          window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
-        })
-        .catch(() => {
-          window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
-        });
-    }
-
+  <script>
     async function get(path) {
       const r = await fetch(path);
       return await r.text();
@@ -798,13 +704,12 @@ ${lines.join("\n\n")}
           `;
 
           card.querySelector(".btn").onclick = () => {
-            cart.push({
+            addToCart({
               title: d.title || "Product",
               price: d.price || "",
               months: d.months || "",
               image: imagePath
             });
-            update();
           };
 
           grid.appendChild(card);
@@ -818,7 +723,6 @@ ${lines.join("\n\n")}
       }
     }
 
-    update();
     load();
   </script>
 
