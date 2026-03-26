@@ -654,30 +654,33 @@
     let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
     function update() {
-      const count = cart.length;
-      document.getElementById("count").innerText = count;
-      const topCount = document.getElementById("cart-count-top");
-      if (topCount) topCount.innerText = count;
+  localStorage.setItem("cart", JSON.stringify(cart)); // 🔥 مهم جدا
 
-      const cartItems = document.getElementById("cartItems");
+  const count = cart.length;
+  document.getElementById("count").innerText = count;
 
-      if (!count) {
-        cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
-        return;
-      }
+  const topCount = document.getElementById("cart-count-top");
+  if (topCount) topCount.innerText = count;
 
-      cartItems.innerHTML = cart.map((item, index) => `
-        <div class="cart-item">
-          <img src="${item.image}" alt="Product">
-          <div>
-            <div class="cart-item-title">${item.title || "Product"}</div>
-            <div class="cart-item-meta">${item.price}</div>
-            <div class="cart-item-meta">${item.months}</div>
-          </div>
-          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
-        </div>
-      `).join("");
-    }
+  const cartItems = document.getElementById("cartItems");
+
+  if (!count) {
+    cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+    return;
+  }
+
+  cartItems.innerHTML = cart.map((item, index) => `
+    <div class="cart-item">
+      <img src="${item.image}" alt="Product">
+      <div>
+        <div class="cart-item-title">${item.title || "Product"}</div>
+        <div class="cart-item-meta">${item.price}</div>
+        <div class="cart-item-meta">${item.months}</div>
+      </div>
+      <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+    </div>
+  `).join("");
+}
 
     function removeFromCart(index) {
       cart.splice(index, 1);
