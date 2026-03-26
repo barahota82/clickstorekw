@@ -868,7 +868,7 @@
       });
     }
 
-    const cart = [];
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
     function updateCartUI() {
   // 🔥 حفظ السلة في localStorage
