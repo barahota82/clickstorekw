@@ -84,22 +84,16 @@
     }
 
     .brand-text span {
-      display: block;
-      text-align: center;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--muted);
-      white-space: nowrap;
-      margin-top: 4px;
-      animation: fadeLoop 4s infinite;
-    }
-
-    @keyframes fadeLoop {
-      0% { opacity: 0; }
-      25% { opacity: 1; }
-      75% { opacity: 1; }
-      100% { opacity: 0; }
-    }
+  display: block;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-top: 4px;
+  transition: opacity 0.4s ease;
+  opacity: 1;
+}
 
     .nav-links {
       display: flex;
@@ -604,7 +598,7 @@
           <img src="/images/logo.png" alt="Click Company Logo" class="logo">
           <div class="brand-text">
             <h1>CLICK COMPANY</h1>
-            <span>You Can Depend on Us</span>
+            <span id="loopText">You Can Depend on Us</span>
           </div>
         </div>
       </div>
@@ -870,5 +864,29 @@ ${lines.join("\n\n")}
     load();
   </script>
 
+  <script>
+  const texts = [
+    "You Can Depend on Us",
+    "Best Deals in Kuwait",
+    "Easy Monthly Installments",
+    "Fast Delivery"
+  ];
+
+  let i = 0;
+  const el = document.getElementById("loopText");
+
+  setInterval(() => {
+    if (!el) return;
+
+    el.style.opacity = 0;
+
+    setTimeout(() => {
+      i = (i + 1) % texts.length;
+      el.textContent = texts[i];
+      el.style.opacity = 1;
+    }, 400);
+  }, 3000);
+</script>
+  
 </body>
 </html>
