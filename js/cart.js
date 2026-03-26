@@ -1,57 +1,70 @@
-// ================= CART SYSTEM =================
-
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// تصحيح أي منتجات قديمة أو ناقصة quantity
+cart = cart.map(item => ({
+  ...item,
+  quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
+}));
 
 function saveCart() {
   localStorage.setItem("cart", JSON.stringify(cart));
 }
 
 function updateCartUI() {
-  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const count = cart.reduce((total, item) => {
+    return total + (parseInt(item.quantity) || 1);
+  }, 0);
 
-  const top = document.getElementById("cart-count-top");
-  const floating = document.getElementById("count") || document.getElementById("cart-count-floating");
-
-  if (top) top.innerText = count;
-  if (floating) floating.innerText = count;
-
+  const topCount = document.getElementById("cart-count-top");
+  const normalCount = document.getElementById("count");
+  const floatingCount = document.getElementById("cart-count-floating");
   const cartItems = document.getElementById("cartItems");
 
-  if (!cart.length) {
-    cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
-    return;
-  }
+  if (topCount) topCount.innerText = count;
+  if (normalCount) normalCount.innerText = count;
+  if (floatingCount) floatingCount.innerText = count;
 
-  cartItems.innerHTML = cart.map((item, index) => `
-    <div class="cart-item">
-      <img src="${item.image}" alt="Product">
-      <div>
-        <div class="cart-item-title">${item.title} × ${item.quantity}</div>
-        <div class="cart-item-meta">${item.price}</div>
-        <div class="cart-item-meta">${item.months}</div>
-      </div>
-      <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
-    </div>
-  `).join("");
+  if (cartItems) {
+    if (!cart.length) {
+      cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+    } else {
+      cartItems.innerHTML = cart.map((item, index) => `
+        <div class="cart-item">
+          <img src="${item.image}" alt="${item.title || "Product"}">
+          <div>
+            <div class="cart-item-title">${item.title || "Product"} × ${parseInt(item.quantity) || 1}</div>
+            <div class="cart-item-meta">${item.price || ""}</div>
+            <div class="cart-item-meta">${item.months || ""}</div>
+          </div>
+          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+        </div>
+      `).join("");
+    }
+  }
 
   saveCart();
 }
 
 function addToCart(newItem) {
-  const existing = cart.find(item => item.title === newItem.title);
+  const existingItem = cart.find(item => item.title === newItem.title);
 
-  if (existing) {
-    existing.quantity += 1;
+  if (existingItem) {
+    existingItem.quantity = (parseInt(existingItem.quantity) || 1) + 1;
   } else {
-    cart.push({ ...newItem, quantity: 1 });
+    cart.push({
+      ...newItem,
+      quantity: 1
+    });
   }
 
   updateCartUI();
 }
 
 function removeFromCart(index) {
-  if (cart[index].quantity > 1) {
-    cart[index].quantity -= 1;
+  if (!cart[index]) return;
+
+  if ((parseInt(cart[index].quantity) || 1) > 1) {
+    cart[index].quantity = (parseInt(cart[index].quantity) || 1) - 1;
   } else {
     cart.splice(index, 1);
   }
@@ -60,13 +73,24 @@ function removeFromCart(index) {
 }
 
 function openCart() {
-  document.getElementById("cartPanel").classList.add("open");
-  document.getElementById("cartOverlay").classList.add("open");
+  const cartPanel = document.getElementById("cartPanel");
+  const cartOverlay = document.getElementById("cartOverlay");
+
+  if (cartPanel) cartPanel.classList.add("open");
+  if (cartOverlay) cartOverlay.classList.add("open");
 }
 
 function closeCart() {
-  document.getElementById("cartPanel").classList.remove("open");
-  document.getElementById("cartOverlay").classList.remove("open");
+  const cartPanel = document.getElementById("cartPanel");
+  const cartOverlay = document.getElementById("cartOverlay");
+
+  if (cartPanel) cartPanel.classList.remove("open");
+  if (cartOverlay) cartOverlay.classList.remove("open");
+}
+
+function clearCart() {
+  cart = [];
+  updateCartUI();
 }
 
 function sendOrderWhatsApp() {
@@ -76,25 +100,51 @@ function sendOrderWhatsApp() {
 
   const lines = cart.map((item, i) => {
     let imageURL = item.image || "";
-    if (imageURL.startsWith("/")) imageURL = baseURL + imageURL;
+
+    if (imageURL.startsWith("/")) {
+      imageURL = baseURL + imageURL;
+    }
 
     return `🔹 Product ${i + 1}
-📱 ${item.title}
-💰 ${item.price}
-📆 ${item.months}
-📸 ${imageURL}`;
+📱 ${item.title || "Product"} × ${parseInt(item.quantity) || 1}
+💰 ${item.price || ""}
+📆 ${item.months || ""}
+📸 View Product Image:
+${imageURL}`;
   });
 
   const msg = `Welcome to Click Company 👋
 
+👤 Shella - Sales Representative
+
 🛒 New Order
 
-${lines.join("\n\n")}`;
+${lines.join("\n\n")}
+
+📍 Please confirm availability & total price.`;
 
   const encoded = encodeURIComponent(msg);
 
-  window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
+  fetch("/settings/whatsapp.md")
+    .then(res => res.text())
+    .then(text => {
+      const data = {};
+      text.split("\n").forEach(line => {
+        if (line.includes(":")) {
+          const [key, ...rest] = line.split(":");
+          data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+        }
+      });
+
+      const phone = "965" + (data.phone || "");
+      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+    })
+    .catch(() => {
+      window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
+    });
 }
 
-// INIT
-updateCartUI();
+// تشغيل السلة عند فتح الصفحة
+document.addEventListener("DOMContentLoaded", () => {
+  updateCartUI();
+});
