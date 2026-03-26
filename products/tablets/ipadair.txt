@@ -2,7 +2,7 @@
 title: "iPad Air"
 price: "180 KD"
 months: "12 months installment"
-image: "/images/tablets/ipadair.jpg"
+image: "/images/tablets/ipadair.webp"
 available: true
 hot_offer: true
 ---
