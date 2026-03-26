@@ -646,11 +646,22 @@
   </section>
 
   <footer>
-    <div class="container footer-box">
-      <div>©️ 2026 Click Company</div>
-      <div>You Can Depend on Us</div>
+  <div class="container footer-box">
+
+    <div>
+      © 2017–<span id="year"></span> Click Company. All rights reserved.
     </div>
-  </footer>
+
+    <div>You Can Depend on Us</div>
+
+  </div>
+</footer>
+
+<script>
+  window.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("year").textContent = new Date().getFullYear();
+  });
+</script>
 
   <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
   <a id="whatsappBtn" class="floating-whatsapp" href="#" target="_blank">
