@@ -63,19 +63,19 @@
     }
 
     .brand-static {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: white;
-}
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+    }
 
     .logo {
-  height: 55px;
-  width: auto;
-  display: block;
-  object-fit: contain;
-  filter: brightness(1.35);
-}
+      height: 55px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+      filter: brightness(1.35);
+    }
 
     .brand-text h1 {
       font-size: 22px;
@@ -84,9 +84,21 @@
     }
 
     .brand-text span {
-      font-size: 12px;
+      display: block;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
       color: var(--muted);
       white-space: nowrap;
+      margin-top: 4px;
+      animation: fadeLoop 4s infinite;
+    }
+
+    @keyframes fadeLoop {
+      0% { opacity: 0; }
+      25% { opacity: 1; }
+      75% { opacity: 1; }
+      100% { opacity: 0; }
     }
 
     .nav-links {
@@ -104,6 +116,10 @@
     }
 
     .nav-row.main-row {
+      justify-content: flex-start;
+    }
+
+    .nav-row.hot-row {
       justify-content: flex-start;
     }
 
@@ -129,6 +145,19 @@
       background: var(--primary);
       color: #fff;
       font-weight: bold;
+    }
+
+    .nav-links a.hot-link {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      font-weight: bold;
+    }
+
+    .nav-links a.hot-link:hover {
+      background: var(--hot-bg);
+      color: var(--hot-text);
+      border-color: var(--hot-bg);
     }
 
     .cart-btn {
@@ -477,6 +506,10 @@
         gap: 8px;
       }
 
+      .nav-row.hot-row {
+        order: 2;
+      }
+
       .products-grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -493,110 +526,110 @@
     }
 
     @media (max-width: 640px) {
-  .nav {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+      .nav {
+        align-items: flex-start;
+        flex-direction: column;
+      }
 
-  .page-head {
-    padding: 18px 0 10px;
-  }
+      .page-head {
+        padding: 18px 0 10px;
+      }
 
-  .cart-panel {
-    top: auto;
-    bottom: -100vh;
-    right: 0;
-    width: 100%;
-    height: 75vh;
-    border-radius: 20px 20px 0 0;
-  }
+      .cart-panel {
+        top: auto;
+        bottom: -100vh;
+        right: 0;
+        width: 100%;
+        height: 75vh;
+        border-radius: 20px 20px 0 0;
+      }
 
-  .cart-panel.open {
-    bottom: 0;
-  }
+      .cart-panel.open {
+        bottom: 0;
+      }
 
-  .page-head h2 {
-    font-size: 28px;
-  }
+      .page-head h2 {
+        font-size: 28px;
+      }
 
-  .logo {
-    height: 42px;
-  }
+      .logo {
+        height: 42px;
+      }
 
-  .brand-text span {
-    white-space: normal;
-  }
+      .brand-text span {
+        white-space: normal;
+      }
 
-  .nav-links a,
-  .cart-btn {
-    font-size: 12px;
-    padding: 7px 8px;
-  }
+      .nav-links a,
+      .cart-btn {
+        font-size: 12px;
+        padding: 7px 8px;
+      }
 
-  .product-image {
-    height: 340px;
-  }
+      .product-image {
+        height: 340px;
+      }
 
-  .floating-cart {
-    left: 14px;
-    bottom: 14px;
-    height: 52px;
-  }
+      .floating-cart {
+        left: 14px;
+        bottom: 14px;
+        height: 52px;
+      }
 
-  .floating-whatsapp {
-    right: 14px;
-    bottom: 14px;
-    height: 52px;
-  }
+      .floating-whatsapp {
+        right: 14px;
+        bottom: 14px;
+        height: 52px;
+      }
 
-  .btn {
-    min-width: 140px;
-    padding: 13px 16px;
-    font-size: 16px;
-  }
+      .btn {
+        min-width: 140px;
+        padding: 13px 16px;
+        font-size: 16px;
+      }
 
-  .price {
-    font-size: 28px;
-  }
-}
+      .price {
+        font-size: 28px;
+      }
     }
   </style>
 </head>
 <body>
 
   <header>
-  <div class="container nav">
+    <div class="container nav">
 
-    <div class="brand">
-  <div class="brand-static">
-    <img src="/images/logo.png" alt="Click Company Logo" class="logo">
-    <div class="brand-text">
-      <h1>CLICK COMPANY</h1>
-      <span>You Can Depend on Us</span>
+      <div class="brand">
+        <div class="brand-static">
+          <img src="/images/logo.png" alt="Click Company Logo" class="logo">
+          <div class="brand-text">
+            <h1>CLICK COMPANY</h1>
+            <span>You Can Depend on Us</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <div class="nav-row main-row">
+          <a href="index.html">Home</a>
+          <a href="phones.html">Phones</a>
+          <a href="tablets.html">Tablets</a>
+          <a href="laptops.html">Laptops</a>
+          <a href="accessories.html">Accessories</a>
+
+          <button class="cart-btn" onclick="openCart()">
+            Cart <span class="cart-badge" id="cart-count-top">0</span>
+          </button>
+        </div>
+
+        <div class="nav-row hot-row">
+          <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
+        </div>
+      </nav>
+
     </div>
-  </div>
-</div>
+  </header>
 
-    <nav class="nav-links">
-      <div class="nav-row main-row">
-        <a href="index.html">Home</a>
-        <a href="phones.html">Phones</a>
-        <a href="tablets.html">Tablets</a>
-        <a href="laptops.html">Laptops</a>
-        <a href="accessories.html">Accessories</a>
-
-        <button class="cart-btn" onclick="openCart()">
-          Cart <span class="cart-badge" id="cart-count-top">0</span>
-        </button>
-      </div>
-
-      <div class="nav-row hot-row">
-        <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
-      </div>
-    </nav>
-
-  </div>
-</header>
   <section class="page-head">
     <div class="container">
       <h2>All Products</h2>
@@ -627,8 +660,8 @@
 
   <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
   <a id="whatsappBtn" class="floating-whatsapp" href="#" target="_blank">
-  WhatsApp
-</a>
+    WhatsApp
+  </a>
 
   <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
@@ -721,23 +754,24 @@ ${lines.join("\n\n")}
 
 📍 Please confirm availability & total price.`;
       const encoded = encodeURIComponent(msg);
-      fetch("/settings/whatsapp.md")
-  .then(res => res.text())
-  .then(text => {
-    const data = {};
-    text.split("\n").forEach(line => {
-      if (line.includes(":")) {
-        const [key, ...rest] = line.split(":");
-        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-      }
-    });
 
-    const phone = "965" + (data.phone || "");
-    window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
-  })
-  .catch(() => {
-    window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
-  });
+      fetch("/settings/whatsapp.md")
+        .then(res => res.text())
+        .then(text => {
+          const data = {};
+          text.split("\n").forEach(line => {
+            if (line.includes(":")) {
+              const [key, ...rest] = line.split(":");
+              data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+            }
+          });
+
+          const phone = "965" + (data.phone || "");
+          window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+        })
+        .catch(() => {
+          window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
+        });
     }
 
     async function get(path) {
