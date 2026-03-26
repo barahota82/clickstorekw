@@ -1,6 +1,6 @@
 ---
 title: "iPhone 15 Pro"
-price: "30 KD"
+price: "300 KD"
 months: "12 months installment"
 image: "/images/phones/iphone15pro.jpg"
 available: true
