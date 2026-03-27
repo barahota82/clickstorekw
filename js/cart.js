@@ -1,15 +1,23 @@
+/* ================================
+   CART SYSTEM - CLICK COMPANY
+   Professional Version 🔥
+================================ */
+
+// ===== INIT CART =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// تصحيح أي منتجات قديمة أو ناقصة quantity
+// إصلاح البيانات القديمة
 cart = cart.map(item => ({
   ...item,
   quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
 }));
 
+// ===== SAVE =====
 function saveCart() {
   localStorage.setItem("cart", JSON.stringify(cart));
 }
 
+// ===== UPDATE UI =====
 function updateCartUI() {
   const count = cart.reduce((total, item) => {
     return total + (parseInt(item.quantity) || 1);
@@ -45,6 +53,7 @@ function updateCartUI() {
   saveCart();
 }
 
+// ===== ADD =====
 function addToCart(newItem) {
   const existingItem = cart.find(item => item.title === newItem.title);
 
@@ -60,11 +69,12 @@ function addToCart(newItem) {
   updateCartUI();
 }
 
+// ===== REMOVE =====
 function removeFromCart(index) {
   if (!cart[index]) return;
 
   if ((parseInt(cart[index].quantity) || 1) > 1) {
-    cart[index].quantity = (parseInt(cart[index].quantity) || 1) - 1;
+    cart[index].quantity--;
   } else {
     cart.splice(index, 1);
   }
@@ -72,28 +82,61 @@ function removeFromCart(index) {
   updateCartUI();
 }
 
-function openCart() {
-  const cartPanel = document.getElementById("cartPanel");
-  const cartOverlay = document.getElementById("cartOverlay");
-
-  if (cartPanel) cartPanel.classList.add("open");
-  if (cartOverlay) cartOverlay.classList.add("open");
-}
-
-function closeCart() {
-  const cartPanel = document.getElementById("cartPanel");
-  const cartOverlay = document.getElementById("cartOverlay");
-
-  if (cartPanel) cartPanel.classList.remove("open");
-  if (cartOverlay) cartOverlay.classList.remove("open");
-}
-
+// ===== CLEAR =====
 function clearCart() {
   cart = [];
   updateCartUI();
 }
 
-function sendOrderWhatsApp() {
+// ===== OPEN / CLOSE =====
+function openCart() {
+  document.getElementById("cartPanel")?.classList.add("open");
+  document.getElementById("cartOverlay")?.classList.add("open");
+}
+
+function closeCart() {
+  document.getElementById("cartPanel")?.classList.remove("open");
+  document.getElementById("cartOverlay")?.classList.remove("open");
+}
+
+// ===== SETTINGS LOADER (AI READY) =====
+async function loadWhatsAppSettings() {
+  try {
+    const res = await fetch("/settings/whatsapp.md");
+    const text = await res.text();
+
+    const data = {};
+
+    text.split("\n").forEach(line => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+      }
+    });
+
+    return data;
+  } catch {
+    return {};
+  }
+}
+
+// ===== BUILD MESSAGE (SMART AI STYLE) =====
+function buildOrderMessage(data, lines) {
+  let greeting = data.greeting || "Welcome 👋";
+
+  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+
+  return `${greeting}
+
+🛒 New Order
+
+${lines.join("\n\n")}
+
+📍 Please confirm availability & total price.`;
+}
+
+// ===== SEND ORDER =====
+async function sendOrderWhatsApp() {
   if (!cart.length) return;
 
   const baseURL = window.location.origin;
@@ -109,42 +152,36 @@ function sendOrderWhatsApp() {
 📱 ${item.title || "Product"} × ${parseInt(item.quantity) || 1}
 💰 ${item.price || ""}
 📆 ${item.months || ""}
-📸 View Product Image:
-${imageURL}`;
+📸 ${imageURL}`;
   });
 
-  const msg = `Welcome to Click Company 👋
+  const data = await loadWhatsAppSettings();
 
-👤 Shella - Sales Representative
-
-🛒 New Order
-
-${lines.join("\n\n")}
-
-📍 Please confirm availability & total price.`;
+  const msg = buildOrderMessage(data, lines);
 
   const encoded = encodeURIComponent(msg);
 
-  fetch("/settings/whatsapp.txt")
-    .then(res => res.text())
-    .then(text => {
-      const data = {};
-      text.split("\n").forEach(line => {
-        if (line.includes(":")) {
-          const [key, ...rest] = line.split(":");
-          data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-        }
-      });
+  const phone = "965" + (data.phone || "67680877");
 
-      const phone = "965" + (data.phone || "");
-      window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
-    })
-    .catch(() => {
-      window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
-    });
+  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
 }
 
-// تشغيل السلة عند فتح الصفحة
+// ===== DIRECT WHATSAPP =====
+async function openWhatsAppDirect() {
+  const data = await loadWhatsAppSettings();
+
+  let greeting = data.greeting || "Hello 👋";
+
+  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+
+  const encoded = encodeURIComponent(greeting);
+
+  const phone = "965" + (data.phone || "67680877");
+
+  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+}
+
+// ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
   updateCartUI();
 });
