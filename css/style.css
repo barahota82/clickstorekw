@@ -519,19 +519,6 @@ footer {
   cursor: pointer;
 }
 
-.page-home .floating-whatsapp {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 999;
-  background: #25D366;
-  color: white;
-  padding: 14px 18px;
-  border-radius: 999px;
-  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
-  font-weight: bold;
-}
-
 .page-catalog .floating-cart,
 .page-all-products .floating-cart {
   position: fixed;
@@ -558,21 +545,26 @@ footer {
   font-size: 17px;
 }
 
-.page-catalog .floating-whatsapp,
-.page-all-products .floating-whatsapp {
+.page-home .floating-cart,
+.page-catalog .floating-cart,
+.page-all-products .floating-cart {
   position: fixed;
-  right: 18px;
+  left: 18px;
   bottom: 18px;
-  background: #25D366;
+  background: #2f6df1;
   color: #fff;
-  height: 56px;
-  padding: 0 22px;
   border-radius: 999px;
+  height: 56px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
+  gap: 10px;
   font-weight: bold;
   box-shadow: 0 10px 25px rgba(0,0,0,.3);
   z-index: 1000;
+  border: 0;
+  cursor: pointer;
+  font-size: 22px;
 }
 
 /* ===== CART PANEL ===== */
@@ -841,20 +833,29 @@ footer {
     height: 52px;
   }
 
-  .page-catalog .floating-whatsapp,
-  .page-all-products .floating-whatsapp {
-    right: 14px;
-    bottom: 14px;
-    height: 52px;
-  }
+ .page-home .floating-whatsapp,
+ .page-catalog .floating-whatsapp,
+ .page-all-products .floating-whatsapp {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  background: #25D366;
+  color: #fff;
+  height: 56px;
+  padding: 0 22px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 10px 25px rgba(0,0,0,.3);
+  z-index: 2000;
+  border: 0;
+  cursor: pointer;
+}
 
   .page-home .floating-cart {
     left: 14px;
-    bottom: 14px;
-  }
-
-  .page-home .floating-whatsapp {
-    right: 14px;
     bottom: 14px;
   }
 
