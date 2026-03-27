@@ -1,8 +1,0 @@
----
-title: "iPhone 15 Pro"
-price: "300 KD"
-months: "12 months installment"
-image: "/images/phones/iphone15pro.jpg"
-available: true
-hot_offer: false
----
