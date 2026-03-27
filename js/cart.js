@@ -142,6 +142,26 @@ ${lines.join("\n\n")}
     .catch(() => {
       window.open(`https://wa.me/96567680877?text=${encoded}`, "_blank");
     });
+  function openWhatsAppDirect() {
+  fetch("/settings/whatsapp.txt")
+    .then(res => res.text())
+    .then(text => {
+      const data = {};
+      text.split("\n").forEach(line => {
+        if (line.includes(":")) {
+          const [key, ...rest] = line.split(":");
+          data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+        }
+      });
+
+      const phone = "965" + (data.phone || "");
+      const msg = encodeURIComponent("Hello, I want to ask about your products.");
+      window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    })
+    .catch(() => {
+      const msg = encodeURIComponent("Hello, I want to ask about your products.");
+      window.open(`https://wa.me/96567680877?text=${msg}`, "_blank");
+    });
 }
 
 // تشغيل السلة عند فتح الصفحة
