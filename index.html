@@ -6,7 +6,6 @@
   <title>Click Company</title>
   <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
   <link rel="stylesheet" href="/css/style.css" />
-  
 </head>
 <body class="page-home">
 <header>
@@ -110,8 +109,8 @@
   </button>
 
   <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">
-  WhatsApp
-</button>
+    WhatsApp
+  </button>
 
   <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
@@ -157,95 +156,67 @@
   <script src="/js/cart.js"></script>
 
   <script>
-    async function fetchText(path) {
-      const res = await fetch(path);
-      if (!res.ok) throw new Error(path);
-      return await res.text();
-    }
-
-    function parseFrontMatter(text) {
-      const data = {};
-      const lines = text.split("\n");
-
-      for (let raw of lines) {
-        const line = raw.trim();
-        if (!line || line === "---") continue;
-
-        const idx = line.indexOf(":");
-        if (idx === -1) continue;
-
-        const key = line.slice(0, idx).trim();
-        let value = line.slice(idx + 1).trim();
-
-        if (value.startsWith('"') && value.endsWith('"')) {
-          value = value.slice(1, -1);
-        }
-
-        data[key] = value;
-      }
-
-      return data;
-    }
-
     async function loadHotOffers() {
       const grid = document.getElementById("hot-offers-grid");
       const empty = document.getElementById("hot-offers-empty");
 
-      const paths = [
-        "/products/phones/iphone15pro.txt",
-        "/products/tablets/ipadair.webp",
-        "/products/laptops/macbookairm2.txt",
-        "/products/accessories/airpodspro.txt"
-      ];
-
+      const categories = ["phones", "tablets", "laptops", "accessories"];
       let rendered = 0;
 
-      for (const path of paths) {
+      for (const category of categories) {
         try {
-          const text = await fetchText(path);
-          const data = parseFrontMatter(text);
+          const indexRes = await fetch(`/products/${category}/index.json`);
+          const files = await indexRes.json();
 
-          const available = String(data.available || "").toLowerCase();
-          const hot = String(data.hot_offer || "").toLowerCase();
+          for (const file of files) {
+            try {
+              const res = await fetch(`/products/${category}/${file}`);
+              const data = await res.json();
 
-          if (available === "false") continue;
-          if (hot !== "true") continue;
+              if (!data.available) continue;
+              if (!data.hot_offer) continue;
 
-          rendered++;
+              rendered++;
 
-          const safeItem = {
-            title: data.title || "Product",
-            price: data.price || "",
-            months: data.months || "",
-            image: data.image || "/images/logo.png"
-          };
+              const safeItem = {
+                title: data.title || file,
+                price: data.monthly ? `${data.monthly} Monthly` : "",
+                months: `${data.duration || ""}${data.down_payment ? ` • ${data.down_payment} Down Payment` : ""}`,
+                image: data.image || "/images/logo.png"
+              };
 
-          const card = document.createElement("div");
-          card.className = "product-card";
+              const card = document.createElement("div");
+              card.className = "product-card";
 
-          card.innerHTML = `
-            <div class="product-image">
-              <img src="${safeItem.image}" alt="${safeItem.title}">
-            </div>
-
-            <div class="product-body">
-              <div class="row">
-                <div>
-                  <div class="price">${safeItem.price}</div>
-                  <div class="months">${safeItem.months}</div>
+              card.innerHTML = `
+                <div class="product-image">
+                  <img src="${safeItem.image}" alt="${safeItem.title}">
                 </div>
-                <button class="cart-add-btn">+ Add</button>
-              </div>
-            </div>
-          `;
 
-          card.querySelector(".cart-add-btn").addEventListener("click", () => {
-            addToCart(safeItem);
-          });
+                <div class="product-body">
+                  <div class="row">
+                    <div>
+                      <div class="price">${data.monthly || ""}</div>
+                      <div class="months">${data.duration || ""}</div>
+                      <div class="months">${data.down_payment || ""} Down Payment</div>
+                    </div>
+                    <button class="cart-add-btn">+ Add</button>
+                  </div>
+                </div>
+              `;
 
-          grid.appendChild(card);
+              card.querySelector(".cart-add-btn").addEventListener("click", () => {
+                addToCart(safeItem);
+              });
 
-        } catch (e) {}
+              grid.appendChild(card);
+            } catch (e) {
+              console.error("Failed to load hot offer file:", file, e);
+            }
+          }
+        } catch (e) {
+          console.error(`Failed to load ${category} hot offers index:`, e);
+        }
       }
 
       if (rendered && empty) {
