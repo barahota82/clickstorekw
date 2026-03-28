@@ -462,37 +462,61 @@ function extractFinancialsFromText(text) {
     .replace(/o/g, "0")
     .replace(/I/g, "1")
     .replace(/l/g, "1")
-    .replace(/S(?=\s*MONTH)/gi, "5")
     .trim();
 
   let downPayment = "";
   let monthly = "";
   let duration = "";
 
-  // ناخد سطور منفصلة (مهم جدا)
-  const lines = clean.split(/[\n\r]+/);
+  const words = clean.split(" ");
 
-  for (const line of lines) {
-    const l = line.toLowerCase();
+  function isSimilar(word, target) {
+    return word.includes(target) || target.includes(word);
+  }
 
-    // -------- MONTHLY --------
-    if (l.includes("monthly")) {
-      const m = line.match(/(\d+)/);
-      if (m) monthly = m[1];
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i].toLowerCase();
+
+    // ---- MONTHLY ----
+    if (
+      isSimilar(w, "monthly") ||
+      isSimilar(w, "month1y") ||
+      isSimilar(w, "monthiy")
+    ) {
+      // دور على رقم قريب
+      for (let j = i - 2; j <= i + 2; j++) {
+        if (words[j] && /\d+/.test(words[j])) {
+          monthly = words[j].match(/\d+/)[0];
+        }
+      }
     }
 
-    // -------- DURATION --------
-    if (l.includes("month") || l.includes("to pay")) {
-      const m = line.match(/(\d+)/);
-      if (m) duration = m[1];
+    // ---- DURATION ----
+    if (
+      isSimilar(w, "months") ||
+      isSimilar(w, "month") ||
+      isSimilar(w, "pay")
+    ) {
+      for (let j = i - 2; j <= i + 2; j++) {
+        if (words[j] && /\d+/.test(words[j])) {
+          duration = words[j].match(/\d+/)[0];
+        }
+      }
     }
 
-    // -------- DOWN PAYMENT --------
-    if (l.includes("down") || l.includes("payment")) {
-      const m = line.match(/(\d+)/);
-      if (m) {
-        downPayment = m[1];
-      } else if (l.includes("zero")) {
+    // ---- DOWN PAYMENT ----
+    if (
+      isSimilar(w, "down") ||
+      isSimilar(w, "payment")
+    ) {
+      for (let j = i - 2; j <= i + 2; j++) {
+        if (words[j] && /\d+/.test(words[j])) {
+          downPayment = words[j].match(/\d+/)[0];
+        }
+      }
+
+      // ZERO case
+      if (!downPayment && clean.toLowerCase().includes("zero")) {
         downPayment = "0";
       }
     }
