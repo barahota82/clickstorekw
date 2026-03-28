@@ -457,67 +457,127 @@ ctx.drawImage(
 
 function extractFinancialsFromText(text) {
   const clean = String(text || "")
-    .replace(/\s+/g, " ")
+    .replace(/\r/g, "")
     .replace(/O/g, "0")
     .replace(/o/g, "0")
     .replace(/I/g, "1")
     .replace(/l/g, "1")
+    .replace(/S(?=\s*MONTH)/gi, "5")
     .trim();
+
+  const lines = clean
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
 
   let downPayment = "";
   let monthly = "";
   let duration = "";
 
-  const words = clean.split(" ");
-
-  function isSimilar(word, target) {
-    return word.includes(target) || target.includes(word);
+  function firstNumber(str) {
+    const match = String(str || "").match(/\d+/);
+    return match ? match[0] : "";
   }
 
-  for (let i = 0; i < words.length; i++) {
-    const w = words[i].toLowerCase();
+  function hasMonthly(str) {
+    const s = String(str || "").toLowerCase();
+    return (
+      s.includes("monthly") ||
+      s.includes("month1y") ||
+      s.includes("monthiy") ||
+      s.includes("m0nthly")
+    );
+  }
 
-    // ---- MONTHLY ----
-    if (
-      isSimilar(w, "monthly") ||
-      isSimilar(w, "month1y") ||
-      isSimilar(w, "monthiy")
-    ) {
-      // دور على رقم قريب
-      for (let j = i - 2; j <= i + 2; j++) {
-        if (words[j] && /\d+/.test(words[j])) {
-          monthly = words[j].match(/\d+/)[0];
+  function hasDownPayment(str) {
+    const s = String(str || "").toLowerCase();
+    return (
+      s.includes("down") ||
+      s.includes("payment") ||
+      s.includes("paynent") ||
+      s.includes("payrnent")
+    );
+  }
+
+  function hasZero(str) {
+    const s = String(str || "").toLowerCase();
+    return s.includes("zero") || s.includes("zer0");
+  }
+
+  function hasDuration(str) {
+    const s = String(str || "").toLowerCase();
+    return (
+      s.includes("months") ||
+      s.includes("month") ||
+      s.includes("m0nths") ||
+      s.includes("to pay") ||
+      s.includes("topay") ||
+      s.includes("pay")
+    );
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (hasMonthly(line)) {
+      monthly = firstNumber(line);
+
+      if (i > 0) {
+        const prevLine = lines[i - 1];
+
+        if (hasZero(prevLine)) {
+          downPayment = "0";
+        } else {
+          const prevNumber = firstNumber(prevLine);
+          downPayment = prevNumber || "0";
         }
-      }
-    }
-
-    // ---- DURATION ----
-    if (
-      isSimilar(w, "months") ||
-      isSimilar(w, "to") ||
-      isSimilar(w, "pay")
-    ) {
-      for (let j = i - 2; j <= i + 2; j++) {
-        if (words[j] && /\d+/.test(words[j])) {
-          duration = words[j].match(/\d+/)[0];
-        }
-      }
-    }
-
-    // ---- DOWN PAYMENT ----
-    if (
-      isSimilar(w, "down") ||
-      isSimilar(w, "payment")
-    ) {
-      for (let j = i - 2; j <= i + 2; j++) {
-        if (words[j] && /\d+/.test(words[j])) {
-          downPayment = words[j].match(/\d+/)[0];
-        }
-      }
-
-      // ZERO case
-      if (!downPayment && clean.toLowerCase().includes("zero")) {
+      } else {
         downPayment = "0";
+      }
+
+      if (i < lines.length - 1) {
+        const nextLine = lines[i + 1];
+        const nextNumber = firstNumber(nextLine);
+        if (nextNumber) {
+          duration = nextNumber;
+        }
+      }
+
+      break;
+    }
+  }
+
+  if (!monthly) {
+    for (let i = 0; i < lines.length; i++) {
+      if (hasMonthly(lines[i])) {
+        monthly = firstNumber(lines[i]);
+        break;
+      }
+    }
+  }
+
+  if (!duration) {
+    for (let i = 0; i < lines.length; i++) {
+      if (hasDuration(lines[i])) {
+        const n = firstNumber(lines[i]);
+        if (n && n !== monthly) {
+          duration = n;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!downPayment) {
+    for (let i = 0; i < lines.length; i++) {
+      if (hasDownPayment(lines[i])) {
+        if (hasZero(lines[i])) {
+          downPayment = "0";
+        } else {
+          const n = firstNumber(lines[i]);
+          downPayment = n || "0";
+        }
+        break;
       }
     }
   }
