@@ -455,41 +455,51 @@ ctx.drawImage(
       };
     }
 
-    function extractFinancialsFromText(text) {
+function extractFinancialsFromText(text) {
   const clean = String(text || "")
     .replace(/\s+/g, " ")
     .replace(/O/g, "0")
     .replace(/o/g, "0")
     .replace(/I/g, "1")
     .replace(/l/g, "1")
+    .replace(/S(?=\s*MONTH)/gi, "5")
+    .replace(/ZER0/gi, "ZERO")
     .trim();
 
   let downPayment = "";
   let monthly = "";
   let duration = "";
 
-  // Zero down payment
   if (/zero\s*down\s*payment/i.test(clean)) {
     downPayment = "0";
   }
 
-  // 10 KD monthly
-  const monthlyMatch = clean.match(/(\d+)\s*(kd|k\.d)\s*monthly/i);
+  const monthlyMatch =
+    clean.match(/(\d+)\s*(kd|k\.d)\s*monthly/i) ||
+    clean.match(/(\d+)\s*(kd|k\.d)\b/i) ||
+    clean.match(/monthly\s*(\d+)/i);
+
   if (monthlyMatch) {
     monthly = monthlyMatch[1];
   }
 
-  // 8 months to pay
-  const durationMatch = clean.match(/(\d+)\s*months?\s*to\s*pay/i);
+  const durationMatch =
+    clean.match(/(\d+)\s*months?\s*to\s*pay/i) ||
+    clean.match(/(\d+)\s*months?/i) ||
+    clean.match(/(\d+)\s*to\s*pay/i);
+
   if (durationMatch) {
     duration = durationMatch[1];
   }
 
-  // fallback لو قرأ months بدون to pay
-  if (!duration) {
-    const durationFallback = clean.match(/(\d+)\s*months?/i);
-    if (durationFallback) {
-      duration = durationFallback[1];
+  if (!downPayment) {
+    const zeroMatch =
+      clean.match(/(?:zero|0)\s*down/i) ||
+      clean.match(/down\s*payment\s*(?:zero|0)/i) ||
+      clean.match(/(?:^|\s)(0)\s*(kd|k\.d)(?:\s|$)/i);
+
+    if (zeroMatch) {
+      downPayment = "0";
     }
   }
 
@@ -500,20 +510,37 @@ ctx.drawImage(
     rawText: clean
   };
 }
-
     async function runOCRFromImage(file) {
   const processedCanvas = await preprocessImageForOCR(file);
 
-  const result = await Tesseract.recognize(processedCanvas, "eng", {
+  const croppedResult = await Tesseract.recognize(processedCanvas, "eng", {
     logger: m => {
       if (m.status === "recognizing text") {
         const pct = Math.round((m.progress || 0) * 100);
-        setStatus("info", `Reading image text... ${pct}%`);
+        setStatus("info", `Reading cropped area... ${pct}%`);
       }
     }
   });
 
-  return extractFinancialsFromText(result.data.text || "");
+  const fullResult = await Tesseract.recognize(file, "eng", {
+    logger: m => {
+      if (m.status === "recognizing text") {
+        const pct = Math.round((m.progress || 0) * 100);
+        setStatus("info", `Reading full image... ${pct}%`);
+      }
+    }
+  });
+
+  const croppedData = extractFinancialsFromText(croppedResult.data.text || "");
+  const fullData = extractFinancialsFromText(fullResult.data.text || "");
+
+  return {
+    downPayment: croppedData.downPayment || fullData.downPayment || "",
+    monthly: croppedData.monthly || fullData.monthly || "",
+    duration: croppedData.duration || fullData.duration || "",
+    rawText:
+      `--- CROPPED OCR ---\n${croppedData.rawText || ""}\n\n--- FULL OCR ---\n${fullData.rawText || ""}`
+  };
 }
 
     async function smartAutoFill() {
