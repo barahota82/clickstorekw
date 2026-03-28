@@ -481,22 +481,7 @@ function extractFinancialsFromText(text) {
 
   function hasMonthly(str) {
     const s = String(str || "").toLowerCase();
-    return (
-      s.includes("monthly") ||
-      s.includes("month1y") ||
-      s.includes("monthiy") ||
-      s.includes("m0nthly")
-    );
-  }
-
-  function hasDownPayment(str) {
-    const s = String(str || "").toLowerCase();
-    return (
-      s.includes("down") ||
-      s.includes("payment") ||
-      s.includes("paynent") ||
-      s.includes("payrnent")
-    );
+    return s.includes("monthly");
   }
 
   function hasZero(str) {
@@ -504,24 +489,23 @@ function extractFinancialsFromText(text) {
     return s.includes("zero") || s.includes("zer0");
   }
 
-  function hasDuration(str) {
-    const s = String(str || "").toLowerCase();
-    return (
-      s.includes("months") ||
-      s.includes("month") ||
-      s.includes("m0nths") ||
-      s.includes("to pay") ||
-      s.includes("topay") ||
-      s.includes("pay")
-    );
-  }
-
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
+    // القسط: فقط من السطر الذي يحتوي على monthly
     if (hasMonthly(line)) {
-      monthly = firstNumber(line);
+      const monthlyMatch =
+        line.match(/(\d+)\s*(kd|k\.d)\s*monthly/i) ||
+        line.match(/(\d+).{0,12}?monthly/i) ||
+        line.match(/monthly.{0,12}?(\d+)/i);
 
+      if (monthlyMatch) {
+        monthly = monthlyMatch[1];
+      } else {
+        monthly = firstNumber(line);
+      }
+
+      // المقدم: من السطر اللي فوق مباشرة
       if (i > 0) {
         const prevLine = lines[i - 1];
 
@@ -535,6 +519,7 @@ function extractFinancialsFromText(text) {
         downPayment = "0";
       }
 
+      // الشهور: من السطر اللي تحت مباشرة
       if (i < lines.length - 1) {
         const nextLine = lines[i + 1];
         const nextNumber = firstNumber(nextLine);
@@ -544,41 +529,6 @@ function extractFinancialsFromText(text) {
       }
 
       break;
-    }
-  }
-
-  if (!monthly) {
-    for (let i = 0; i < lines.length; i++) {
-      if (hasMonthly(lines[i])) {
-        monthly = firstNumber(lines[i]);
-        break;
-      }
-    }
-  }
-
-  if (!duration) {
-    for (let i = 0; i < lines.length; i++) {
-      if (hasDuration(lines[i])) {
-        const n = firstNumber(lines[i]);
-        if (n && n !== monthly) {
-          duration = n;
-          break;
-        }
-      }
-    }
-  }
-
-  if (!downPayment) {
-    for (let i = 0; i < lines.length; i++) {
-      if (hasDownPayment(lines[i])) {
-        if (hasZero(lines[i])) {
-          downPayment = "0";
-        } else {
-          const n = firstNumber(lines[i]);
-          downPayment = n || "0";
-        }
-        break;
-      }
     }
   }
 
