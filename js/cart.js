@@ -1,133 +1,187 @@
-/* ==========================================
-   COMMUNICATION & CART SYSTEM - CLICK COMPANY
-   Final Stable Version ✅
-   Fix: Server not found & Mobile Blocking
-========================================== */
+/* ================================
+   CART SYSTEM - CLICK COMPANY
+   Professional Version 🔥
+================================ */
 
-// 1. إعدادات احتياطية فورية (تعمل إذا فشل السيرفر في الرد)
-let whatsappSystem = {
-    config: { phone: "67680877", employee_name: "Sales", greeting: "Welcome 👋" },
-    isLoaded: true 
-};
-
-// 2. نظام السلة
+// ===== INIT CART =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// إصلاح البيانات القديمة
 cart = cart.map(item => ({
-    ...item,
-    quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
+  ...item,
+  quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
 }));
 
+// ===== SAVE =====
 function saveCart() {
-    localStorage.setItem("cart", JSON.stringify(cart));
+  localStorage.setItem("cart", JSON.stringify(cart));
 }
 
+// ===== UPDATE UI =====
 function updateCartUI() {
-    const count = cart.reduce((total, item) => total + (parseInt(item.quantity) || 1), 0);
-    const elements = {
-        top: document.getElementById("cart-count-top"),
-        normal: document.getElementById("count"),
-        floating: document.getElementById("cart-count-floating"),
-        items: document.getElementById("cartItems")
-    };
-    if (elements.top) elements.top.innerText = count;
-    if (elements.normal) elements.normal.innerText = count;
-    if (elements.floating) elements.floating.innerText = count;
-    if (elements.items) {
-        if (!cart.length) {
-            elements.items.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
-        } else {
-            elements.items.innerHTML = cart.map((item, index) => `
-                <div class="cart-item">
-                    <img src="${item.image}" alt="${item.title || "Product"}">
-                    <div>
-                        <div class="cart-item-title">${item.title || "Product"} × ${item.quantity}</div>
-                        <div class="cart-item-meta">${item.price || ""}</div>
-                        <div class="cart-item-meta">${item.months || ""}</div>
-                    </div>
-                    <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
-                </div>
-            `).join("");
-        }
+  const count = cart.reduce((total, item) => {
+    return total + (parseInt(item.quantity) || 1);
+  }, 0);
+
+  const topCount = document.getElementById("cart-count-top");
+  const normalCount = document.getElementById("count");
+  const floatingCount = document.getElementById("cart-count-floating");
+  const cartItems = document.getElementById("cartItems");
+
+  if (topCount) topCount.innerText = count;
+  if (normalCount) normalCount.innerText = count;
+  if (floatingCount) floatingCount.innerText = count;
+
+  if (cartItems) {
+    if (!cart.length) {
+      cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+    } else {
+      cartItems.innerHTML = cart.map((item, index) => `
+        <div class="cart-item">
+          <img src="${item.image}" alt="${item.title || "Product"}">
+          <div>
+            <div class="cart-item-title">${item.title || "Product"} × ${parseInt(item.quantity) || 1}</div>
+            <div class="cart-item-meta">${item.price || ""}</div>
+            <div class="cart-item-meta">${item.months || ""}</div>
+          </div>
+          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+        </div>
+      `).join("");
     }
-    saveCart();
+  }
+
+  saveCart();
 }
 
+// ===== ADD =====
 function addToCart(newItem) {
-    const existing = cart.find(item => item.title === newItem.title);
-    existing ? existing.quantity++ : cart.push({ ...newItem, quantity: 1 });
-    updateCartUI();
+  const existingItem = cart.find(item => item.title === newItem.title);
+
+  if (existingItem) {
+    existingItem.quantity = (parseInt(existingItem.quantity) || 1) + 1;
+  } else {
+    cart.push({
+      ...newItem,
+      quantity: 1
+    });
+  }
+
+  updateCartUI();
 }
 
+// ===== REMOVE =====
 function removeFromCart(index) {
-    if (!cart[index]) return;
-    cart[index].quantity > 1 ? cart[index].quantity-- : cart.splice(index, 1);
-    updateCartUI();
+  if (!cart[index]) return;
+
+  if ((parseInt(cart[index].quantity) || 1) > 1) {
+    cart[index].quantity--;
+  } else {
+    cart.splice(index, 1);
+  }
+
+  updateCartUI();
 }
 
+// ===== CLEAR =====
+function clearCart() {
+  cart = [];
+  updateCartUI();
+}
+
+// ===== OPEN / CLOSE =====
 function openCart() {
-    document.getElementById("cartPanel")?.classList.add("open");
-    document.getElementById("cartOverlay")?.classList.add("open");
+  document.getElementById("cartPanel")?.classList.add("open");
+  document.getElementById("cartOverlay")?.classList.add("open");
 }
 
 function closeCart() {
-    document.getElementById("cartPanel")?.classList.remove("open");
-    document.getElementById("cartOverlay")?.classList.remove("open");
+  document.getElementById("cartPanel")?.classList.remove("open");
+  document.getElementById("cartOverlay")?.classList.remove("open");
 }
 
-// 3. محرك الواتساب المطور (بدون توقف)
-async function initWhatsAppSystem() {
-    try {
-        // محاولة جلب الملف من السيرفر
-        const response = await fetch("/settings/whatsapp.md?v=" + Date.now());
-        if (response.ok) {
-            const text = await response.text();
-            const data = {};
-            text.split("\n").forEach(line => {
-                if (line.includes(":")) {
-                    const [key, ...rest] = line.split(":");
-                    data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-                }
-            });
-            whatsappSystem.config = data;
-            console.log("Settings loaded from server ✅");
-        }
-    } catch (e) {
-        console.warn("Server file not found, using defaults.");
-    }
-}
+// ===== SETTINGS LOADER (AI READY) =====
+async function loadWhatsAppSettings() {
+  try {
+    const res = await fetch("/settings/whatsapp.md");
+    const text = await res.text();
 
-function execWhatsApp(message) {
-    const phone = "965" + (whatsappSystem.config.phone || "67680877");
-    const encoded = encodeURIComponent(message);
-    const url = `https://api.whatsapp.com{phone}&text=${encoded}`;
-    
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        window.location.href = url;
-    } else {
-        window.open(url, "_blank");
-    }
-}
+    const data = {};
 
-function sendOrderWhatsApp() {
-    if (!cart.length) return;
-    const baseURL = window.location.origin;
-    const productLines = cart.map((item, i) => {
-        let img = item.image.startsWith("/") ? baseURL + item.image : item.image;
-        return `🔹 *Item ${i + 1}*\n📱 *${item.title}* × ${item.quantity}\n💰 ${item.price}\n📆 ${item.months}\n📸 ${img}`;
+    text.split("\n").forEach(line => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+      }
     });
-    let msg = whatsappSystem.config.greeting || "Welcome 👋";
-    msg = msg.replace("{{name}}", whatsappSystem.config.employee_name || "Sales");
-    const finalMessage = `${msg}\n\n🛒 *New Order Details:*\n\n${productLines.join("\n\n")}\n\n📍 *Please confirm order status.*`;
-    execWhatsApp(finalMessage);
+
+    return data;
+  } catch {
+    return {};
+  }
 }
 
-function openWhatsAppDirect() {
-    let msg = whatsappSystem.config.greeting || "Hello!";
-    msg = msg.replace("{{name}}", whatsappSystem.config.employee_name || "Sales");
-    execWhatsApp(msg);
+// ===== BUILD MESSAGE (SMART AI STYLE) =====
+function buildOrderMessage(data, lines) {
+  let greeting = data.greeting || "Welcome 👋";
+
+  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+
+  return `${greeting}
+
+🛒 New Order
+
+${lines.join("\n\n")}
+
+📍 Please confirm availability & total price.`;
 }
 
+// ===== SEND ORDER =====
+async function sendOrderWhatsApp() {
+  if (!cart.length) return;
+
+  const baseURL = window.location.origin;
+
+  const lines = cart.map((item, i) => {
+    let imageURL = item.image || "";
+
+    if (imageURL.startsWith("/")) {
+      imageURL = baseURL + imageURL;
+    }
+
+    return `🔹 Product ${i + 1}
+📱 ${item.title || "Product"} × ${parseInt(item.quantity) || 1}
+💰 ${item.price || ""}
+📆 ${item.months || ""}
+📸 ${imageURL}`;
+  });
+
+  const data = await loadWhatsAppSettings();
+
+  const msg = buildOrderMessage(data, lines);
+
+  const encoded = encodeURIComponent(msg);
+
+  const phone = "965" + (data.phone || "67680877");
+
+  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+}
+
+// ===== DIRECT WHATSAPP =====
+async function openWhatsAppDirect() {
+  const data = await loadWhatsAppSettings();
+
+  let greeting = data.greeting || "Hello 👋";
+
+  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+
+  const encoded = encodeURIComponent(greeting);
+
+  const phone = "965" + (data.phone || "67680877");
+
+  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+}
+
+// ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
-    updateCartUI();
-    initWhatsAppSystem(); 
+  updateCartUI();
 });
