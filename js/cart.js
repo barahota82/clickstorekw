@@ -1,6 +1,6 @@
 /* ================================
    CART SYSTEM - CLICK COMPANY
-   Stable & Final Mobile Fix ✅
+   Professional Version 🔥
 ================================ */
 
 // ===== INIT CART =====
@@ -53,88 +53,132 @@ function updateCartUI() {
   saveCart();
 }
 
-// ===== ADD / REMOVE / OPEN / CLOSE =====
+// ===== ADD =====
 function addToCart(newItem) {
   const existingItem = cart.find(item => item.title === newItem.title);
-  if (existingItem) { existingItem.quantity++; } else { cart.push({ ...newItem, quantity: 1 }); }
+
+  if (existingItem) {
+    existingItem.quantity = (parseInt(existingItem.quantity) || 1) + 1;
+  } else {
+    cart.push({
+      ...newItem,
+      quantity: 1
+    });
+  }
+
   updateCartUI();
 }
+
+// ===== REMOVE =====
 function removeFromCart(index) {
   if (!cart[index]) return;
-  if (cart[index].quantity > 1) { cart[index].quantity--; } else { cart.splice(index, 1); }
+
+  if ((parseInt(cart[index].quantity) || 1) > 1) {
+    cart[index].quantity--;
+  } else {
+    cart.splice(index, 1);
+  }
+
   updateCartUI();
 }
+
+// ===== CLEAR =====
+function clearCart() {
+  cart = [];
+  updateCartUI();
+}
+
+// ===== OPEN / CLOSE =====
 function openCart() {
   document.getElementById("cartPanel")?.classList.add("open");
   document.getElementById("cartOverlay")?.classList.add("open");
 }
+
 function closeCart() {
   document.getElementById("cartPanel")?.classList.remove("open");
   document.getElementById("cartOverlay")?.classList.remove("open");
 }
 
-// ===== SETTINGS LOADER (تمت إضافة حماية لمنع خطأ السيرفر) =====
+// ===== SETTINGS LOADER (AI READY) =====
 async function loadWhatsAppSettings() {
   try {
-    const res = await fetch("/settings/whatsapp.md?v=" + Date.now());
-    if (!res.ok) throw new Error(); // إذا لم يجد الملف لا يكمل
+    const res = await fetch("/settings/whatsapp.md");
     const text = await res.text();
+
     const data = {};
+
     text.split("\n").forEach(line => {
       if (line.includes(":")) {
         const [key, ...rest] = line.split(":");
         data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
       }
     });
+
     return data;
   } catch {
-    // بيانات احتياطية لضمان عمل الزر دائماً
-    return { phone: "67680877", employee_name: "Sales", greeting: "Welcome 👋" };
+    return {};
   }
 }
 
-// ===== BUILD MESSAGE =====
+// ===== BUILD MESSAGE (SMART AI STYLE) =====
 function buildOrderMessage(data, lines) {
   let greeting = data.greeting || "Welcome 👋";
+
   greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
-  return `${greeting}\n\n🛒 New Order\n\n${lines.join("\n\n")}\n\n📍 Please confirm status.`;
+
+  return `${greeting}
+
+🛒 New Order
+
+${lines.join("\n\n")}
+
+📍 Please confirm availability & total price.`;
 }
 
-// ===== SEND ORDER (الإصلاح الجوهري للموبايل واللاب) =====
+// ===== SEND ORDER =====
 async function sendOrderWhatsApp() {
   if (!cart.length) return;
+
   const baseURL = window.location.origin;
+
   const lines = cart.map((item, i) => {
-    let img = item.image.startsWith("/") ? baseURL + item.image : item.image;
-    return `🔹 Product ${i + 1}\n📱 ${item.title} × ${item.quantity}\n💰 ${item.price}\n📆 ${item.months}\n📸 ${img}`;
+    let imageURL = item.image || "";
+
+    if (imageURL.startsWith("/")) {
+      imageURL = baseURL + imageURL;
+    }
+
+    return `🔹 Product ${i + 1}
+📱 ${item.title || "Product"} × ${parseInt(item.quantity) || 1}
+💰 ${item.price || ""}
+📆 ${item.months || ""}
+📸 ${imageURL}`;
   });
 
   const data = await loadWhatsAppSettings();
+
   const msg = buildOrderMessage(data, lines);
+
+  const encoded = encodeURIComponent(msg);
+
   const phone = "965" + (data.phone || "67680877");
-  const finalURL = `https://api.whatsapp.com{phone}&text=${encodeURIComponent(msg)}`;
-  
-  // الفتح الذكي: نافذة جديدة للكمبيوتر وتحويل مباشر للموبايل
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      window.location.href = finalURL;
-  } else {
-      window.open(finalURL, "_blank");
-  }
+
+  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
 }
 
 // ===== DIRECT WHATSAPP =====
 async function openWhatsAppDirect() {
   const data = await loadWhatsAppSettings();
+
   let greeting = data.greeting || "Hello 👋";
+
   greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+
+  const encoded = encodeURIComponent(greeting);
+
   const phone = "965" + (data.phone || "67680877");
-  const finalURL = `https://api.whatsapp.com{phone}&text=${encodeURIComponent(greeting)}`;
-  
-  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      window.location.href = finalURL;
-  } else {
-      window.open(finalURL, "_blank");
-  }
+
+  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
 }
 
 // ===== INIT =====
