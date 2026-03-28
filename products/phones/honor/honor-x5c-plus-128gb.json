@@ -1,12 +1,16 @@
 {
   "title": "Honor X5C Plus 128GB 8GB RAM",
-  "image": "/images/phones/honor/honor-x5c-plus-128gb.webp",
-  "available": true,
-  "hot_offer": true,
   "category": "phones",
   "brand": "Honor",
+
+  "devices_count": 1,
+
+  "image": "/images/phones/honor/honor-x5c-plus-128gb.webp",
 
   "down_payment": "0 KD",
   "monthly": "10 KD",
   "duration": "11 Months"
+
+  "available": true,
+  "hot_offer": false
 }
