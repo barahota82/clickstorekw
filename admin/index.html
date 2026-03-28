@@ -373,10 +373,10 @@ async function preprocessImageForOCR(file) {
   canvas.height = Math.floor(img.height * scale);
 
   const ctx = canvas.getContext("2d");
-  const sourceX = img.width * 0.55;     // آخر ربع عرض
-const sourceY = img.height * 0.55;    // آخر ربع ارتفاع
-const sourceWidth = img.width * 0.45; 
-const sourceHeight = img.height * 0.45;
+  const sourceX = img.width * 0.72;     // آخر ربع عرض
+const sourceY = img.height * 0.70;    // آخر ربع ارتفاع
+const sourceWidth = img.width * 0.22; 
+const sourceHeight = img.height * 0.18;
 
 ctx.drawImage(
   img,
@@ -550,14 +550,17 @@ function extractFinancialsFromText(text) {
     async function runOCRFromImage(file) {
   const processedCanvas = await preprocessImageForOCR(file);
 
-  const croppedResult = await Tesseract.recognize(processedCanvas, "eng", {
+  const result = await Tesseract.recognize(processedCanvas, "eng", {
     logger: m => {
       if (m.status === "recognizing text") {
         const pct = Math.round((m.progress || 0) * 100);
-        setStatus("info", `Reading cropped area... ${pct}%`);
+        setStatus("info", Reading price area... ${pct}%);
       }
     }
   });
+
+  return extractFinancialsFromText(result.data.text || "");
+}
 
   const fullResult = await Tesseract.recognize(file, "eng", {
     logger: m => {
