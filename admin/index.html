@@ -156,6 +156,7 @@
       .checkline { padding-top: 0; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div class="wrap">
@@ -250,7 +251,7 @@
         </div>
 
         <div class="btns">
-          <button class="btn-secondary" type="button" onclick="autoFillFromImage()">Auto Fill From Image Name</button>
+          <button class="btn-secondary" type="button" onclick="smartAutoFill()">Smart Auto Fill</button>
           <button class="btn-dark" type="button" onclick="generatePreview()">Generate Preview</button>
           <button class="btn-primary" type="button" onclick="saveAll()">Save to GitHub</button>
           <button class="btn-danger" type="button" onclick="resetForm()">Reset</button>
@@ -278,397 +279,579 @@
     </div>
   </div>
 
-  <script>
-    const knownCompoundBrands = ["m-horse", "s-color"];
+ <script>
+  const knownBrands = [
+    "samsung", "honor", "oppo", "realme", "redmi", "vivo", "tcl",
+    "avita", "huawei", "iphone", "apple", "m-horse", "mhorse",
+    "s-color", "scolor", "el"
+  ];
 
-    function slugify(text) {
-      return String(text || "")
-        .trim()
-        .toLowerCase()
-        .replace(/[_\s]+/g, "-")
-        .replace(/[^a-z0-9-]/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
+  const brandDisplayMap = {
+    "mhorse": "M-HORSE",
+    "m-horse": "M-HORSE",
+    "scolor": "S-COLOR",
+    "s-color": "S-COLOR",
+    "tcl": "TCL",
+    "avita": "AVITA",
+    "el": "EL",
+    "iphone": "iPhone",
+    "apple": "Apple"
+  };
+
+  function slugify(text) {
+    return String(text || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[_\s]+/g, "-")
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  function niceWord(word) {
+    const lower = String(word || "").toLowerCase();
+    if (brandDisplayMap[lower]) return brandDisplayMap[lower];
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }
+
+  function titleCaseFromSlug(slug) {
+    return slug
+      .split("-")
+      .filter(Boolean)
+      .map(niceWord)
+      .join(" ");
+  }
+
+  function getImageExt(fileName) {
+    const match = String(fileName || "").match(/\.([a-zA-Z0-9]+)$/);
+    return match ? match[0].toLowerCase() : ".webp";
+  }
+
+  function b64EncodeUnicode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  function b64DecodeUnicode(str) {
+    return decodeURIComponent(escape(atob(str)));
+  }
+
+  function setStatus(type, message) {
+    const box = document.getElementById("statusBox");
+    box.className = `status ${type}`;
+    box.style.display = "block";
+    box.textContent = message;
+  }
+
+  function clearStatus() {
+    const box = document.getElementById("statusBox");
+    box.className = "status info";
+    box.style.display = "none";
+    box.textContent = "";
+  }
+
+  function previewImageFile(file) {
+    const img = document.getElementById("previewImage");
+    if (!file) {
+      img.style.display = "none";
+      img.removeAttribute("src");
+      return;
     }
 
-    function titleCaseFromSlug(slug) {
-      return slug
-        .split("-")
-        .filter(Boolean)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
+    const reader = new FileReader();
+    reader.onload = e => {
+      img.src = e.target.result;
+      img.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function normalizeBrand(raw) {
+    const slug = slugify(raw);
+    if (brandDisplayMap[slug]) return brandDisplayMap[slug];
+    return titleCaseFromSlug(slug);
+  }
+
+  function splitOfferPartsFromFilename(baseName) {
+    const normalized = String(baseName || "")
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[_]+/g, "-")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .toLowerCase();
+
+    // يفصل العروض المركبة لو الاسم فيه +
+    if (normalized.includes("+")) {
+      return normalized.split("+").map(s => s.trim()).filter(Boolean);
     }
 
-    function inferBrandFromSlug(slug) {
-      if (!slug) return "";
+    // يفصل العروض لو الاسم فيه " - " أصلًا
+    if (String(baseName || "").includes(" - ")) {
+      return String(baseName)
+        .replace(/\.[^/.]+$/, "")
+        .split(" - ")
+        .map(s => slugify(s))
+        .filter(Boolean);
+    }
 
-      for (const compound of knownCompoundBrands) {
-        if (slug.startsWith(compound + "-") || slug === compound) {
-          return titleCaseFromSlug(compound);
+    // لو فيه أكثر من براند داخل الاسم
+    const words = normalized.split("-").filter(Boolean);
+    const positions = [];
+
+    for (let i = 0; i < words.length; i++) {
+      const one = words[i];
+      const two = i < words.length - 1 ? `${words[i]}-${words[i + 1]}` : "";
+
+      if (knownBrands.includes(two)) {
+        positions.push({ index: i, brand: two, len: 2 });
+        i++;
+      } else if (knownBrands.includes(one)) {
+        positions.push({ index: i, brand: one, len: 1 });
+      }
+    }
+
+    if (positions.length <= 1) return [normalized];
+
+    const parts = [];
+    for (let p = 0; p < positions.length; p++) {
+      const start = positions[p].index;
+      const end = p < positions.length - 1 ? positions[p + 1].index : words.length;
+      parts.push(words.slice(start, end).join("-"));
+    }
+
+    return parts.filter(Boolean);
+  }
+
+  function detectFilenameData(fileName) {
+    const raw = String(fileName || "").replace(/\.[^/.]+$/, "");
+    const parts = splitOfferPartsFromFilename(raw);
+
+    const devicesCount = parts.length || 1;
+
+    const titles = parts.map(part => {
+      const slug = slugify(part);
+      return titleCaseFromSlug(slug);
+    });
+
+    const detectedBrands = parts.map(part => {
+      const words = slugify(part).split("-").filter(Boolean);
+
+      for (let i = 0; i < words.length; i++) {
+        const two = i < words.length - 1 ? `${words[i]}-${words[i + 1]}` : "";
+        if (knownBrands.includes(two)) return normalizeBrand(two);
+        if (knownBrands.includes(words[i])) return normalizeBrand(words[i]);
+      }
+
+      return normalizeBrand(words[0] || "");
+    });
+
+    return {
+      devicesCount,
+      title: titles.join(" + "),
+      brand: detectedBrands.length === 1
+        ? detectedBrands[0]
+        : detectedBrands.join(" / ")
+    };
+  }
+
+  function extractFinancialsFromText(text) {
+    const clean = String(text || "")
+      .replace(/\s+/g, " ")
+      .replace(/O/g, "0")
+      .replace(/o/g, "0");
+
+    let downPayment = "";
+    let monthly = "";
+    let duration = "";
+
+    // Zero down payment / 0 KD
+    if (/zero\s*down\s*payment/i.test(clean)) {
+      downPayment = "0 KD";
+    }
+
+    // 10 KD monthly
+    const monthlyMatch = clean.match(/(\d+)\s*kd\s*monthly/i);
+    if (monthlyMatch) {
+      monthly = `${monthlyMatch[1]} KD`;
+    }
+
+    // 11 months to pay / 11 months
+    const durationMatch = clean.match(/(\d+)\s*months?/i);
+    if (durationMatch) {
+      duration = `${durationMatch[1]} Months`;
+    }
+
+    // fallback for 0 KD if OCR picked it directly
+    if (!downPayment) {
+      const downMatch = clean.match(/(?:down\s*payment[^0-9]*|^|\s)(0)\s*kd/i);
+      if (downMatch) {
+        downPayment = `${downMatch[1]} KD`;
+      }
+    }
+
+    return { downPayment, monthly, duration, rawText: clean };
+  }
+
+  async function runOCRFromImage(file) {
+    const result = await Tesseract.recognize(file, "eng", {
+      logger: m => {
+        if (m.status === "recognizing text") {
+          const pct = Math.round((m.progress || 0) * 100);
+          setStatus("info", `Reading image text... ${pct}%`);
         }
       }
+    });
 
-      const first = slug.split("-")[0] || "";
-      return titleCaseFromSlug(first);
+    return extractFinancialsFromText(result.data.text || "");
+  }
+
+  async function smartAutoFill() {
+    clearStatus();
+
+    const fileInput = document.getElementById("productImage");
+    const file = fileInput.files[0];
+
+    if (!file) {
+      setStatus("err", "Please choose an image first.");
+      return;
     }
 
-    function getImageExt(fileName) {
-      const match = String(fileName || "").match(/\.([a-zA-Z0-9]+)$/);
-      return match ? match[0].toLowerCase() : ".webp";
+    previewImageFile(file);
+
+    // 1) اسم الملف
+    const fromName = detectFilenameData(file.name);
+
+    if (!document.getElementById("title").value.trim()) {
+      document.getElementById("title").value = fromName.title;
     }
-
-    function b64EncodeUnicode(str) {
-      return btoa(unescape(encodeURIComponent(str)));
+    if (!document.getElementById("brand").value.trim()) {
+      document.getElementById("brand").value = fromName.brand;
     }
+    document.getElementById("devices_count").value = fromName.devicesCount || 1;
 
-    function b64DecodeUnicode(str) {
-      return decodeURIComponent(escape(atob(str)));
-    }
+    // 2) OCR من الصورة
+    try {
+      const fromOCR = await runOCRFromImage(file);
 
-    function setStatus(type, message) {
-      const box = document.getElementById("statusBox");
-      box.className = `status ${type}`;
-      box.textContent = message;
-    }
-
-    function clearStatus() {
-      const box = document.getElementById("statusBox");
-      box.className = "status info";
-      box.style.display = "none";
-      box.textContent = "";
-    }
-
-    function getFormData() {
-      const category = document.getElementById("category").value;
-      const brand = document.getElementById("brand").value.trim();
-      const title = document.getElementById("title").value.trim();
-      const devices_count = parseInt(document.getElementById("devices_count").value || "1", 10);
-      const down_payment = document.getElementById("down_payment").value.trim() || "0 KD";
-      const monthly = document.getElementById("monthly").value.trim();
-      const duration = document.getElementById("duration").value.trim();
-      const available = document.getElementById("available").checked;
-      const hot_offer = document.getElementById("hot_offer").checked;
-      const imageFile = document.getElementById("productImage").files[0] || null;
-
-      const brandSlug = slugify(brand);
-      const titleSlug = slugify(title);
-
-      return {
-        category,
-        brand,
-        brandSlug,
-        title,
-        titleSlug,
-        devices_count: Number.isFinite(devices_count) && devices_count > 0 ? devices_count : 1,
-        down_payment,
-        monthly,
-        duration,
-        available,
-        hot_offer,
-        imageFile
-      };
-    }
-
-    function buildPaths(data) {
-      const ext = data.imageFile ? getImageExt(data.imageFile.name) : ".webp";
-      const imageNameSlug = data.imageFile
-        ? slugify(data.imageFile.name.replace(/\.[^.]+$/, ""))
-        : data.titleSlug;
-
-      const imagePath = `/images/${data.category}/${data.brandSlug}/${imageNameSlug}${ext}`;
-      const productPath = `/products/${data.category}/${data.brandSlug}/${data.titleSlug}.json`;
-      const indexPath = `/products/${data.category}/index.json`;
-
-      return { imagePath, productPath, indexPath, imageNameSlug, ext };
-    }
-
-    function buildProductJson(data, paths) {
-      return {
-        title: data.title,
-        category: data.category,
-        brand: data.brand,
-        devices_count: data.devices_count,
-        image: paths.imagePath,
-        down_payment: data.down_payment,
-        monthly: data.monthly,
-        duration: data.duration,
-        available: data.available,
-        hot_offer: data.hot_offer
-      };
-    }
-
-    function validateData(data) {
-      if (!data.brand) return "Brand is required.";
-      if (!data.title) return "Title is required.";
-      if (!data.monthly) return "Monthly is required.";
-      if (!data.duration) return "Duration is required.";
-      if (!data.imageFile) return "Please choose an image file.";
-      if (!data.brandSlug) return "Brand slug is empty.";
-      if (!data.titleSlug) return "Title slug is empty.";
-      return "";
-    }
-
-    function previewImageFile(file) {
-      const img = document.getElementById("previewImage");
-      if (!file) {
-        img.style.display = "none";
-        img.removeAttribute("src");
-        return;
+      if (fromOCR.downPayment) {
+        document.getElementById("down_payment").value = fromOCR.downPayment;
+      } else if (!document.getElementById("down_payment").value.trim()) {
+        document.getElementById("down_payment").value = "0 KD";
       }
 
-      const reader = new FileReader();
-      reader.onload = e => {
-        img.src = e.target.result;
-        img.style.display = "block";
-      };
-      reader.readAsDataURL(file);
+      if (fromOCR.monthly) {
+        document.getElementById("monthly").value = fromOCR.monthly;
+      }
+
+      if (fromOCR.duration) {
+        document.getElementById("duration").value = fromOCR.duration;
+      }
+
+      setStatus(
+        "ok",
+        `Smart auto fill completed.
+
+Title: ${document.getElementById("title").value}
+Brand: ${document.getElementById("brand").value}
+Devices Count: ${document.getElementById("devices_count").value}
+Down Payment: ${document.getElementById("down_payment").value}
+Monthly: ${document.getElementById("monthly").value}
+Duration: ${document.getElementById("duration").value}`
+      );
+    } catch (err) {
+      setStatus("err", `OCR failed. File name was filled, but image text was not read.\n${err.message}`);
     }
 
-    function autoFillFromImage() {
-      clearStatus();
+    generatePreview();
+  }
 
-      const imageFile = document.getElementById("productImage").files[0];
-      if (!imageFile) {
-        setStatus("err", "Choose an image first.");
-        return;
-      }
+  function getFormData() {
+    const category = document.getElementById("category").value;
+    const brand = document.getElementById("brand").value.trim();
+    const title = document.getElementById("title").value.trim();
+    const devices_count = parseInt(document.getElementById("devices_count").value || "1", 10);
+    const down_payment = document.getElementById("down_payment").value.trim() || "0 KD";
+    const monthly = document.getElementById("monthly").value.trim();
+    const duration = document.getElementById("duration").value.trim();
+    const available = document.getElementById("available").checked;
+    const hot_offer = document.getElementById("hot_offer").checked;
+    const imageFile = document.getElementById("productImage").files[0] || null;
 
-      const rawName = imageFile.name.replace(/\.[^.]+$/, "");
-      const slug = slugify(rawName);
+    let brandSlug = slugify(brand.split("/")[0].trim());
+    let titleSlug = slugify(title);
 
-      let inferredBrand = inferBrandFromSlug(slug);
-      if (!document.getElementById("brand").value.trim() && inferredBrand) {
-        document.getElementById("brand").value = inferredBrand;
-      }
+    return {
+      category,
+      brand,
+      brandSlug,
+      title,
+      titleSlug,
+      devices_count: Number.isFinite(devices_count) && devices_count > 0 ? devices_count : 1,
+      down_payment,
+      monthly,
+      duration,
+      available,
+      hot_offer,
+      imageFile
+    };
+  }
 
-      if (!document.getElementById("title").value.trim()) {
-        document.getElementById("title").value = titleCaseFromSlug(slug);
-      }
+  function buildPaths(data) {
+    const ext = data.imageFile ? getImageExt(data.imageFile.name) : ".webp";
+    const imageNameSlug = data.imageFile
+      ? slugify(data.imageFile.name.replace(/\.[^.]+$/, ""))
+      : data.titleSlug;
 
-      previewImageFile(imageFile);
-      generatePreview();
-      setStatus("ok", "Fields were filled from image name. Review them before saving.");
+    const imagePath = `/images/${data.category}/${data.brandSlug}/${imageNameSlug}${ext}`;
+    const productPath = `/products/${data.category}/${data.brandSlug}/${data.titleSlug}.json`;
+    const indexPath = `/products/${data.category}/index.json`;
+
+    return { imagePath, productPath, indexPath, imageNameSlug, ext };
+  }
+
+  function buildProductJson(data, paths) {
+    return {
+      title: data.title,
+      category: data.category,
+      brand: data.brand,
+      devices_count: data.devices_count,
+      image: paths.imagePath,
+      down_payment: data.down_payment,
+      monthly: data.monthly,
+      duration: data.duration,
+      available: data.available,
+      hot_offer: data.hot_offer
+    };
+  }
+
+  function validateData(data) {
+    if (!data.brand) return "Brand is required.";
+    if (!data.title) return "Title is required.";
+    if (!data.monthly) return "Monthly is required.";
+    if (!data.duration) return "Duration is required.";
+    if (!data.imageFile) return "Please choose an image file.";
+    if (!data.brandSlug) return "Brand slug is empty.";
+    if (!data.titleSlug) return "Title slug is empty.";
+    return "";
+  }
+
+  function generatePreview() {
+    clearStatus();
+
+    const data = getFormData();
+    const error = validateData(data);
+    const paths = buildPaths(data);
+
+    document.getElementById("brandSlugPreview").textContent = data.brandSlug || "-";
+    document.getElementById("titleSlugPreview").textContent = data.titleSlug || "-";
+    document.getElementById("imagePathPreview").textContent = paths.imagePath;
+    document.getElementById("productPathPreview").textContent = paths.productPath;
+    document.getElementById("indexPathPreview").textContent = paths.indexPath;
+
+    if (data.imageFile) {
+      previewImageFile(data.imageFile);
     }
 
-    function generatePreview() {
-      clearStatus();
-
-      const data = getFormData();
-      const error = validateData(data);
-
-      if (error && data.imageFile) {
-        previewImageFile(data.imageFile);
-      }
-
-      const paths = buildPaths(data);
-
-      document.getElementById("brandSlugPreview").textContent = data.brandSlug || "-";
-      document.getElementById("titleSlugPreview").textContent = data.titleSlug || "-";
-      document.getElementById("imagePathPreview").textContent = paths.imagePath;
-      document.getElementById("productPathPreview").textContent = paths.productPath;
-      document.getElementById("indexPathPreview").textContent = paths.indexPath;
-
-      if (data.imageFile) {
-        previewImageFile(data.imageFile);
-      }
-
-      if (error) {
-        document.getElementById("jsonPreview").value = "";
-        setStatus("err", error);
-        return null;
-      }
-
-      const productJson = buildProductJson(data, paths);
-      document.getElementById("jsonPreview").value = JSON.stringify(productJson, null, 2);
-      return { data, paths, productJson };
+    if (error) {
+      document.getElementById("jsonPreview").value = "";
+      setStatus("err", error);
+      return null;
     }
 
-    async function githubGetFile(owner, repo, path, token, branch) {
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: "application/vnd.github+json"
-        }
-      });
+    const productJson = buildProductJson(data, paths);
+    document.getElementById("jsonPreview").value = JSON.stringify(productJson, null, 2);
+    return { data, paths, productJson };
+  }
 
-      if (res.status === 404) return null;
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`GET ${path} failed: ${text}`);
+  async function githubGetFile(owner, repo, path, token, branch) {
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: "application/vnd.github+json"
       }
+    });
 
-      return await res.json();
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`GET ${path} failed: ${text}`);
     }
 
-    async function githubPutFile(owner, repo, path, token, branch, contentBase64, message, sha = null) {
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-      const body = {
-        message,
-        content: contentBase64,
-        branch
-      };
-      if (sha) body.sha = sha;
+    return await res.json();
+  }
 
-      const res = await fetch(url, {
-        method: "PUT",
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-      });
+  async function githubPutFile(owner, repo, path, token, branch, contentBase64, message, sha = null) {
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+    const body = {
+      message,
+      content: contentBase64,
+      branch
+    };
+    if (sha) body.sha = sha;
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`PUT ${path} failed: ${text}`);
-      }
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
 
-      return await res.json();
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`PUT ${path} failed: ${text}`);
     }
 
-    async function fileToBase64(file) {
-      const buffer = await file.arrayBuffer();
-      let binary = "";
-      const bytes = new Uint8Array(buffer);
-      const chunkSize = 0x8000;
+    return await res.json();
+  }
 
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-      }
+  async function fileToBase64(file) {
+    const buffer = await file.arrayBuffer();
+    let binary = "";
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
 
-      return btoa(binary);
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
     }
 
-    async function updateIndexJson(owner, repo, token, branch, category, brandSlug, productSlug) {
-      const indexPath = `products/${category}/index.json`;
-      const relativePath = `${brandSlug}/${productSlug}.json`;
+    return btoa(binary);
+  }
 
-      const existing = await githubGetFile(owner, repo, indexPath, token, branch);
+  async function updateIndexJson(owner, repo, token, branch, category, brandSlug, productSlug) {
+    const indexPath = `products/${category}/index.json`;
+    const relativePath = `${brandSlug}/${productSlug}.json`;
 
-      let list = [];
-      let sha = null;
+    const existing = await githubGetFile(owner, repo, indexPath, token, branch);
 
-      if (existing) {
-        sha = existing.sha;
-        try {
-          list = JSON.parse(b64DecodeUnicode(existing.content.replace(/\n/g, "")));
-          if (!Array.isArray(list)) list = [];
-        } catch {
-          list = [];
-        }
+    let list = [];
+    let sha = null;
+
+    if (existing) {
+      sha = existing.sha;
+      try {
+        list = JSON.parse(b64DecodeUnicode(existing.content.replace(/\n/g, "")));
+        if (!Array.isArray(list)) list = [];
+      } catch {
+        list = [];
       }
+    }
 
-      if (!list.includes(relativePath)) {
-        list.push(relativePath);
-      }
+    if (!list.includes(relativePath)) {
+      list.push(relativePath);
+    }
 
-      list.sort((a, b) => a.localeCompare(b));
+    list.sort((a, b) => a.localeCompare(b));
 
-      const content = b64EncodeUnicode(JSON.stringify(list, null, 2) + "\n");
+    const content = b64EncodeUnicode(JSON.stringify(list, null, 2) + "\n");
+
+    await githubPutFile(
+      owner,
+      repo,
+      indexPath,
+      token,
+      branch,
+      content,
+      `Update ${indexPath}`,
+      sha
+    );
+  }
+
+  async function saveAll() {
+    const token = document.getElementById("githubToken").value.trim();
+    const owner = document.getElementById("owner").value.trim();
+    const repo = document.getElementById("repo").value.trim();
+    const branch = document.getElementById("branch").value.trim();
+
+    if (!token) {
+      setStatus("err", "GitHub token is required.");
+      return;
+    }
+    if (!owner || !repo || !branch) {
+      setStatus("err", "Owner, repo, and branch are required.");
+      return;
+    }
+
+    const preview = generatePreview();
+    if (!preview) return;
+
+    const { data, paths, productJson } = preview;
+
+    try {
+      setStatus("info", "Uploading image...");
+      const imageContent = await fileToBase64(data.imageFile);
+      const imageRepoPath = paths.imagePath.replace(/^\//, "");
+      const existingImage = await githubGetFile(owner, repo, imageRepoPath, token, branch);
 
       await githubPutFile(
         owner,
         repo,
-        indexPath,
+        imageRepoPath,
         token,
         branch,
-        content,
-        `Update ${indexPath}`,
-        sha
+        imageContent,
+        `Upload ${imageRepoPath}`,
+        existingImage ? existingImage.sha : null
       );
+
+      setStatus("info", "Saving product JSON...");
+      const productRepoPath = paths.productPath.replace(/^\//, "");
+      const productContent = b64EncodeUnicode(JSON.stringify(productJson, null, 2) + "\n");
+      const existingProduct = await githubGetFile(owner, repo, productRepoPath, token, branch);
+
+      await githubPutFile(
+        owner,
+        repo,
+        productRepoPath,
+        token,
+        branch,
+        productContent,
+        `Save ${productRepoPath}`,
+        existingProduct ? existingProduct.sha : null
+      );
+
+      setStatus("info", "Updating index.json...");
+      await updateIndexJson(owner, repo, token, branch, data.category, data.brandSlug, data.titleSlug);
+
+      setStatus(
+        "ok",
+        `Done successfully.
+
+Image: ${paths.imagePath}
+Product: ${paths.productPath}
+Index updated: ${paths.indexPath}`
+      );
+    } catch (err) {
+      setStatus("err", err.message || "Unknown error");
     }
+  }
 
-    async function saveAll() {
-      const token = document.getElementById("githubToken").value.trim();
-      const owner = document.getElementById("owner").value.trim();
-      const repo = document.getElementById("repo").value.trim();
-      const branch = document.getElementById("branch").value.trim();
+  function resetForm() {
+    document.getElementById("brand").value = "";
+    document.getElementById("title").value = "";
+    document.getElementById("devices_count").value = "1";
+    document.getElementById("down_payment").value = "0 KD";
+    document.getElementById("monthly").value = "";
+    document.getElementById("duration").value = "";
+    document.getElementById("available").checked = true;
+    document.getElementById("hot_offer").checked = false;
+    document.getElementById("productImage").value = "";
+    document.getElementById("jsonPreview").value = "";
+    document.getElementById("brandSlugPreview").textContent = "-";
+    document.getElementById("titleSlugPreview").textContent = "-";
+    document.getElementById("imagePathPreview").textContent = "-";
+    document.getElementById("productPathPreview").textContent = "-";
+    document.getElementById("indexPathPreview").textContent = "-";
+    previewImageFile(null);
+    clearStatus();
+  }
 
-      if (!token) {
-        setStatus("err", "GitHub token is required.");
-        return;
-      }
-      if (!owner || !repo || !branch) {
-        setStatus("err", "Owner, repo, and branch are required.");
-        return;
-      }
-
-      const preview = generatePreview();
-      if (!preview) return;
-
-      const { data, paths, productJson } = preview;
-
-      try {
-        setStatus("info", "Uploading image...");
-        const imageContent = await fileToBase64(data.imageFile);
-        const imageRepoPath = paths.imagePath.replace(/^\//, "");
-        const existingImage = await githubGetFile(owner, repo, imageRepoPath, token, branch);
-
-        await githubPutFile(
-          owner,
-          repo,
-          imageRepoPath,
-          token,
-          branch,
-          imageContent,
-          `Upload ${imageRepoPath}`,
-          existingImage ? existingImage.sha : null
-        );
-
-        setStatus("info", "Saving product JSON...");
-        const productRepoPath = paths.productPath.replace(/^\//, "");
-        const productContent = b64EncodeUnicode(JSON.stringify(productJson, null, 2) + "\n");
-        const existingProduct = await githubGetFile(owner, repo, productRepoPath, token, branch);
-
-        await githubPutFile(
-          owner,
-          repo,
-          productRepoPath,
-          token,
-          branch,
-          productContent,
-          `Save ${productRepoPath}`,
-          existingProduct ? existingProduct.sha : null
-        );
-
-        setStatus("info", "Updating index.json...");
-        await updateIndexJson(owner, repo, token, branch, data.category, data.brandSlug, data.titleSlug);
-
-        setStatus(
-          "ok",
-          `Done successfully.\n\nImage: ${paths.imagePath}\nProduct: ${paths.productPath}\nIndex updated: ${paths.indexPath}`
-        );
-      } catch (err) {
-        setStatus("err", err.message || "Unknown error");
-      }
-    }
-
-    function resetForm() {
-      document.getElementById("brand").value = "";
-      document.getElementById("title").value = "";
-      document.getElementById("devices_count").value = "1";
-      document.getElementById("down_payment").value = "0 KD";
-      document.getElementById("monthly").value = "";
-      document.getElementById("duration").value = "";
-      document.getElementById("available").checked = true;
-      document.getElementById("hot_offer").checked = false;
-      document.getElementById("productImage").value = "";
-      document.getElementById("jsonPreview").value = "";
-      document.getElementById("brandSlugPreview").textContent = "-";
-      document.getElementById("titleSlugPreview").textContent = "-";
-      document.getElementById("imagePathPreview").textContent = "-";
-      document.getElementById("productPathPreview").textContent = "-";
-      document.getElementById("indexPathPreview").textContent = "-";
-      previewImageFile(null);
-      clearStatus();
-    }
-
-    document.getElementById("productImage").addEventListener("change", () => {
-      const file = document.getElementById("productImage").files[0];
-      previewImageFile(file);
-    });
-  </script>
+  document.getElementById("productImage").addEventListener("change", () => {
+    const file = document.getElementById("productImage").files[0];
+    previewImageFile(file);
+  });
+</script>
 </body>
 </html>
