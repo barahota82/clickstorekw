@@ -217,17 +217,17 @@
 
           <div>
             <label for="down_payment">Down Payment</label>
-            <input id="down_payment" type="text" value="0 KD" />
+            <input id="down_payment" type="number" min="0" step="1" value="0" placeholder="e.g. 0" />
           </div>
 
           <div>
             <label for="monthly">Monthly</label>
-            <input id="monthly" type="text" placeholder="e.g. 10 KD" />
+            <input id="monthly" type="number" min="0" step="1" placeholder="e.g. 10" />
           </div>
 
           <div>
             <label for="duration">Duration</label>
-            <input id="duration" type="text" placeholder="e.g. 12 Months" />
+            <input id="duration" type="number" min="1" step="1" placeholder="e.g. 12" />
           </div>
 
           <div class="checkline">
@@ -264,6 +264,7 @@
         <h2 class="section-title">Preview</h2>
 
         <div class="preview-box">
+          <div class="small"><strong>Storage Brand (first device only):</strong> <span id="storageBrandPreview">-</span></div>
           <div class="small"><strong>Brand slug:</strong> <span id="brandSlugPreview">-</span></div>
           <div class="small"><strong>Title slug:</strong> <span id="titleSlugPreview">-</span></div>
           <div class="small"><strong>Image path:</strong> <span id="imagePathPreview" class="path">-</span></div>
@@ -279,276 +280,205 @@
     </div>
   </div>
 
- <script>
-  const knownBrands = [
-    "samsung", "honor", "oppo", "realme", "redmi", "vivo", "tcl",
-    "avita", "huawei", "iphone", "apple", "m-horse", "mhorse",
-    "s-color", "scolor", "el"
-  ];
-
-  const brandDisplayMap = {
-    "mhorse": "M-HORSE",
-    "m-horse": "M-HORSE",
-    "scolor": "S-COLOR",
-    "s-color": "S-COLOR",
-    "tcl": "TCL",
-    "avita": "AVITA",
-    "el": "EL",
-    "iphone": "iPhone",
-    "apple": "Apple"
-  };
-
-  function slugify(text) {
-    return String(text || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[_\s]+/g, "-")
-      .replace(/[^a-z0-9-]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-  }
-
-  function niceWord(word) {
-    const lower = String(word || "").toLowerCase();
-    if (brandDisplayMap[lower]) return brandDisplayMap[lower];
-    return lower.charAt(0).toUpperCase() + lower.slice(1);
-  }
-
-  function titleCaseFromSlug(slug) {
-    return slug
-      .split("-")
-      .filter(Boolean)
-      .map(niceWord)
-      .join(" ");
-  }
-
-  function getImageExt(fileName) {
-    const match = String(fileName || "").match(/\.([a-zA-Z0-9]+)$/);
-    return match ? match[0].toLowerCase() : ".webp";
-  }
-
-  function b64EncodeUnicode(str) {
-    return btoa(unescape(encodeURIComponent(str)));
-  }
-
-  function b64DecodeUnicode(str) {
-    return decodeURIComponent(escape(atob(str)));
-  }
-
-  function setStatus(type, message) {
-    const box = document.getElementById("statusBox");
-    box.className = `status ${type}`;
-    box.style.display = "block";
-    box.textContent = message;
-  }
-
-  function clearStatus() {
-    const box = document.getElementById("statusBox");
-    box.className = "status info";
-    box.style.display = "none";
-    box.textContent = "";
-  }
-
-  function previewImageFile(file) {
-    const img = document.getElementById("previewImage");
-    if (!file) {
-      img.style.display = "none";
-      img.removeAttribute("src");
-      return;
+  <script>
+    function slugify(text) {
+      return String(text || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/_/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/\s*\+\s*/g, "+")
+        .replace(/[^a-z0-9\-+]/g, "")
+        .replace(/-+/g, "-")
+        .replace(/^\-+|\-+$/g, "");
     }
 
-    const reader = new FileReader();
-    reader.onload = e => {
-      img.src = e.target.result;
-      img.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function normalizeBrand(raw) {
-    const slug = slugify(raw);
-    if (brandDisplayMap[slug]) return brandDisplayMap[slug];
-    return titleCaseFromSlug(slug);
-  }
-
-  function splitOfferPartsFromFilename(baseName) {
-    const normalized = String(baseName || "")
-      .replace(/\.[^/.]+$/, "")
-      .replace(/[_]+/g, "-")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .toLowerCase();
-
-    // يفصل العروض المركبة لو الاسم فيه +
-    if (normalized.includes("+")) {
-      return normalized.split("+").map(s => s.trim()).filter(Boolean);
+    function titleCaseWord(word) {
+      if (!word) return "";
+      if (/^\d+[a-z]+$/i.test(word)) return word.toUpperCase();
+      return word.charAt(0).toUpperCase() + word.slice(1);
     }
 
-    // يفصل العروض لو الاسم فيه " - " أصلًا
-    if (String(baseName || "").includes(" - ")) {
-      return String(baseName)
-        .replace(/\.[^/.]+$/, "")
-        .split(" - ")
-        .map(s => slugify(s))
+    function titleFromDeviceSlug(slug) {
+      return slug
+        .split("-")
+        .filter(Boolean)
+        .map(titleCaseWord)
+        .join(" ");
+    }
+
+    function getImageExt(fileName) {
+      const match = String(fileName || "").match(/\.([a-zA-Z0-9]+)$/);
+      return match ? match[0].toLowerCase() : ".webp";
+    }
+
+    function b64EncodeUnicode(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function b64DecodeUnicode(str) {
+      return decodeURIComponent(escape(atob(str)));
+    }
+
+    function setStatus(type, message) {
+      const box = document.getElementById("statusBox");
+      box.className = `status ${type}`;
+      box.style.display = "block";
+      box.textContent = message;
+    }
+
+    function clearStatus() {
+      const box = document.getElementById("statusBox");
+      box.className = "status info";
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function previewImageFile(file) {
+      const img = document.getElementById("previewImage");
+      if (!file) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        img.src = e.target.result;
+        img.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function splitOfferPartsFromFilename(fileName) {
+      const raw = String(fileName || "").replace(/\.[^/.]+$/, "");
+      return raw
+        .split("+")
+        .map(part => slugify(part))
+        .map(part => part.replace(/-+/g, "-").replace(/^-|-$/g, ""))
         .filter(Boolean);
     }
 
-    // لو فيه أكثر من براند داخل الاسم
-    const words = normalized.split("-").filter(Boolean);
-    const positions = [];
+    function extractBrandFromDeviceSlug(deviceSlug) {
+      const words = deviceSlug.split("-").filter(Boolean);
+      if (!words.length) return "";
 
-    for (let i = 0; i < words.length; i++) {
-      const one = words[i];
-      const two = i < words.length - 1 ? `${words[i]}-${words[i + 1]}` : "";
-
-      if (knownBrands.includes(two)) {
-        positions.push({ index: i, brand: two, len: 2 });
-        i++;
-      } else if (knownBrands.includes(one)) {
-        positions.push({ index: i, brand: one, len: 1 });
-      }
-    }
-
-    if (positions.length <= 1) return [normalized];
-
-    const parts = [];
-    for (let p = 0; p < positions.length; p++) {
-      const start = positions[p].index;
-      const end = p < positions.length - 1 ? positions[p + 1].index : words.length;
-      parts.push(words.slice(start, end).join("-"));
-    }
-
-    return parts.filter(Boolean);
-  }
-
-  function detectFilenameData(fileName) {
-    const raw = String(fileName || "").replace(/\.[^/.]+$/, "");
-    const parts = splitOfferPartsFromFilename(raw);
-
-    const devicesCount = parts.length || 1;
-
-    const titles = parts.map(part => {
-      const slug = slugify(part);
-      return titleCaseFromSlug(slug);
-    });
-
-    const detectedBrands = parts.map(part => {
-      const words = slugify(part).split("-").filter(Boolean);
-
-      for (let i = 0; i < words.length; i++) {
-        const two = i < words.length - 1 ? `${words[i]}-${words[i + 1]}` : "";
-        if (knownBrands.includes(two)) return normalizeBrand(two);
-        if (knownBrands.includes(words[i])) return normalizeBrand(words[i]);
+      if (words.length >= 2 && words[1].length <= 5) {
+        return `${words[0]}-${words[1]}`;
       }
 
-      return normalizeBrand(words[0] || "");
-    });
-
-    return {
-      devicesCount,
-      title: titles.join(" + "),
-      brand: detectedBrands.length === 1
-        ? detectedBrands[0]
-        : detectedBrands.join(" / ")
-    };
-  }
-
-  function extractFinancialsFromText(text) {
-    const clean = String(text || "")
-      .replace(/\s+/g, " ")
-      .replace(/O/g, "0")
-      .replace(/o/g, "0");
-
-    let downPayment = "";
-    let monthly = "";
-    let duration = "";
-
-    // Zero down payment / 0 KD
-    if (/zero\s*down\s*payment/i.test(clean)) {
-      downPayment = "0 KD";
+      return words[0];
     }
 
-    // 10 KD monthly
-    const monthlyMatch = clean.match(/(\d+)\s*kd\s*monthly/i);
-    if (monthlyMatch) {
-      monthly = `${monthlyMatch[1]} KD`;
+    function detectFilenameData(fileName) {
+      const parts = splitOfferPartsFromFilename(fileName);
+      const devicesCount = parts.length || 1;
+
+      const titles = parts.map(part => titleFromDeviceSlug(part));
+      const brands = parts.map(part => titleFromDeviceSlug(extractBrandFromDeviceSlug(part)));
+
+      return {
+        devicesCount,
+        title: titles.join(" + "),
+        brand: devicesCount === 1 ? (brands[0] || "") : brands.join(" / "),
+        storageBrandSlug: parts.length ? extractBrandFromDeviceSlug(parts[0]) : "",
+        storageBrand: parts.length ? titleFromDeviceSlug(extractBrandFromDeviceSlug(parts[0])) : ""
+      };
     }
 
-    // 11 months to pay / 11 months
-    const durationMatch = clean.match(/(\d+)\s*months?/i);
-    if (durationMatch) {
-      duration = `${durationMatch[1]} Months`;
-    }
+    function extractFinancialsFromText(text) {
+      const clean = String(text || "")
+        .replace(/\s+/g, " ")
+        .replace(/O/g, "0")
+        .replace(/o/g, "0");
 
-    // fallback for 0 KD if OCR picked it directly
-    if (!downPayment) {
-      const downMatch = clean.match(/(?:down\s*payment[^0-9]*|^|\s)(0)\s*kd/i);
-      if (downMatch) {
-        downPayment = `${downMatch[1]} KD`;
+      let downPayment = "";
+      let monthly = "";
+      let duration = "";
+
+      if (/zero\s*down\s*payment/i.test(clean)) {
+        downPayment = "0";
       }
-    }
 
-    return { downPayment, monthly, duration, rawText: clean };
-  }
+      const monthlyMatch = clean.match(/(\d+)\s*kd\s*monthly/i);
+      if (monthlyMatch) {
+        monthly = monthlyMatch[1];
+      }
 
-  async function runOCRFromImage(file) {
-    const result = await Tesseract.recognize(file, "eng", {
-      logger: m => {
-        if (m.status === "recognizing text") {
-          const pct = Math.round((m.progress || 0) * 100);
-          setStatus("info", `Reading image text... ${pct}%`);
+      const durationMatch = clean.match(/(\d+)\s*months?/i);
+      if (durationMatch) {
+        duration = durationMatch[1];
+      }
+
+      if (!downPayment) {
+        const zeroMatch = clean.match(/(?:^|\s)(0)\s*kd(?:\s|$)/i);
+        if (zeroMatch) {
+          downPayment = zeroMatch[1];
         }
       }
-    });
 
-    return extractFinancialsFromText(result.data.text || "");
-  }
-
-  async function smartAutoFill() {
-    clearStatus();
-
-    const fileInput = document.getElementById("productImage");
-    const file = fileInput.files[0];
-
-    if (!file) {
-      setStatus("err", "Please choose an image first.");
-      return;
+      return { downPayment, monthly, duration };
     }
 
-    previewImageFile(file);
+    async function runOCRFromImage(file) {
+      const result = await Tesseract.recognize(file, "eng", {
+        logger: m => {
+          if (m.status === "recognizing text") {
+            const pct = Math.round((m.progress || 0) * 100);
+            setStatus("info", `Reading image text... ${pct}%`);
+          }
+        }
+      });
 
-    // 1) اسم الملف
-    const fromName = detectFilenameData(file.name);
-
-    if (!document.getElementById("title").value.trim()) {
-      document.getElementById("title").value = fromName.title;
+      return extractFinancialsFromText(result.data.text || "");
     }
-    if (!document.getElementById("brand").value.trim()) {
-      document.getElementById("brand").value = fromName.brand;
-    }
-    document.getElementById("devices_count").value = fromName.devicesCount || 1;
 
-    // 2) OCR من الصورة
-    try {
-      const fromOCR = await runOCRFromImage(file);
+    async function smartAutoFill() {
+      clearStatus();
 
-      if (fromOCR.downPayment) {
-        document.getElementById("down_payment").value = fromOCR.downPayment;
-      } else if (!document.getElementById("down_payment").value.trim()) {
-        document.getElementById("down_payment").value = "0 KD";
+      const fileInput = document.getElementById("productImage");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        setStatus("err", "Please choose an image first.");
+        return;
       }
 
-      if (fromOCR.monthly) {
-        document.getElementById("monthly").value = fromOCR.monthly;
+      previewImageFile(file);
+
+      const fromName = detectFilenameData(file.name);
+
+      if (!document.getElementById("title").value.trim()) {
+        document.getElementById("title").value = fromName.title;
       }
 
-      if (fromOCR.duration) {
-        document.getElementById("duration").value = fromOCR.duration;
+      if (!document.getElementById("brand").value.trim()) {
+        document.getElementById("brand").value = fromName.brand;
       }
 
-      setStatus(
-        "ok",
-        `Smart auto fill completed.
+      document.getElementById("devices_count").value = fromName.devicesCount || 1;
+
+      try {
+        const fromOCR = await runOCRFromImage(file);
+
+        if (fromOCR.downPayment) {
+          document.getElementById("down_payment").value = fromOCR.downPayment;
+        } else if (!document.getElementById("down_payment").value.trim()) {
+          document.getElementById("down_payment").value = "0";
+        }
+
+        if (fromOCR.monthly) {
+          document.getElementById("monthly").value = fromOCR.monthly;
+        }
+
+        if (fromOCR.duration) {
+          document.getElementById("duration").value = fromOCR.duration;
+        }
+
+        setStatus(
+          "ok",
+          `Smart auto fill completed.
 
 Title: ${document.getElementById("title").value}
 Brand: ${document.getElementById("brand").value}
@@ -556,302 +486,322 @@ Devices Count: ${document.getElementById("devices_count").value}
 Down Payment: ${document.getElementById("down_payment").value}
 Monthly: ${document.getElementById("monthly").value}
 Duration: ${document.getElementById("duration").value}`
-      );
-    } catch (err) {
-      setStatus("err", `OCR failed. File name was filled, but image text was not read.\n${err.message}`);
-    }
-
-    generatePreview();
-  }
-
-  function getFormData() {
-    const category = document.getElementById("category").value;
-    const brand = document.getElementById("brand").value.trim();
-    const title = document.getElementById("title").value.trim();
-    const devices_count = parseInt(document.getElementById("devices_count").value || "1", 10);
-    const down_payment = document.getElementById("down_payment").value.trim() || "0 KD";
-    const monthly = document.getElementById("monthly").value.trim();
-    const duration = document.getElementById("duration").value.trim();
-    const available = document.getElementById("available").checked;
-    const hot_offer = document.getElementById("hot_offer").checked;
-    const imageFile = document.getElementById("productImage").files[0] || null;
-
-    let brandSlug = slugify(brand.split("/")[0].trim());
-    let titleSlug = slugify(title);
-
-    return {
-      category,
-      brand,
-      brandSlug,
-      title,
-      titleSlug,
-      devices_count: Number.isFinite(devices_count) && devices_count > 0 ? devices_count : 1,
-      down_payment,
-      monthly,
-      duration,
-      available,
-      hot_offer,
-      imageFile
-    };
-  }
-
-  function buildPaths(data) {
-    const ext = data.imageFile ? getImageExt(data.imageFile.name) : ".webp";
-    const imageNameSlug = data.imageFile
-      ? slugify(data.imageFile.name.replace(/\.[^.]+$/, ""))
-      : data.titleSlug;
-
-    const imagePath = `/images/${data.category}/${data.brandSlug}/${imageNameSlug}${ext}`;
-    const productPath = `/products/${data.category}/${data.brandSlug}/${data.titleSlug}.json`;
-    const indexPath = `/products/${data.category}/index.json`;
-
-    return { imagePath, productPath, indexPath, imageNameSlug, ext };
-  }
-
-  function buildProductJson(data, paths) {
-    return {
-      title: data.title,
-      category: data.category,
-      brand: data.brand,
-      devices_count: data.devices_count,
-      image: paths.imagePath,
-      down_payment: data.down_payment,
-      monthly: data.monthly,
-      duration: data.duration,
-      available: data.available,
-      hot_offer: data.hot_offer
-    };
-  }
-
-  function validateData(data) {
-    if (!data.brand) return "Brand is required.";
-    if (!data.title) return "Title is required.";
-    if (!data.monthly) return "Monthly is required.";
-    if (!data.duration) return "Duration is required.";
-    if (!data.imageFile) return "Please choose an image file.";
-    if (!data.brandSlug) return "Brand slug is empty.";
-    if (!data.titleSlug) return "Title slug is empty.";
-    return "";
-  }
-
-  function generatePreview() {
-    clearStatus();
-
-    const data = getFormData();
-    const error = validateData(data);
-    const paths = buildPaths(data);
-
-    document.getElementById("brandSlugPreview").textContent = data.brandSlug || "-";
-    document.getElementById("titleSlugPreview").textContent = data.titleSlug || "-";
-    document.getElementById("imagePathPreview").textContent = paths.imagePath;
-    document.getElementById("productPathPreview").textContent = paths.productPath;
-    document.getElementById("indexPathPreview").textContent = paths.indexPath;
-
-    if (data.imageFile) {
-      previewImageFile(data.imageFile);
-    }
-
-    if (error) {
-      document.getElementById("jsonPreview").value = "";
-      setStatus("err", error);
-      return null;
-    }
-
-    const productJson = buildProductJson(data, paths);
-    document.getElementById("jsonPreview").value = JSON.stringify(productJson, null, 2);
-    return { data, paths, productJson };
-  }
-
-  async function githubGetFile(owner, repo, path, token, branch) {
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `token ${token}`,
-        Accept: "application/vnd.github+json"
+        );
+      } catch (err) {
+        setStatus("err", `OCR failed. File name was filled, but image text was not read.\n${err.message}`);
       }
-    });
 
-    if (res.status === 404) return null;
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`GET ${path} failed: ${text}`);
+      generatePreview();
     }
 
-    return await res.json();
-  }
+    function getFormData() {
+      const category = document.getElementById("category").value;
+      const brand = document.getElementById("brand").value.trim();
+      const title = document.getElementById("title").value.trim();
+      const devices_count = parseInt(document.getElementById("devices_count").value || "1", 10);
 
-  async function githubPutFile(owner, repo, path, token, branch, contentBase64, message, sha = null) {
-    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-    const body = {
-      message,
-      content: contentBase64,
-      branch
-    };
-    if (sha) body.sha = sha;
+      const downPaymentNumber = document.getElementById("down_payment").value.trim() || "0";
+      const monthlyNumber = document.getElementById("monthly").value.trim();
+      const durationNumber = document.getElementById("duration").value.trim();
 
-    const res = await fetch(url, {
-      method: "PUT",
-      headers: {
-        Authorization: `token ${token}`,
-        Accept: "application/vnd.github+json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
+      const down_payment = `${downPaymentNumber} KD`;
+      const monthly = monthlyNumber ? `${monthlyNumber} KD` : "";
+      const duration = durationNumber ? `${durationNumber} Months` : "";
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`PUT ${path} failed: ${text}`);
+      const available = document.getElementById("available").checked;
+      const hot_offer = document.getElementById("hot_offer").checked;
+      const imageFile = document.getElementById("productImage").files[0] || null;
+
+      const nameData = imageFile ? detectFilenameData(imageFile.name) : {
+        storageBrandSlug: slugify(brand.split("/")[0].trim()),
+        storageBrand: brand.split("/")[0].trim()
+      };
+
+      const brandSlug = slugify(nameData.storageBrandSlug || brand.split("/")[0].trim());
+
+      // اسم الملف يكون من اسم الصورة، ومع العرض + يتحول إلى -
+      const titleSlug = imageFile
+        ? slugify(imageFile.name.replace(/\.[^.]+$/, "").replace(/\+/g, "-"))
+        : slugify(title);
+
+      return {
+        category,
+        brand,
+        title,
+        brandSlug,
+        storageBrand: nameData.storageBrand || "",
+        titleSlug,
+        devices_count: Number.isFinite(devices_count) && devices_count > 0 ? devices_count : 1,
+        down_payment,
+        monthly,
+        duration,
+        available,
+        hot_offer,
+        imageFile
+      };
     }
 
-    return await res.json();
-  }
+    function buildPaths(data) {
+      const ext = data.imageFile ? getImageExt(data.imageFile.name) : ".webp";
 
-  async function fileToBase64(file) {
-    const buffer = await file.arrayBuffer();
-    let binary = "";
-    const bytes = new Uint8Array(buffer);
-    const chunkSize = 0x8000;
+      const imageNameSlug = data.imageFile
+        ? slugify(data.imageFile.name.replace(/\.[^.]+$/, "").replace(/\+/g, "-"))
+        : data.titleSlug;
 
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      const imagePath = `/images/${data.category}/${data.brandSlug}/${imageNameSlug}${ext}`;
+      const productPath = `/products/${data.category}/${data.brandSlug}/${data.titleSlug}.json`;
+      const indexPath = `/products/${data.category}/index.json`;
+
+      return { imagePath, productPath, indexPath, imageNameSlug, ext };
     }
 
-    return btoa(binary);
-  }
+    function buildProductJson(data, paths) {
+      return {
+        title: data.title,
+        category: data.category,
+        brand: data.brand,
+        devices_count: data.devices_count,
+        image: paths.imagePath,
+        down_payment: data.down_payment,
+        monthly: data.monthly,
+        duration: data.duration,
+        available: data.available,
+        hot_offer: data.hot_offer
+      };
+    }
 
-  async function updateIndexJson(owner, repo, token, branch, category, brandSlug, productSlug) {
-    const indexPath = `products/${category}/index.json`;
-    const relativePath = `${brandSlug}/${productSlug}.json`;
+    function validateData(data) {
+      if (!data.brand) return "Brand is required.";
+      if (!data.title) return "Title is required.";
+      if (!data.monthly) return "Monthly is required.";
+      if (!data.duration) return "Duration is required.";
+      if (!data.imageFile) return "Please choose an image file.";
+      if (!data.brandSlug) return "Brand slug is empty.";
+      if (!data.titleSlug) return "Title slug is empty.";
+      return "";
+    }
 
-    const existing = await githubGetFile(owner, repo, indexPath, token, branch);
+    function generatePreview() {
+      clearStatus();
 
-    let list = [];
-    let sha = null;
+      const data = getFormData();
+      const error = validateData(data);
+      const paths = buildPaths(data);
 
-    if (existing) {
-      sha = existing.sha;
+      document.getElementById("storageBrandPreview").textContent = data.storageBrand || "-";
+      document.getElementById("brandSlugPreview").textContent = data.brandSlug || "-";
+      document.getElementById("titleSlugPreview").textContent = data.titleSlug || "-";
+      document.getElementById("imagePathPreview").textContent = paths.imagePath;
+      document.getElementById("productPathPreview").textContent = paths.productPath;
+      document.getElementById("indexPathPreview").textContent = paths.indexPath;
+
+      if (data.imageFile) {
+        previewImageFile(data.imageFile);
+      }
+
+      if (error) {
+        document.getElementById("jsonPreview").value = "";
+        setStatus("err", error);
+        return null;
+      }
+
+      const productJson = buildProductJson(data, paths);
+      document.getElementById("jsonPreview").value = JSON.stringify(productJson, null, 2);
+      return { data, paths, productJson };
+    }
+
+    async function githubGetFile(owner, repo, path, token, branch) {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json"
+        }
+      });
+
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`GET ${path} failed: ${text}`);
+      }
+
+      return await res.json();
+    }
+
+    async function githubPutFile(owner, repo, path, token, branch, contentBase64, message, sha = null) {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+      const body = {
+        message,
+        content: contentBase64,
+        branch
+      };
+      if (sha) body.sha = sha;
+
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`PUT ${path} failed: ${text}`);
+      }
+
+      return await res.json();
+    }
+
+    async function fileToBase64(file) {
+      const buffer = await file.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buffer);
+      const chunkSize = 0x8000;
+
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+
+      return btoa(binary);
+    }
+
+    async function updateIndexJson(owner, repo, token, branch, category, brandSlug, productSlug) {
+      const indexPath = `products/${category}/index.json`;
+      const relativePath = `${brandSlug}/${productSlug}.json`;
+
+      const existing = await githubGetFile(owner, repo, indexPath, token, branch);
+
+      let list = [];
+      let sha = null;
+
+      if (existing) {
+        sha = existing.sha;
+        try {
+          list = JSON.parse(b64DecodeUnicode(existing.content.replace(/\n/g, "")));
+          if (!Array.isArray(list)) list = [];
+        } catch {
+          list = [];
+        }
+      }
+
+      if (!list.includes(relativePath)) {
+        list.push(relativePath);
+      }
+
+      list.sort((a, b) => a.localeCompare(b));
+
+      const content = b64EncodeUnicode(JSON.stringify(list, null, 2) + "\n");
+
+      await githubPutFile(
+        owner,
+        repo,
+        indexPath,
+        token,
+        branch,
+        content,
+        `Update ${indexPath}`,
+        sha
+      );
+    }
+
+    async function saveAll() {
+      const token = document.getElementById("githubToken").value.trim();
+      const owner = document.getElementById("owner").value.trim();
+      const repo = document.getElementById("repo").value.trim();
+      const branch = document.getElementById("branch").value.trim();
+
+      if (!token) {
+        setStatus("err", "GitHub token is required.");
+        return;
+      }
+
+      if (!owner || !repo || !branch) {
+        setStatus("err", "Owner, repo, and branch are required.");
+        return;
+      }
+
+      const preview = generatePreview();
+      if (!preview) return;
+
+      const { data, paths, productJson } = preview;
+
       try {
-        list = JSON.parse(b64DecodeUnicode(existing.content.replace(/\n/g, "")));
-        if (!Array.isArray(list)) list = [];
-      } catch {
-        list = [];
-      }
-    }
+        setStatus("info", "Uploading image...");
+        const imageContent = await fileToBase64(data.imageFile);
+        const imageRepoPath = paths.imagePath.replace(/^\//, "");
+        const existingImage = await githubGetFile(owner, repo, imageRepoPath, token, branch);
 
-    if (!list.includes(relativePath)) {
-      list.push(relativePath);
-    }
+        await githubPutFile(
+          owner,
+          repo,
+          imageRepoPath,
+          token,
+          branch,
+          imageContent,
+          `Upload ${imageRepoPath}`,
+          existingImage ? existingImage.sha : null
+        );
 
-    list.sort((a, b) => a.localeCompare(b));
+        setStatus("info", "Saving product JSON...");
+        const productRepoPath = paths.productPath.replace(/^\//, "");
+        const productContent = b64EncodeUnicode(JSON.stringify(productJson, null, 2) + "\n");
+        const existingProduct = await githubGetFile(owner, repo, productRepoPath, token, branch);
 
-    const content = b64EncodeUnicode(JSON.stringify(list, null, 2) + "\n");
+        await githubPutFile(
+          owner,
+          repo,
+          productRepoPath,
+          token,
+          branch,
+          productContent,
+          `Save ${productRepoPath}`,
+          existingProduct ? existingProduct.sha : null
+        );
 
-    await githubPutFile(
-      owner,
-      repo,
-      indexPath,
-      token,
-      branch,
-      content,
-      `Update ${indexPath}`,
-      sha
-    );
-  }
+        setStatus("info", "Updating index.json...");
+        await updateIndexJson(owner, repo, token, branch, data.category, data.brandSlug, data.titleSlug);
 
-  async function saveAll() {
-    const token = document.getElementById("githubToken").value.trim();
-    const owner = document.getElementById("owner").value.trim();
-    const repo = document.getElementById("repo").value.trim();
-    const branch = document.getElementById("branch").value.trim();
-
-    if (!token) {
-      setStatus("err", "GitHub token is required.");
-      return;
-    }
-    if (!owner || !repo || !branch) {
-      setStatus("err", "Owner, repo, and branch are required.");
-      return;
-    }
-
-    const preview = generatePreview();
-    if (!preview) return;
-
-    const { data, paths, productJson } = preview;
-
-    try {
-      setStatus("info", "Uploading image...");
-      const imageContent = await fileToBase64(data.imageFile);
-      const imageRepoPath = paths.imagePath.replace(/^\//, "");
-      const existingImage = await githubGetFile(owner, repo, imageRepoPath, token, branch);
-
-      await githubPutFile(
-        owner,
-        repo,
-        imageRepoPath,
-        token,
-        branch,
-        imageContent,
-        `Upload ${imageRepoPath}`,
-        existingImage ? existingImage.sha : null
-      );
-
-      setStatus("info", "Saving product JSON...");
-      const productRepoPath = paths.productPath.replace(/^\//, "");
-      const productContent = b64EncodeUnicode(JSON.stringify(productJson, null, 2) + "\n");
-      const existingProduct = await githubGetFile(owner, repo, productRepoPath, token, branch);
-
-      await githubPutFile(
-        owner,
-        repo,
-        productRepoPath,
-        token,
-        branch,
-        productContent,
-        `Save ${productRepoPath}`,
-        existingProduct ? existingProduct.sha : null
-      );
-
-      setStatus("info", "Updating index.json...");
-      await updateIndexJson(owner, repo, token, branch, data.category, data.brandSlug, data.titleSlug);
-
-      setStatus(
-        "ok",
-        `Done successfully.
+        setStatus(
+          "ok",
+          `Done successfully.
 
 Image: ${paths.imagePath}
 Product: ${paths.productPath}
 Index updated: ${paths.indexPath}`
-      );
-    } catch (err) {
-      setStatus("err", err.message || "Unknown error");
+        );
+      } catch (err) {
+        setStatus("err", err.message || "Unknown error");
+      }
     }
-  }
 
-  function resetForm() {
-    document.getElementById("brand").value = "";
-    document.getElementById("title").value = "";
-    document.getElementById("devices_count").value = "1";
-    document.getElementById("down_payment").value = "0 KD";
-    document.getElementById("monthly").value = "";
-    document.getElementById("duration").value = "";
-    document.getElementById("available").checked = true;
-    document.getElementById("hot_offer").checked = false;
-    document.getElementById("productImage").value = "";
-    document.getElementById("jsonPreview").value = "";
-    document.getElementById("brandSlugPreview").textContent = "-";
-    document.getElementById("titleSlugPreview").textContent = "-";
-    document.getElementById("imagePathPreview").textContent = "-";
-    document.getElementById("productPathPreview").textContent = "-";
-    document.getElementById("indexPathPreview").textContent = "-";
-    previewImageFile(null);
-    clearStatus();
-  }
+    function resetForm() {
+      document.getElementById("brand").value = "";
+      document.getElementById("title").value = "";
+      document.getElementById("devices_count").value = "1";
+      document.getElementById("down_payment").value = "0";
+      document.getElementById("monthly").value = "";
+      document.getElementById("duration").value = "";
+      document.getElementById("available").checked = true;
+      document.getElementById("hot_offer").checked = false;
+      document.getElementById("productImage").value = "";
+      document.getElementById("jsonPreview").value = "";
+      document.getElementById("storageBrandPreview").textContent = "-";
+      document.getElementById("brandSlugPreview").textContent = "-";
+      document.getElementById("titleSlugPreview").textContent = "-";
+      document.getElementById("imagePathPreview").textContent = "-";
+      document.getElementById("productPathPreview").textContent = "-";
+      document.getElementById("indexPathPreview").textContent = "-";
+      previewImageFile(null);
+      clearStatus();
+    }
 
-  document.getElementById("productImage").addEventListener("change", () => {
-    const file = document.getElementById("productImage").files[0];
-    previewImageFile(file);
-  });
-</script>
+    document.getElementById("productImage").addEventListener("change", () => {
+      const file = document.getElementById("productImage").files[0];
+      previewImageFile(file);
+    });
+  </script>
 </body>
 </html>
