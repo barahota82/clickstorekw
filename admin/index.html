@@ -469,62 +469,33 @@ function extractFinancialsFromText(text) {
   let monthly = "";
   let duration = "";
 
-  // -----------------------
-  // Monthly
-  // -----------------------
-  const monthlyMatch =
-    clean.match(/(\d+)\s*(kd|k\.d)\s*monthly/i) ||
-    clean.match(/monthly\s*(\d+)/i);
+  // ناخد سطور منفصلة (مهم جدا)
+  const lines = clean.split(/[\n\r]+/);
 
-  if (monthlyMatch) {
-    monthly = monthlyMatch[1];
-  }
+  for (const line of lines) {
+    const l = line.toLowerCase();
 
-  // -----------------------
-  // Duration (Months)
-  // -----------------------
-  const durationMatch =
-    clean.match(/(\d+)\s*months?\s*to\s*pay/i) ||
-    clean.match(/(\d+)\s*months?/i) ||
-    clean.match(/(\d+)\s*to\s*pay/i);
+    // -------- MONTHLY --------
+    if (l.includes("monthly")) {
+      const m = line.match(/(\d+)/);
+      if (m) monthly = m[1];
+    }
 
-  if (durationMatch) {
-    duration = durationMatch[1];
-  }
+    // -------- DURATION --------
+    if (l.includes("month") || l.includes("to pay")) {
+      const m = line.match(/(\d+)/);
+      if (m) duration = m[1];
+    }
 
-  // -----------------------
-  // Down Payment (مش شرط يكون صفر)
-  // -----------------------
-
-  // حالة: 0 KD down payment
-  const downMatch =
-    clean.match(/(\d+)\s*(kd|k\.d)\s*(down|payment)/i) ||
-    clean.match(/(down|payment)\s*(\d+)/i);
-
-  if (downMatch) {
-    downPayment = downMatch[1] || downMatch[2] || "";
-  }
-
-  // حالة: ZERO DOWN PAYMENT
-  if (!downPayment && /zero\s*(down|payment)/i.test(clean)) {
-    downPayment = "0";
-  }
-
-  // -----------------------
-  // Rescue ذكي
-  // -----------------------
-  const numbers = clean.match(/\d+/g) || [];
-
-  if (!monthly && numbers.length >= 1) {
-    monthly = numbers[0];
-  }
-
-  if (!duration && numbers.length >= 2) {
-    duration = numbers[1];
-  }
-
-  if (!downPayment && numbers.length >= 3) {
-    downPayment = numbers[2];
+    // -------- DOWN PAYMENT --------
+    if (l.includes("down") || l.includes("payment")) {
+      const m = line.match(/(\d+)/);
+      if (m) {
+        downPayment = m[1];
+      } else if (l.includes("zero")) {
+        downPayment = "0";
+      }
+    }
   }
 
   return {
