@@ -1,201 +1,179 @@
-/* ================================
-   CART SYSTEM - CLICK COMPANY
-   Professional Version 🔥
-   (Mobile-Optimized & WhatsApp Fix)
-================================ */
+/* ==========================================
+   COMMUNICATION & CART SYSTEM - CLICK COMPANY
+   Integrated Admin-Ready Version 🚀
+   Optimized for Mobile (Pre-loading Fix)
+========================================== */
 
-// ===== INIT CART =====
+// ===== 1. الذاكرة المؤقتة للإعدادات (Global Cache) =====
+// هذا المتغير سيخزن بيانات الموظف والرسائل فور فتح الصفحة
+let whatsappSystem = {
+    config: null,
+    isLoaded: false
+};
+
+// ===== 2. نظام السلة (Cart Logic) =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// إصلاح البيانات القديمة وضمان صحة الكميات
+// تنظيف وتدقيق البيانات لضمان عدم وجود أخطاء في الكميات
 cart = cart.map(item => ({
-  ...item,
-  quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
+    ...item,
+    quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
 }));
 
-// ===== SAVE =====
 function saveCart() {
-  localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem("cart", JSON.stringify(cart));
 }
 
-// ===== UPDATE UI =====
+// ===== 3. تحديث الواجهة (UI Updates) =====
 function updateCartUI() {
-  const count = cart.reduce((total, item) => {
-    return total + (parseInt(item.quantity) || 1);
-  }, 0);
+    const count = cart.reduce((total, item) => total + (parseInt(item.quantity) || 1), 0);
+    
+    const elements = {
+        top: document.getElementById("cart-count-top"),
+        normal: document.getElementById("count"),
+        floating: document.getElementById("cart-count-floating"),
+        items: document.getElementById("cartItems")
+    };
 
-  const topCount = document.getElementById("cart-count-top");
-  const normalCount = document.getElementById("count");
-  const floatingCount = document.getElementById("cart-count-floating");
-  const cartItems = document.getElementById("cartItems");
+    if (elements.top) elements.top.innerText = count;
+    if (elements.normal) elements.normal.innerText = count;
+    if (elements.floating) elements.floating.innerText = count;
 
-  if (topCount) topCount.innerText = count;
-  if (normalCount) normalCount.innerText = count;
-  if (floatingCount) floatingCount.innerText = count;
-
-  if (cartItems) {
-    if (!cart.length) {
-      cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
-    } else {
-      cartItems.innerHTML = cart.map((item, index) => `
-        <div class="cart-item">
-          <img src="${item.image}" alt="${item.title || "Product"}">
-          <div>
-            <div class="cart-item-title">${item.title || "Product"} × ${parseInt(item.quantity) || 1}</div>
-            <div class="cart-item-meta">${item.price || ""}</div>
-            <div class="cart-item-meta">${item.months || ""}</div>
-          </div>
-          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
-        </div>
-      `).join("");
+    if (elements.items) {
+        if (!cart.length) {
+            elements.items.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+        } else {
+            elements.items.innerHTML = cart.map((item, index) => `
+                <div class="cart-item">
+                    <img src="${item.image}" alt="${item.title || "Product"}">
+                    <div>
+                        <div class="cart-item-title">${item.title || "Product"} × ${item.quantity}</div>
+                        <div class="cart-item-meta">${item.price || ""}</div>
+                        <div class="cart-item-meta">${item.months || ""}</div>
+                    </div>
+                    <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+                </div>
+            `).join("");
+        }
     }
-  }
-
-  saveCart();
+    saveCart();
 }
 
-// ===== ADD =====
+// ===== 4. وظائف السلة الأساسية =====
 function addToCart(newItem) {
-  const existingItem = cart.find(item => item.title === newItem.title);
-
-  if (existingItem) {
-    existingItem.quantity = (parseInt(existingItem.quantity) || 1) + 1;
-  } else {
-    cart.push({
-      ...newItem,
-      quantity: 1
-    });
-  }
-
-  updateCartUI();
+    const existing = cart.find(item => item.title === newItem.title);
+    existing ? existing.quantity++ : cart.push({ ...newItem, quantity: 1 });
+    updateCartUI();
 }
 
-// ===== REMOVE =====
 function removeFromCart(index) {
-  if (!cart[index]) return;
-
-  if ((parseInt(cart[index].quantity) || 1) > 1) {
-    cart[index].quantity--;
-  } else {
-    cart.splice(index, 1);
-  }
-
-  updateCartUI();
+    if (!cart[index]) return;
+    if (cart[index].quantity > 1) {
+        cart[index].quantity--;
+    } else {
+        cart.splice(index, 1);
+    }
+    updateCartUI();
 }
 
-// ===== CLEAR =====
-function clearCart() {
-  cart = [];
-  updateCartUI();
-}
-
-// ===== OPEN / CLOSE =====
 function openCart() {
-  document.getElementById("cartPanel")?.classList.add("open");
-  document.getElementById("cartOverlay")?.classList.add("open");
+    document.getElementById("cartPanel")?.classList.add("open");
+    document.getElementById("cartOverlay")?.classList.add("open");
 }
 
 function closeCart() {
-  document.getElementById("cartPanel")?.classList.remove("open");
-  document.getElementById("cartOverlay")?.classList.remove("open");
+    document.getElementById("cartPanel")?.classList.remove("remove"); // تأكد من مطابقة الـ CSS لديك (غالباً .classList.remove("open"))
+    document.getElementById("cartPanel")?.classList.remove("open");
+    document.getElementById("cartOverlay")?.classList.remove("open");
 }
 
-// ===== SETTINGS LOADER (AI READY) =====
-async function loadWhatsAppSettings() {
-  try {
-    // إضافة تيم-ستامب لمنع الكاش عند التحديث من الأدمن
-    const res = await fetch("/settings/whatsapp.md?v=" + new Date().getTime());
-    const text = await res.text();
+// ===== 5. محرك نظام الواتساب الذكي (The Engine) =====
 
-    const data = {};
+/**
+ * التحميل المسبق للإعدادات فور فتح الصفحة
+ * يحل مشكلة الحظر في الموبايل بجعل البيانات جاهزة قبل النقر
+ */
+async function initWhatsAppSystem() {
+    try {
+        // جلب الإعدادات مع إضافة تيم-ستامب لمنع "كاش" المتصفح
+        const res = await fetch("/settings/whatsapp.md?v=" + Date.now());
+        const text = await res.text();
+        
+        const data = {};
+        text.split("\n").forEach(line => {
+            if (line.includes(":")) {
+                const [key, ...rest] = line.split(":");
+                data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+            }
+        });
 
-    text.split("\n").forEach(line => {
-      if (line.includes(":")) {
-        const [key, ...rest] = line.split(":");
-        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-      }
-    });
-
-    return data;
-  } catch (error) {
-    console.error("Error loading WhatsApp settings:", error);
-    return {};
-  }
-}
-
-// ===== BUILD MESSAGE (SMART AI STYLE) =====
-function buildOrderMessage(data, lines) {
-  let greeting = data.greeting || "Welcome 👋";
-  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
-
-  return `${greeting}
-
-🛒 *New Order*
-
-${lines.join("\n\n")}
-
-📍 *Please confirm availability & total price.*`;
+        whatsappSystem.config = data;
+        whatsappSystem.isLoaded = true;
+        
+        console.log("WhatsApp System Ready ✅ Connected to: " + data.employee_name);
+    } catch (error) {
+        console.error("System Error: Using default fallback.");
+        // بيانات احتياطية في حال فشل الاتصال بالسيرفر
+        whatsappSystem.config = { phone: "67680877", employee_name: "Sales", greeting: "Welcome 👋" };
+        whatsappSystem.isLoaded = true;
+    }
 }
 
 /**
- * دالة ذكية لفتح واتساب تدعم الموبايل والكمبيوتر
- * تحل مشكلة حظر النوافذ المنبثقة في متصفحات الموبايل
+ * معالج فتح الرابط - يضمن تخطي حظر النوافذ المنبثقة
  */
-function triggerWhatsApp(phone, message) {
-    const encoded = encodeURIComponent(message);
-    const whatsappURL = `https://api.whatsapp.com{phone}&text=${encoded}`;
+function execWhatsApp(message) {
+    if (!whatsappSystem.isLoaded) {
+        alert("Loading settings, please try again in a second...");
+        return;
+    }
     
-    // استخدام window.open للكمبيوتر و window.location للموبايل
+    const phone = "965" + (whatsappSystem.config.phone || "67680877");
+    const encoded = encodeURIComponent(message);
+    const url = `https://api.whatsapp.com{phone}&text=${encoded}`;
+    
+    // في الموبايل نستخدم الفتح المباشر في نفس النافذة لضمان العمل 100%
     if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        window.location.href = whatsappURL;
+        window.location.href = url;
     } else {
-        window.open(whatsappURL, "_blank");
+        window.open(url, "_blank");
     }
 }
 
-// ===== SEND ORDER =====
-async function sendOrderWhatsApp() {
-  if (!cart.length) return;
+// ===== 6. بناء الرسائل والطلبات =====
 
-  const baseURL = window.location.origin;
+function sendOrderWhatsApp() {
+    if (!cart.length) return;
 
-  // جلب الإعدادات
-  const data = await loadWhatsAppSettings();
-  const phone = "965" + (data.phone || "67680877");
+    const config = whatsappSystem.config;
+    const baseURL = window.location.origin;
 
-  const lines = cart.map((item, i) => {
-    let imageURL = item.image || "";
+    const productLines = cart.map((item, i) => {
+        let img = item.image.startsWith("/") ? baseURL + item.image : item.image;
+        return `🔹 *Item ${i + 1}*\n📱 *${item.title}* × ${item.quantity}\n💰 ${item.price}\n📆 ${item.months}\n📸 ${img}`;
+    });
 
-    if (imageURL.startsWith("/")) {
-      imageURL = baseURL + imageURL;
-    }
+    // الرد الترحيبي الذكي باستخدام البيانات المحملة مسبقاً
+    let msg = config.greeting || "Welcome 👋";
+    msg = msg.replace("{{name}}", config.employee_name || "Sales");
 
-    return `🔹 *Product ${i + 1}*
-📱 *${item.title || "Product"}* × ${parseInt(item.quantity) || 1}
-💰 ${item.price || ""}
-📆 ${item.months || ""}
-📸 ${imageURL}`;
-  });
+    const finalMessage = `${msg}\n\n🛒 *New Order Details:*\n\n${productLines.join("\n\n")}\n\n📍 *Please confirm order status.*`;
 
-  const msg = buildOrderMessage(data, lines);
-
-  // تنفيذ الفتح باستخدام الدالة الذكية
-  triggerWhatsApp(phone, msg);
+    execWhatsApp(finalMessage);
 }
 
-// ===== DIRECT WHATSAPP =====
-async function openWhatsAppDirect() {
-  const data = await loadWhatsAppSettings();
-  const phone = "965" + (data.phone || "67680877");
-
-  let greeting = data.greeting || "Hello 👋";
-  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
-
-  // تنفيذ الفتح باستخدام الدالة الذكية
-  triggerWhatsApp(phone, greeting);
+function openWhatsAppDirect() {
+    if (!whatsappSystem.isLoaded) return;
+    
+    const config = whatsappSystem.config;
+    let msg = config.greeting || "Hello!";
+    msg = msg.replace("{{name}}", config.employee_name || "Sales");
+    
+    execWhatsApp(msg);
 }
 
-// ===== INIT =====
+// ===== 7. التشغيل عند تحميل الصفحة =====
 document.addEventListener("DOMContentLoaded", () => {
-  updateCartUI();
+    updateCartUI();
+    initWhatsAppSystem(); // جلب رقم الهاتف والرسائل فوراً ليكون الزر جاهزاً
 });
