@@ -1,45 +1,46 @@
 /* ================================
    CART SYSTEM - CLICK COMPANY
-   Stable & Final Fix ✅
+   Stable & Final Mobile Fix ✅
 ================================ */
-
-// 1. الإعدادات الافتراضية لضمان عمل الزر حتى لو فشل السيرفر
-let config = { phone: "67680877", employee_name: "Sales", greeting: "Welcome 👋" };
 
 // ===== INIT CART =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// إصلاح البيانات القديمة
 cart = cart.map(item => ({
   ...item,
   quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
 }));
 
-// ===== SAVE & UI =====
+// ===== SAVE =====
 function saveCart() {
   localStorage.setItem("cart", JSON.stringify(cart));
 }
 
+// ===== UPDATE UI =====
 function updateCartUI() {
-  const count = cart.reduce((total, item) => total + (parseInt(item.quantity) || 1), 0);
-  const elements = {
-    top: document.getElementById("cart-count-top"),
-    normal: document.getElementById("count"),
-    floating: document.getElementById("cart-count-floating"),
-    items: document.getElementById("cartItems")
-  };
+  const count = cart.reduce((total, item) => {
+    return total + (parseInt(item.quantity) || 1);
+  }, 0);
 
-  if (elements.top) elements.top.innerText = count;
-  if (elements.normal) elements.normal.innerText = count;
-  if (elements.floating) elements.floating.innerText = count;
+  const topCount = document.getElementById("cart-count-top");
+  const normalCount = document.getElementById("count");
+  const floatingCount = document.getElementById("cart-count-floating");
+  const cartItems = document.getElementById("cartItems");
 
-  if (elements.items) {
+  if (topCount) topCount.innerText = count;
+  if (normalCount) normalCount.innerText = count;
+  if (floatingCount) floatingCount.innerText = count;
+
+  if (cartItems) {
     if (!cart.length) {
-      elements.items.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
+      cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
     } else {
-      elements.items.innerHTML = cart.map((item, index) => `
+      cartItems.innerHTML = cart.map((item, index) => `
         <div class="cart-item">
           <img src="${item.image}" alt="${item.title || "Product"}">
           <div>
-            <div class="cart-item-title">${item.title || "Product"} × ${item.quantity}</div>
+            <div class="cart-item-title">${item.title || "Product"} × ${parseInt(item.quantity) || 1}</div>
             <div class="cart-item-meta">${item.price || ""}</div>
             <div class="cart-item-meta">${item.months || ""}</div>
           </div>
@@ -48,66 +49,59 @@ function updateCartUI() {
       `).join("");
     }
   }
+
   saveCart();
 }
 
-// ===== ACTIONS =====
+// ===== ADD / REMOVE / OPEN / CLOSE =====
 function addToCart(newItem) {
-  const existing = cart.find(item => item.title === newItem.title);
-  existing ? existing.quantity++ : cart.push({ ...newItem, quantity: 1 });
+  const existingItem = cart.find(item => item.title === newItem.title);
+  if (existingItem) { existingItem.quantity++; } else { cart.push({ ...newItem, quantity: 1 }); }
   updateCartUI();
 }
-
 function removeFromCart(index) {
   if (!cart[index]) return;
-  cart[index].quantity > 1 ? cart[index].quantity-- : cart.splice(index, 1);
+  if (cart[index].quantity > 1) { cart[index].quantity--; } else { cart.splice(index, 1); }
   updateCartUI();
 }
-
 function openCart() {
   document.getElementById("cartPanel")?.classList.add("open");
   document.getElementById("cartOverlay")?.classList.add("open");
 }
-
 function closeCart() {
   document.getElementById("cartPanel")?.classList.remove("open");
   document.getElementById("cartOverlay")?.classList.remove("open");
 }
 
-// ===== SETTINGS LOADER (صامت ولا يسبب أعطال) =====
-async function loadSettings() {
+// ===== SETTINGS LOADER (تمت إضافة حماية لمنع خطأ السيرفر) =====
+async function loadWhatsAppSettings() {
   try {
     const res = await fetch("/settings/whatsapp.md?v=" + Date.now());
-    if (res.ok) {
-        const text = await res.text();
-        const data = {};
-        text.split("\n").forEach(line => {
-          if (line.includes(":")) {
-            const [key, ...rest] = line.split(":");
-            data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-          }
-        });
-        config = data;
-    }
-  } catch (e) { console.log("Using defaults"); }
+    if (!res.ok) throw new Error(); // إذا لم يجد الملف لا يكمل
+    const text = await res.text();
+    const data = {};
+    text.split("\n").forEach(line => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+      }
+    });
+    return data;
+  } catch {
+    // بيانات احتياطية لضمان عمل الزر دائماً
+    return { phone: "67680877", employee_name: "Sales", greeting: "Welcome 👋" };
+  }
 }
 
-// ===== WHATSAPP TRIGGER (حل الموبايل + اللاب) =====
-function openWA(message) {
-    const phone = "965" + (config.phone || "67680877");
-    const encoded = encodeURIComponent(message);
-    const url = `https://api.whatsapp.com{phone}&text=${encoded}`;
-    
-    // الفتح المباشر للموبايل والنافذة الجديدة للكمبيوتر
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        window.location.href = url;
-    } else {
-        window.open(url, "_blank");
-    }
+// ===== BUILD MESSAGE =====
+function buildOrderMessage(data, lines) {
+  let greeting = data.greeting || "Welcome 👋";
+  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+  return `${greeting}\n\n🛒 New Order\n\n${lines.join("\n\n")}\n\n📍 Please confirm status.`;
 }
 
-// ===== SEND ORDER =====
-function sendOrderWhatsApp() {
+// ===== SEND ORDER (الإصلاح الجوهري للموبايل واللاب) =====
+async function sendOrderWhatsApp() {
   if (!cart.length) return;
   const baseURL = window.location.origin;
   const lines = cart.map((item, i) => {
@@ -115,20 +109,35 @@ function sendOrderWhatsApp() {
     return `🔹 Product ${i + 1}\n📱 ${item.title} × ${item.quantity}\n💰 ${item.price}\n📆 ${item.months}\n📸 ${img}`;
   });
 
-  let greeting = config.greeting || "Welcome 👋";
-  greeting = greeting.replace("{{name}}", config.employee_name || "Sales");
-
-  openWA(`${greeting}\n\n🛒 New Order\n\n${lines.join("\n\n")}\n\n📍 Please confirm status.`);
+  const data = await loadWhatsAppSettings();
+  const msg = buildOrderMessage(data, lines);
+  const phone = "965" + (data.phone || "67680877");
+  const finalURL = `https://api.whatsapp.com{phone}&text=${encodeURIComponent(msg)}`;
+  
+  // الفتح الذكي: نافذة جديدة للكمبيوتر وتحويل مباشر للموبايل
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      window.location.href = finalURL;
+  } else {
+      window.open(finalURL, "_blank");
+  }
 }
 
-function openWhatsAppDirect() {
-  let greeting = config.greeting || "Hello 👋";
-  greeting = greeting.replace("{{name}}", config.employee_name || "Sales");
-  openWA(greeting);
+// ===== DIRECT WHATSAPP =====
+async function openWhatsAppDirect() {
+  const data = await loadWhatsAppSettings();
+  let greeting = data.greeting || "Hello 👋";
+  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+  const phone = "965" + (data.phone || "67680877");
+  const finalURL = `https://api.whatsapp.com{phone}&text=${encodeURIComponent(greeting)}`;
+  
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      window.location.href = finalURL;
+  } else {
+      window.open(finalURL, "_blank");
+  }
 }
 
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
   updateCartUI();
-  loadSettings(); // جلب الإعدادات في الخلفية
 });
