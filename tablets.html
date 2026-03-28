@@ -5,6 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tablets - Click Company</title>
   <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .catalog-filter-wrap {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .catalog-filter-label {
+      font-size: 14px;
+      color: #c9d4e7;
+      font-weight: bold;
+    }
+
+    .catalog-filter {
+      width: 100%;
+      max-width: 260px;
+      min-height: 46px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: #ffffff;
+      color: #111827;
+      padding: 0 14px;
+      font-size: 14px;
+      font-weight: bold;
+      outline: none;
+      cursor: pointer;
+    }
+
+    @media (max-width: 640px) {
+      .catalog-filter {
+        max-width: 100%;
+      }
+    }
+  </style>
 </head>
 <body class="page-catalog">
 
@@ -46,6 +81,13 @@
     <div class="container">
       <h2>Tablets</h2>
       <p>Browse all tablet offers.</p>
+
+      <div class="catalog-filter-wrap">
+        <label for="brandFilter" class="catalog-filter-label">Filter by Brand</label>
+        <select id="brandFilter" class="catalog-filter" onchange="applyBrandFilter()">
+          <option value="all">All Brands</option>
+        </select>
+      </div>
     </div>
   </section>
 
@@ -96,6 +138,66 @@
   <script src="/js/cart.js"></script>
 
   <script>
+    const renderedBrands = new Set();
+
+    function normalizeBrand(brand, filePath) {
+      if (brand && String(brand).trim()) {
+        return String(brand).trim();
+      }
+
+      const cleanPath = String(filePath || "").replace(/\\/g, "/");
+      const parts = cleanPath.split("/").filter(Boolean);
+
+      return parts.length ? parts[0] : "Other";
+    }
+
+    function populateBrandFilter() {
+      const select = document.getElementById("brandFilter");
+      if (!select) return;
+
+      const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
+
+      select.innerHTML = `<option value="all">All Brands</option>`;
+
+      brands.forEach(brand => {
+        const option = document.createElement("option");
+        option.value = brand;
+        option.textContent = brand;
+        select.appendChild(option);
+      });
+    }
+
+    function applyBrandFilter() {
+      const selectedBrand = document.getElementById("brandFilter")?.value || "all";
+      const cards = document.querySelectorAll(".product-card[data-brand]");
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const cardBrand = card.getAttribute("data-brand") || "";
+        const shouldShow = selectedBrand === "all" || cardBrand === selectedBrand;
+
+        card.style.display = shouldShow ? "" : "none";
+
+        if (shouldShow) visibleCount++;
+      });
+
+      let empty = document.getElementById("empty-state");
+
+      if (visibleCount === 0) {
+        if (!empty) {
+          empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.id = "empty-state";
+          empty.textContent = "No products available for this brand.";
+          document.getElementById("grid").appendChild(empty);
+        } else {
+          empty.textContent = "No products available for this brand.";
+        }
+      } else if (empty) {
+        empty.remove();
+      }
+    }
+
     async function load() {
       const grid = document.getElementById("grid");
       let rendered = 0;
@@ -112,9 +214,11 @@
             if (!d.available) continue;
 
             const imagePath = (d.image || "/images/logo.png").trim();
+            const brandName = normalizeBrand(d.brand, file);
 
             const card = document.createElement("div");
             card.className = "product-card";
+            card.setAttribute("data-brand", brandName);
 
             card.innerHTML = `
               <div class="product-image">
@@ -143,6 +247,7 @@
             };
 
             grid.appendChild(card);
+            renderedBrands.add(brandName);
             rendered++;
           } catch (e) {
             console.error("Failed to load product file:", file, e);
@@ -153,6 +258,10 @@
           const empty = document.getElementById("empty-state");
           if (empty) empty.remove();
         }
+
+        populateBrandFilter();
+        applyBrandFilter();
+
       } catch (e) {
         console.error("Failed to load tablets index:", e);
       }
