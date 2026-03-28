@@ -33,9 +33,51 @@
       cursor: pointer;
     }
 
+    /* نفس استايل صفحة All Products */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0 14px;
+    }
+
+    .filter-btn {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      border-radius: 18px;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.25s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+    }
+
+    .filter-btn:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-1px);
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, #37a0ff, #2f6bff);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 10px 24px rgba(55,160,255,0.35);
+    }
+
     @media (max-width: 640px) {
       .catalog-filter {
         max-width: 100%;
+      }
+
+      .filter-bar {
+        gap: 10px;
+      }
+
+      .filter-btn {
+        padding: 12px 20px;
+        font-size: 15px;
       }
     }
   </style>
@@ -256,15 +298,12 @@
     }
 
     function applyHotFilters() {
-      const selectedBrand = document.getElementById("hotBrandFilter")?.value || "all";
       const cards = document.querySelectorAll(".hot-card");
-
       hotBrands = new Set();
 
       cards.forEach(card => {
         const cardCategory = card.getAttribute("data-category") || "";
         const cardBrand = card.getAttribute("data-brand") || "";
-
         const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
 
         if (matchCategory) {
