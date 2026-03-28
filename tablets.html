@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tablets - Click Company</title>
   <link rel="stylesheet" href="/css/style.css" />
-
 </head>
 <body class="page-catalog">
 
@@ -68,8 +67,8 @@
   <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
 
   <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">
-  WhatsApp
-</button>
+    WhatsApp
+  </button>
 
   <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
@@ -97,75 +96,65 @@
   <script src="/js/cart.js"></script>
 
   <script>
-    async function get(path) {
-      const r = await fetch(path);
-      return await r.text();
-    }
-
-    function parse(t) {
-      const d = {};
-      t.split("\n").forEach(l => {
-        if (l.includes(":")) {
-          const [k, ...rest] = l.split(":");
-          d[k.trim()] = rest.join(":").trim().replace(/"/g, "");
-        }
-      });
-      return d;
-    }
-
     async function load() {
-      const paths = [
-        "/products/tablets/ipadair.webp"
-      ];
-
       const grid = document.getElementById("grid");
       let rendered = 0;
 
-      for (const p of paths) {
-        try {
-          const t = await get(p);
-          const d = parse(t);
+      try {
+        const res = await fetch("/products/tablets/index.json");
+        const files = await res.json();
 
-          if (String(d.available || "").toLowerCase() === "false") continue;
+        for (const file of files) {
+          try {
+            const r = await fetch(`/products/tablets/${file}`);
+            const d = await r.json();
 
-          const imagePath = (d.image || "/images/logo.png").trim();
+            if (!d.available) continue;
 
-          const card = document.createElement("div");
-          card.className = "product-card";
+            const imagePath = (d.image || "/images/logo.png").trim();
 
-          card.innerHTML = `
-            <div class="product-image">
-              <img src="${imagePath}" alt="Product">
-            </div>
+            const card = document.createElement("div");
+            card.className = "product-card";
 
-            <div class="product-body">
-              <div class="row">
-                <div>
-                  <div class="price">${d.price || ""}</div>
-                  <div class="months">${d.months || ""}</div>
-                </div>
-                <button class="btn">+ Add</button>
+            card.innerHTML = `
+              <div class="product-image">
+                <img src="${imagePath}" alt="${d.title || "Product"}">
               </div>
-            </div>
-          `;
 
-          card.querySelector(".btn").onclick = () => {
-            addToCart({
-              title: d.title || "Product",
-              price: d.price || "",
-              months: d.months || "",
-              image: imagePath
-            });
-          };
+              <div class="product-body">
+                <div class="row">
+                  <div>
+                    <div class="price">${d.monthly || ""}</div>
+                    <div class="months">${d.duration || ""}</div>
+                    <div class="months">${d.down_payment || ""} Down Payment</div>
+                  </div>
+                  <button class="btn">+ Add</button>
+                </div>
+              </div>
+            `;
 
-          grid.appendChild(card);
-          rendered++;
-        } catch (e) {}
-      }
+            card.querySelector(".btn").onclick = () => {
+              addToCart({
+                title: d.title || file,
+                price: d.monthly ? `${d.monthly} Monthly` : "",
+                months: `${d.duration || ""}${d.down_payment ? ` • ${d.down_payment} Down Payment` : ""}`,
+                image: imagePath
+              });
+            };
 
-      if (rendered) {
-        const empty = document.getElementById("empty-state");
-        if (empty) empty.remove();
+            grid.appendChild(card);
+            rendered++;
+          } catch (e) {
+            console.error("Failed to load product file:", file, e);
+          }
+        }
+
+        if (rendered) {
+          const empty = document.getElementById("empty-state");
+          if (empty) empty.remove();
+        }
+      } catch (e) {
+        console.error("Failed to load tablets index:", e);
       }
     }
 
