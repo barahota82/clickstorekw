@@ -361,15 +361,31 @@
     }
 
     function extractBrandFromDeviceSlug(deviceSlug) {
-      const words = deviceSlug.split("-").filter(Boolean);
-      if (!words.length) return "";
+  const words = deviceSlug.split("-").filter(Boolean);
+  if (!words.length) return "";
 
-      if (words.length >= 2 && words[1].length <= 5) {
-        return `${words[0]}-${words[1]}`;
-      }
+  const first = words[0];
+  const second = words[1] || "";
 
-      return words[0];
-    }
+  // لو الكلمة الثانية فيها أرقام => هذه موديل وليست جزء من البراند
+  if (/\d/.test(second)) {
+    return first;
+  }
+
+  // ندعم البراندات المركبة مثل:
+  // m-horse / s-color
+  // بشرط أن أول جزء حرف واحد فقط والثاني حروف فقط
+  if (
+    first.length === 1 &&
+    second &&
+    /^[a-z]+$/i.test(second)
+  ) {
+    return `${first}-${second}`;
+  }
+
+  // في كل الحالات الأخرى البراند هو أول كلمة فقط
+  return first;
+}
 
     function detectFilenameData(fileName) {
       const parts = splitOfferPartsFromFilename(fileName);
