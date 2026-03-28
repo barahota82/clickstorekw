@@ -138,139 +138,165 @@
   <script src="/js/cart.js"></script>
 
   <script>
-    const renderedBrands = new Set();
+  const renderedBrands = new Set();
 
-    function normalizeBrand(filePath) {
-      const cleanPath = String(filePath || "").replace(/\\/g, "/");
-      const parts = cleanPath.split("/").filter(Boolean);
+  function normalizeBrand(filePath) {
+    const cleanPath = String(filePath || "").replace(/\\/g, "/");
+    const parts = cleanPath.split("/").filter(Boolean);
 
-      if (!parts.length) return "Other";
+    if (!parts.length) return "Other";
 
-      const folderName = parts[0];
+    const folderName = parts[0];
 
-      return folderName
-        .replace(/-/g, " ")
-        .replace(/\b\w/g, char => char.toUpperCase());
-    }
+    return folderName
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
 
-    function populateBrandFilter() {
-      const select = document.getElementById("brandFilter");
-      if (!select) return;
+  function populateBrandFilter() {
+    const select = document.getElementById("brandFilter");
+    if (!select) return;
 
-      const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
+    const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
 
-      select.innerHTML = `<option value="all">All Brands</option>`;
+    select.innerHTML = `<option value="all">All Brands</option>`;
 
-      brands.forEach(brand => {
-        const option = document.createElement("option");
-        option.value = brand;
-        option.textContent = brand;
-        select.appendChild(option);
-      });
-    }
+    brands.forEach(brand => {
+      const option = document.createElement("option");
+      option.value = brand;
+      option.textContent = brand;
+      select.appendChild(option);
+    });
+  }
 
-    function applyBrandFilter() {
-      const selectedBrand = document.getElementById("brandFilter")?.value || "all";
-      const cards = document.querySelectorAll(".product-card[data-brand]");
-      let visibleCount = 0;
+  function applyBrandFilter() {
+    const selectedBrand = document.getElementById("brandFilter")?.value || "all";
+    const cards = document.querySelectorAll(".product-card[data-brand]");
+    let visibleCount = 0;
 
-      cards.forEach(card => {
-        const cardBrand = card.getAttribute("data-brand") || "";
-        const shouldShow = selectedBrand === "all" || cardBrand === selectedBrand;
+    cards.forEach(card => {
+      const cardBrand = card.getAttribute("data-brand") || "";
+      const shouldShow = selectedBrand === "all" || cardBrand === selectedBrand;
 
-        card.style.display = shouldShow ? "" : "none";
+      card.style.display = shouldShow ? "" : "none";
 
-        if (shouldShow) visibleCount++;
-      });
+      if (shouldShow) visibleCount++;
+    });
 
-      let empty = document.getElementById("empty-state");
+    let empty = document.getElementById("empty-state");
 
-      if (visibleCount === 0) {
-        if (!empty) {
-          empty = document.createElement("div");
-          empty.className = "empty-state";
-          empty.id = "empty-state";
-          empty.textContent = "No products available for this brand.";
-          document.getElementById("grid").appendChild(empty);
-        } else {
-          empty.textContent = "No products available for this brand.";
-        }
-      } else if (empty) {
-        empty.remove();
+    if (visibleCount === 0) {
+      if (!empty) {
+        empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.id = "empty-state";
+        empty.textContent = "No products available for this brand.";
+        document.getElementById("grid").appendChild(empty);
+      } else {
+        empty.textContent = "No products available for this brand.";
       }
+    } else if (empty) {
+      empty.remove();
     }
+  }
 
-    async function load() {
-      const grid = document.getElementById("grid");
-      let rendered = 0;
+  async function load() {
+    const grid = document.getElementById("grid");
+    let rendered = 0;
 
-      try {
-        const res = await fetch("/products/accessories/index.json");
-        const files = await res.json();
+    try {
+      const res = await fetch("/products/accessories/index.json");
+      const files = await res.json();
 
-        for (const file of files) {
+      const productResults = await Promise.all(
+        files.map(async (file) => {
           try {
             const r = await fetch(`/products/accessories/${file}`);
             const d = await r.json();
 
-            if (!d.available) continue;
+            if (!d.available) return null;
 
-            const imagePath = (d.image || "/images/logo.png").trim();
-            const brandName = normalizeBrand(file);
-
-            const card = document.createElement("div");
-            card.className = "product-card";
-            card.setAttribute("data-brand", brandName);
-
-            card.innerHTML = `
-              <div class="product-image">
-                <img src="${imagePath}" alt="${d.title || "Product"}">
-              </div>
-
-              <div class="product-body">
-                <div class="row">
-                  <div>
-                    <div class="price">${d.monthly || ""}</div>
-                    <div class="months">${d.duration || ""}</div>
-                    <div class="months">${d.down_payment || ""} Down Payment</div>
-                  </div>
-                  <button class="btn">+ Add</button>
-                </div>
-              </div>
-            `;
-
-            card.querySelector(".btn").onclick = () => {
-              addToCart({
-                title: d.title || file,
-                price: d.monthly ? `${d.monthly} Monthly` : "",
-                months: `${d.duration || ""}${d.down_payment ? ` • ${d.down_payment} Down Payment` : ""}`,
-                image: imagePath
-              });
+            return {
+              ...d,
+              _file: file,
+              _brandPriority: Number.isFinite(Number(d.brand_priority)) ? Number(d.brand_priority) : 9999,
+              _priority: Number.isFinite(Number(d.priority)) ? Number(d.priority) : 9999
             };
-
-            grid.appendChild(card);
-            renderedBrands.add(brandName);
-            rendered++;
           } catch (e) {
             console.error("Failed to load product file:", file, e);
+            return null;
           }
-        }
+        })
+      );
 
-        if (rendered) {
-          const empty = document.getElementById("empty-state");
-          if (empty) empty.remove();
-        }
+      const products = productResults
+        .filter(Boolean)
+        .sort((a, b) => {
+          if (a._brandPriority !== b._brandPriority) {
+            return a._brandPriority - b._brandPriority;
+          }
 
-        populateBrandFilter();
-        applyBrandFilter();
+          if (a._priority !== b._priority) {
+            return a._priority - b._priority;
+          }
 
-      } catch (e) {
-        console.error("Failed to load accessories index:", e);
+          return String(a.title || "").localeCompare(String(b.title || ""));
+        });
+
+      for (const d of products) {
+        const imagePath = (d.image || "/images/logo.png").trim();
+        const brandName = normalizeBrand(d._file);
+
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.setAttribute("data-brand", brandName);
+
+        card.innerHTML = `
+          <div class="product-image">
+            <img src="${imagePath}" alt="${d.title || "Product"}">
+          </div>
+
+          <div class="product-body">
+            <div class="row">
+              <div>
+                <div class="price">${d.monthly || ""}</div>
+                <div class="months">${d.duration || ""}</div>
+                <div class="months">${d.down_payment || ""} Down Payment</div>
+              </div>
+              <button class="btn">+ Add</button>
+            </div>
+          </div>
+        `;
+
+        card.querySelector(".btn").onclick = () => {
+          addToCart({
+            title: d.title || d._file,
+            price: d.monthly ? `${d.monthly} Monthly` : "",
+            months: `${d.duration || ""}${d.down_payment ? ` • ${d.down_payment} Down Payment` : ""}`,
+            image: imagePath
+          });
+        };
+
+        grid.appendChild(card);
+        renderedBrands.add(brandName);
+        rendered++;
       }
-    }
 
-    load();
-  </script>
+      if (rendered) {
+        const empty = document.getElementById("empty-state");
+        if (empty) empty.remove();
+      }
+
+      populateBrandFilter();
+      applyBrandFilter();
+
+    } catch (e) {
+      console.error("Failed to load accessories index:", e);
+    }
+  }
+
+  load();
+</script>
 
   <script>
     const texts = [
