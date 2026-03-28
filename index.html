@@ -6,6 +6,39 @@
   <title>Click Company</title>
   <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
   <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .catalog-filter-wrap {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .catalog-filter-label {
+      font-size: 13px;
+      color: #c9d4e7;
+      font-weight: bold;
+    }
+
+    .catalog-filter {
+      max-width: 260px;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #fff;
+      color: #111827;
+      padding: 0 12px;
+      font-weight: bold;
+      outline: none;
+      cursor: pointer;
+    }
+
+    @media (max-width: 640px) {
+      .catalog-filter {
+        max-width: 100%;
+      }
+    }
+  </style>
 </head>
 <body class="page-home">
 <header>
@@ -89,6 +122,22 @@
   <section class="section" id="hot-offers">
     <div class="container">
       <h2 class="section-title">Hot Offers</h2>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all" onclick="filterHot('all', this)">All</button>
+        <button class="filter-btn" data-filter="phones" onclick="filterHot('phones', this)">Phones</button>
+        <button class="filter-btn" data-filter="tablets" onclick="filterHot('tablets', this)">Tablets</button>
+        <button class="filter-btn" data-filter="laptops" onclick="filterHot('laptops', this)">Laptops</button>
+        <button class="filter-btn" data-filter="accessories" onclick="filterHot('accessories', this)">Accessories</button>
+      </div>
+
+      <div class="catalog-filter-wrap">
+        <label for="hotBrandFilter" class="catalog-filter-label">Filter by Brand</label>
+        <select id="hotBrandFilter" class="catalog-filter" onchange="applyHotBrandFilter()">
+          <option value="all">All Brands</option>
+        </select>
+      </div>
+
       <div class="products-grid" id="hot-offers-grid">
         <div class="empty-state" id="hot-offers-empty">No hot offers available yet.</div>
       </div>
@@ -156,6 +205,108 @@
   <script src="/js/cart.js"></script>
 
   <script>
+    let hotBrands = new Set();
+    let currentHotCategory = "all";
+
+    function normalizeBrand(filePath) {
+      const cleanPath = String(filePath || "").replace(/\\/g, "/");
+      const parts = cleanPath.split("/").filter(Boolean);
+
+      if (!parts.length) return "Other";
+
+      return parts[0]
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function populateHotBrandFilter() {
+      const select = document.getElementById("hotBrandFilter");
+      if (!select) return;
+
+      const currentValue = select.value || "all";
+      const brands = Array.from(hotBrands).sort((a, b) => a.localeCompare(b));
+
+      select.innerHTML = `<option value="all">All Brands</option>`;
+
+      brands.forEach(brand => {
+        const option = document.createElement("option");
+        option.value = brand;
+        option.textContent = brand;
+        select.appendChild(option);
+      });
+
+      if ([...select.options].some(option => option.value === currentValue)) {
+        select.value = currentValue;
+      } else {
+        select.value = "all";
+      }
+    }
+
+    function filterHot(category, buttonEl) {
+      currentHotCategory = category;
+
+      document.querySelectorAll("#hot-offers .filter-btn").forEach(btn => btn.classList.remove("active"));
+      if (buttonEl) buttonEl.classList.add("active");
+
+      applyHotFilters();
+    }
+
+    function applyHotBrandFilter() {
+      applyHotFilters();
+    }
+
+    function applyHotFilters() {
+      const selectedBrand = document.getElementById("hotBrandFilter")?.value || "all";
+      const cards = document.querySelectorAll(".hot-card");
+
+      hotBrands = new Set();
+
+      cards.forEach(card => {
+        const cardCategory = card.getAttribute("data-category") || "";
+        const cardBrand = card.getAttribute("data-brand") || "";
+
+        const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
+
+        if (matchCategory) {
+          hotBrands.add(cardBrand);
+        }
+      });
+
+      populateHotBrandFilter();
+
+      const updatedSelectedBrand = document.getElementById("hotBrandFilter")?.value || "all";
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const cardCategory = card.getAttribute("data-category") || "";
+        const cardBrand = card.getAttribute("data-brand") || "";
+
+        const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
+        const matchBrand = updatedSelectedBrand === "all" || cardBrand === updatedSelectedBrand;
+        const shouldShow = matchCategory && matchBrand;
+
+        card.style.display = shouldShow ? "block" : "none";
+
+        if (shouldShow) visibleCount++;
+      });
+
+      let empty = document.getElementById("hot-offers-empty");
+
+      if (visibleCount === 0) {
+        if (!empty) {
+          empty = document.createElement("div");
+          empty.className = "empty-state";
+          empty.id = "hot-offers-empty";
+          empty.textContent = "No hot offers available for this filter.";
+          document.getElementById("hot-offers-grid").appendChild(empty);
+        } else {
+          empty.textContent = "No hot offers available for this filter.";
+        }
+      } else if (empty) {
+        empty.remove();
+      }
+    }
+
     async function loadHotOffers() {
       const grid = document.getElementById("hot-offers-grid");
       const empty = document.getElementById("hot-offers-empty");
@@ -176,8 +327,7 @@
               if (!data.available) continue;
               if (!data.hot_offer) continue;
 
-              rendered++;
-
+              const brandName = normalizeBrand(file);
               const safeItem = {
                 title: data.title || file,
                 price: data.monthly ? `${data.monthly} Monthly` : "",
@@ -186,7 +336,9 @@
               };
 
               const card = document.createElement("div");
-              card.className = "product-card";
+              card.className = "product-card hot-card";
+              card.setAttribute("data-category", category);
+              card.setAttribute("data-brand", brandName);
 
               card.innerHTML = `
                 <div class="product-image">
@@ -210,6 +362,7 @@
               });
 
               grid.appendChild(card);
+              rendered++;
             } catch (e) {
               console.error("Failed to load hot offer file:", file, e);
             }
@@ -222,6 +375,8 @@
       if (rendered && empty) {
         empty.remove();
       }
+
+      applyHotFilters();
     }
 
     loadHotOffers();
