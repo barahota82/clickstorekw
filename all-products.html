@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>All Products - Click Company</title>
   <link rel="stylesheet" href="/css/style.css" />
-
 </head>
 <body class="page-all-products">
   <header>
@@ -75,8 +74,8 @@
   <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
 
   <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">
-  WhatsApp
-</button>
+    WhatsApp
+  </button>
 
   <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
@@ -104,22 +103,6 @@
   <script src="/js/cart.js"></script>
 
   <script>
-    async function get(path) {
-      const r = await fetch(path);
-      return await r.text();
-    }
-
-    function parse(t) {
-      const d = {};
-      t.split("\n").forEach(l => {
-        if (l.includes(":")) {
-          const [k, ...rest] = l.split(":");
-          d[k.trim()] = rest.join(":").trim().replace(/"/g, "");
-        }
-      });
-      return d;
-    }
-
     function filterProducts(category, buttonEl) {
       const cards = document.querySelectorAll(".product-card[data-category]");
 
@@ -135,40 +118,64 @@
       if (buttonEl) buttonEl.classList.add("active");
     }
 
-    async function load() {
-      const paths = [
-        { path: "/products/phones/iphone15pro.txt", category: "phones" },
-        { path: "/products/tablets/ipadair.txt", category: "tablets" },
-        { path: "/products/laptops/macbookairm2.txt", category: "laptops" },
-        { path: "/products/accessories/airpodspro.txt", category: "accessories" }
-      ];
+    async function loadCategory(categoryName) {
+      try {
+        const res = await fetch(`/products/${categoryName}/index.json`);
+        const files = await res.json();
 
+        const items = [];
+
+        for (const file of files) {
+          try {
+            const r = await fetch(`/products/${categoryName}/${file}`);
+            const d = await r.json();
+
+            if (!d.available) continue;
+
+            items.push({
+              ...d,
+              category: categoryName,
+              file
+            });
+          } catch (e) {
+            console.error("Failed to load product file:", file, e);
+          }
+        }
+
+        return items;
+      } catch (e) {
+        console.error(`Failed to load ${categoryName} index:`, e);
+        return [];
+      }
+    }
+
+    async function load() {
       const grid = document.getElementById("grid");
       let rendered = 0;
 
-      for (const item of paths) {
-        try {
-          const t = await get(item.path);
-          const d = parse(t);
+      const categories = ["phones", "tablets", "laptops", "accessories"];
 
-          if (String(d.available || "").toLowerCase() === "false") continue;
+      for (const category of categories) {
+        const items = await loadCategory(category);
 
+        for (const d of items) {
           const imagePath = (d.image || "/images/logo.png").trim();
 
           const card = document.createElement("div");
           card.className = "product-card";
-          card.setAttribute("data-category", item.category);
+          card.setAttribute("data-category", category);
 
           card.innerHTML = `
             <div class="product-image">
-              <img src="${imagePath}" alt="Product">
+              <img src="${imagePath}" alt="${d.title || "Product"}">
             </div>
 
             <div class="product-body">
               <div class="row">
                 <div>
-                  <div class="price">${d.price || ""}</div>
-                  <div class="months">${d.months || ""}</div>
+                  <div class="price">${d.monthly || ""}</div>
+                  <div class="months">${d.duration || ""}</div>
+                  <div class="months">${d.down_payment || ""} Down Payment</div>
                 </div>
                 <button class="btn">+ Add</button>
               </div>
@@ -177,16 +184,16 @@
 
           card.querySelector(".btn").onclick = () => {
             addToCart({
-              title: d.title || "Product",
-              price: d.price || "",
-              months: d.months || "",
+              title: d.title || `${category}-${d.file || "product"}`,
+              price: d.monthly ? `${d.monthly} Monthly` : "",
+              months: `${d.duration || ""}${d.down_payment ? ` • ${d.down_payment} Down Payment` : ""}`,
               image: imagePath
             });
           };
 
           grid.appendChild(card);
           rendered++;
-        } catch (e) {}
+        }
       }
 
       if (rendered) {
