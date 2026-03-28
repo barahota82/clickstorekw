@@ -452,45 +452,44 @@ async function preprocessImageForOCR(file) {
     .replace(/O/g, "0")
     .replace(/o/g, "0")
     .replace(/I/g, "1")
-    .replace(/l/g, "1");
+    .replace(/l/g, "1")
+    .trim();
 
   let downPayment = "";
   let monthly = "";
   let duration = "";
 
+  // Zero down payment
   if (/zero\s*down\s*payment/i.test(clean)) {
     downPayment = "0";
   }
 
-  const monthlyMatch =
-    clean.match(/(\d+)\s*(kd|k\.d)\s*monthly/i) ||
-    clean.match(/monthly\s*(\d+)/i) ||
-    clean.match(/(\d+)\s*(kd|k\.d)/i);
-
+  // 10 KD monthly
+  const monthlyMatch = clean.match(/(\d+)\s*(kd|k\.d)\s*monthly/i);
   if (monthlyMatch) {
     monthly = monthlyMatch[1];
   }
 
-  const durationMatch =
-    clean.match(/(\d+)\s*(month|months)/i) ||
-    clean.match(/(\d+)\s*to\s*pay/i);
-
+  // 8 months to pay
+  const durationMatch = clean.match(/(\d+)\s*months?\s*to\s*pay/i);
   if (durationMatch) {
     duration = durationMatch[1];
   }
 
-  if (!downPayment) {
-    const zeroMatch =
-      clean.match(/(?:zero|0)\s*(kd|k\.d)?\s*down/i) ||
-      clean.match(/down\s*payment\s*(?:zero|0)/i) ||
-      clean.match(/(?:^|\s)(0)\s*(kd|k\.d)(?:\s|$)/i);
-
-    if (zeroMatch) {
-      downPayment = "0";
+  // fallback لو قرأ months بدون to pay
+  if (!duration) {
+    const durationFallback = clean.match(/(\d+)\s*months?/i);
+    if (durationFallback) {
+      duration = durationFallback[1];
     }
   }
 
-  return { downPayment, monthly, duration, rawText: clean };
+  return {
+    downPayment,
+    monthly,
+    duration,
+    rawText: clean
+  };
 }
 
     async function runOCRFromImage(file) {
