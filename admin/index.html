@@ -373,13 +373,15 @@ async function preprocessImageForOCR(file) {
   canvas.height = Math.floor(img.height * scale);
 
   const ctx = canvas.getContext("2d");
-  const sourceY = img.height * (2 / 3); // بداية الثلث الأخير
-  const sourceHeight = img.height / 3;
+  const sourceX = img.width * 0.75;     // آخر ربع عرض
+const sourceY = img.height * 0.75;    // آخر ربع ارتفاع
+const sourceWidth = img.width * 0.25; 
+const sourceHeight = img.height * 0.25;
 
-  ctx.drawImage(
+ctx.drawImage(
   img,
-  0, sourceY, img.width, sourceHeight,   // الجزء اللي هنقصه من الصورة الأصلية
-  0, 0, canvas.width, canvas.height      // المكان اللي هيرسم فيه على الكانفاس
+  sourceX, sourceY, sourceWidth, sourceHeight,
+  0, 0, canvas.width, canvas.height
 );
   
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
