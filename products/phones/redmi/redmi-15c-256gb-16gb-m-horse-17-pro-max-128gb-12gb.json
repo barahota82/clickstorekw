@@ -9,4 +9,6 @@
   "duration": "12 Months",
   "available": false,
   "hot_offer": false
+  "brand_priority": 7,
+  "priority": 3
 }
