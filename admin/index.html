@@ -1,12 +1,674 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Content Manager</title>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <title>Admin - Product Uploader</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b1220;
+      color: #fff;
+    }
+    .wrap {
+      width: min(1200px, 94%);
+      margin: 24px auto 40px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+    p.muted {
+      margin: 0 0 24px;
+      color: #b9c5da;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+    }
+    .card {
+      background: #121b2d;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    }
+    .section-title {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .full { grid-column: 1 / -1; }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #c7d4e8;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: #0d1525;
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px 13px;
+      font-size: 14px;
+      outline: none;
+    }
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+      font-family: Consolas, monospace;
+      line-height: 1.45;
+    }
+    input[type="checkbox"] {
+      width: auto;
+      transform: scale(1.1);
+      margin-right: 8px;
+    }
+    .checkline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 46px;
+      padding-top: 22px;
+    }
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-primary { background: #22c55e; color: #fff; }
+    .btn-secondary { background: #2563eb; color: #fff; }
+    .btn-dark { background: #1f2937; color: #fff; }
+    .btn-danger { background: #b91c1c; color: #fff; }
+    .preview-box {
+      background: #0d1525;
+      border: 1px dashed rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 14px;
+      min-height: 140px;
+    }
+    .small {
+      font-size: 12px;
+      color: #aebbd0;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .path {
+      font-family: Consolas, monospace;
+      color: #93c5fd;
+    }
+    .image-preview {
+      width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      display: block;
+      border-radius: 14px;
+      background: #fff;
+      margin-top: 10px;
+    }
+    .status {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      display: none;
+      white-space: pre-wrap;
+    }
+    .status.ok {
+      display: block;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.28);
+      color: #bbf7d0;
+    }
+    .status.err {
+      display: block;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.28);
+      color: #fecaca;
+    }
+    .status.info {
+      display: block;
+      background: rgba(37,99,235,0.12);
+      border: 1px solid rgba(37,99,235,0.28);
+      color: #bfdbfe;
+    }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .checkline { padding-top: 0; }
+    }
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <h1>Product Admin</h1>
+    <p class="muted">Upload image → review fields → generate JSON → save to GitHub automatically.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h2 class="section-title">Repository Settings</h2>
+        <div class="form-grid">
+          <div>
+            <label for="githubToken">GitHub Token</label>
+            <input id="githubToken" type="password" placeholder="Paste your GitHub token here" />
+          </div>
+
+          <div>
+            <label for="owner">Repository Owner</label>
+            <input id="owner" type="text" value="barahota82" />
+          </div>
+
+          <div>
+            <label for="repo">Repository Name</label>
+            <input id="repo" type="text" value="clickstorekw" />
+          </div>
+
+          <div>
+            <label for="branch">Branch</label>
+            <input id="branch" type="text" value="main" />
+          </div>
+        </div>
+
+        <h2 class="section-title" style="margin-top:20px;">Product Data</h2>
+        <div class="form-grid">
+          <div>
+            <label for="category">Category</label>
+            <select id="category">
+              <option value="phones">phones</option>
+              <option value="tablets">tablets</option>
+              <option value="laptops">laptops</option>
+              <option value="accessories">accessories</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="brand">Brand</label>
+            <input id="brand" type="text" placeholder="e.g. Honor / Samsung / Huawei" />
+          </div>
+
+          <div class="full">
+            <label for="title">Title</label>
+            <input id="title" type="text" placeholder="Product title or offer title" />
+          </div>
+
+          <div>
+            <label for="devices_count">Devices Count</label>
+            <input id="devices_count" type="number" min="1" step="1" value="1" />
+          </div>
+
+          <div>
+            <label for="down_payment">Down Payment</label>
+            <input id="down_payment" type="text" value="0 KD" />
+          </div>
+
+          <div>
+            <label for="monthly">Monthly</label>
+            <input id="monthly" type="text" placeholder="e.g. 10 KD" />
+          </div>
+
+          <div>
+            <label for="duration">Duration</label>
+            <input id="duration" type="text" placeholder="e.g. 12 Months" />
+          </div>
+
+          <div class="checkline">
+            <label style="margin:0;">
+              <input id="available" type="checkbox" checked />
+              available
+            </label>
+          </div>
+
+          <div class="checkline">
+            <label style="margin:0;">
+              <input id="hot_offer" type="checkbox" />
+              hot_offer
+            </label>
+          </div>
+
+          <div class="full">
+            <label for="productImage">Product Image</label>
+            <input id="productImage" type="file" accept=".webp,.png,.jpg,.jpeg" />
+          </div>
+        </div>
+
+        <div class="btns">
+          <button class="btn-secondary" type="button" onclick="autoFillFromImage()">Auto Fill From Image Name</button>
+          <button class="btn-dark" type="button" onclick="generatePreview()">Generate Preview</button>
+          <button class="btn-primary" type="button" onclick="saveAll()">Save to GitHub</button>
+          <button class="btn-danger" type="button" onclick="resetForm()">Reset</button>
+        </div>
+
+        <div id="statusBox" class="status info"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Preview</h2>
+
+        <div class="preview-box">
+          <div class="small"><strong>Brand slug:</strong> <span id="brandSlugPreview">-</span></div>
+          <div class="small"><strong>Title slug:</strong> <span id="titleSlugPreview">-</span></div>
+          <div class="small"><strong>Image path:</strong> <span id="imagePathPreview" class="path">-</span></div>
+          <div class="small"><strong>Product path:</strong> <span id="productPathPreview" class="path">-</span></div>
+          <div class="small"><strong>Index path:</strong> <span id="indexPathPreview" class="path">-</span></div>
+        </div>
+
+        <img id="previewImage" class="image-preview" style="display:none;" alt="Preview" />
+
+        <h2 class="section-title" style="margin-top:18px;">JSON Preview</h2>
+        <textarea id="jsonPreview" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const knownCompoundBrands = ["m-horse", "s-color"];
+
+    function slugify(text) {
+      return String(text || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[_\s]+/g, "-")
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+    }
+
+    function titleCaseFromSlug(slug) {
+      return slug
+        .split("-")
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+
+    function inferBrandFromSlug(slug) {
+      if (!slug) return "";
+
+      for (const compound of knownCompoundBrands) {
+        if (slug.startsWith(compound + "-") || slug === compound) {
+          return titleCaseFromSlug(compound);
+        }
+      }
+
+      const first = slug.split("-")[0] || "";
+      return titleCaseFromSlug(first);
+    }
+
+    function getImageExt(fileName) {
+      const match = String(fileName || "").match(/\.([a-zA-Z0-9]+)$/);
+      return match ? match[0].toLowerCase() : ".webp";
+    }
+
+    function b64EncodeUnicode(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function b64DecodeUnicode(str) {
+      return decodeURIComponent(escape(atob(str)));
+    }
+
+    function setStatus(type, message) {
+      const box = document.getElementById("statusBox");
+      box.className = `status ${type}`;
+      box.textContent = message;
+    }
+
+    function clearStatus() {
+      const box = document.getElementById("statusBox");
+      box.className = "status info";
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function getFormData() {
+      const category = document.getElementById("category").value;
+      const brand = document.getElementById("brand").value.trim();
+      const title = document.getElementById("title").value.trim();
+      const devices_count = parseInt(document.getElementById("devices_count").value || "1", 10);
+      const down_payment = document.getElementById("down_payment").value.trim() || "0 KD";
+      const monthly = document.getElementById("monthly").value.trim();
+      const duration = document.getElementById("duration").value.trim();
+      const available = document.getElementById("available").checked;
+      const hot_offer = document.getElementById("hot_offer").checked;
+      const imageFile = document.getElementById("productImage").files[0] || null;
+
+      const brandSlug = slugify(brand);
+      const titleSlug = slugify(title);
+
+      return {
+        category,
+        brand,
+        brandSlug,
+        title,
+        titleSlug,
+        devices_count: Number.isFinite(devices_count) && devices_count > 0 ? devices_count : 1,
+        down_payment,
+        monthly,
+        duration,
+        available,
+        hot_offer,
+        imageFile
+      };
+    }
+
+    function buildPaths(data) {
+      const ext = data.imageFile ? getImageExt(data.imageFile.name) : ".webp";
+      const imageNameSlug = data.imageFile
+        ? slugify(data.imageFile.name.replace(/\.[^.]+$/, ""))
+        : data.titleSlug;
+
+      const imagePath = `/images/${data.category}/${data.brandSlug}/${imageNameSlug}${ext}`;
+      const productPath = `/products/${data.category}/${data.brandSlug}/${data.titleSlug}.json`;
+      const indexPath = `/products/${data.category}/index.json`;
+
+      return { imagePath, productPath, indexPath, imageNameSlug, ext };
+    }
+
+    function buildProductJson(data, paths) {
+      return {
+        title: data.title,
+        category: data.category,
+        brand: data.brand,
+        devices_count: data.devices_count,
+        image: paths.imagePath,
+        down_payment: data.down_payment,
+        monthly: data.monthly,
+        duration: data.duration,
+        available: data.available,
+        hot_offer: data.hot_offer
+      };
+    }
+
+    function validateData(data) {
+      if (!data.brand) return "Brand is required.";
+      if (!data.title) return "Title is required.";
+      if (!data.monthly) return "Monthly is required.";
+      if (!data.duration) return "Duration is required.";
+      if (!data.imageFile) return "Please choose an image file.";
+      if (!data.brandSlug) return "Brand slug is empty.";
+      if (!data.titleSlug) return "Title slug is empty.";
+      return "";
+    }
+
+    function previewImageFile(file) {
+      const img = document.getElementById("previewImage");
+      if (!file) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        img.src = e.target.result;
+        img.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function autoFillFromImage() {
+      clearStatus();
+
+      const imageFile = document.getElementById("productImage").files[0];
+      if (!imageFile) {
+        setStatus("err", "Choose an image first.");
+        return;
+      }
+
+      const rawName = imageFile.name.replace(/\.[^.]+$/, "");
+      const slug = slugify(rawName);
+
+      let inferredBrand = inferBrandFromSlug(slug);
+      if (!document.getElementById("brand").value.trim() && inferredBrand) {
+        document.getElementById("brand").value = inferredBrand;
+      }
+
+      if (!document.getElementById("title").value.trim()) {
+        document.getElementById("title").value = titleCaseFromSlug(slug);
+      }
+
+      previewImageFile(imageFile);
+      generatePreview();
+      setStatus("ok", "Fields were filled from image name. Review them before saving.");
+    }
+
+    function generatePreview() {
+      clearStatus();
+
+      const data = getFormData();
+      const error = validateData(data);
+
+      if (error && data.imageFile) {
+        previewImageFile(data.imageFile);
+      }
+
+      const paths = buildPaths(data);
+
+      document.getElementById("brandSlugPreview").textContent = data.brandSlug || "-";
+      document.getElementById("titleSlugPreview").textContent = data.titleSlug || "-";
+      document.getElementById("imagePathPreview").textContent = paths.imagePath;
+      document.getElementById("productPathPreview").textContent = paths.productPath;
+      document.getElementById("indexPathPreview").textContent = paths.indexPath;
+
+      if (data.imageFile) {
+        previewImageFile(data.imageFile);
+      }
+
+      if (error) {
+        document.getElementById("jsonPreview").value = "";
+        setStatus("err", error);
+        return null;
+      }
+
+      const productJson = buildProductJson(data, paths);
+      document.getElementById("jsonPreview").value = JSON.stringify(productJson, null, 2);
+      return { data, paths, productJson };
+    }
+
+    async function githubGetFile(owner, repo, path, token, branch) {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json"
+        }
+      });
+
+      if (res.status === 404) return null;
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`GET ${path} failed: ${text}`);
+      }
+
+      return await res.json();
+    }
+
+    async function githubPutFile(owner, repo, path, token, branch, contentBase64, message, sha = null) {
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+      const body = {
+        message,
+        content: contentBase64,
+        branch
+      };
+      if (sha) body.sha = sha;
+
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`PUT ${path} failed: ${text}`);
+      }
+
+      return await res.json();
+    }
+
+    async function fileToBase64(file) {
+      const buffer = await file.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buffer);
+      const chunkSize = 0x8000;
+
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+
+      return btoa(binary);
+    }
+
+    async function updateIndexJson(owner, repo, token, branch, category, brandSlug, productSlug) {
+      const indexPath = `products/${category}/index.json`;
+      const relativePath = `${brandSlug}/${productSlug}.json`;
+
+      const existing = await githubGetFile(owner, repo, indexPath, token, branch);
+
+      let list = [];
+      let sha = null;
+
+      if (existing) {
+        sha = existing.sha;
+        try {
+          list = JSON.parse(b64DecodeUnicode(existing.content.replace(/\n/g, "")));
+          if (!Array.isArray(list)) list = [];
+        } catch {
+          list = [];
+        }
+      }
+
+      if (!list.includes(relativePath)) {
+        list.push(relativePath);
+      }
+
+      list.sort((a, b) => a.localeCompare(b));
+
+      const content = b64EncodeUnicode(JSON.stringify(list, null, 2) + "\n");
+
+      await githubPutFile(
+        owner,
+        repo,
+        indexPath,
+        token,
+        branch,
+        content,
+        `Update ${indexPath}`,
+        sha
+      );
+    }
+
+    async function saveAll() {
+      const token = document.getElementById("githubToken").value.trim();
+      const owner = document.getElementById("owner").value.trim();
+      const repo = document.getElementById("repo").value.trim();
+      const branch = document.getElementById("branch").value.trim();
+
+      if (!token) {
+        setStatus("err", "GitHub token is required.");
+        return;
+      }
+      if (!owner || !repo || !branch) {
+        setStatus("err", "Owner, repo, and branch are required.");
+        return;
+      }
+
+      const preview = generatePreview();
+      if (!preview) return;
+
+      const { data, paths, productJson } = preview;
+
+      try {
+        setStatus("info", "Uploading image...");
+        const imageContent = await fileToBase64(data.imageFile);
+        const imageRepoPath = paths.imagePath.replace(/^\//, "");
+        const existingImage = await githubGetFile(owner, repo, imageRepoPath, token, branch);
+
+        await githubPutFile(
+          owner,
+          repo,
+          imageRepoPath,
+          token,
+          branch,
+          imageContent,
+          `Upload ${imageRepoPath}`,
+          existingImage ? existingImage.sha : null
+        );
+
+        setStatus("info", "Saving product JSON...");
+        const productRepoPath = paths.productPath.replace(/^\//, "");
+        const productContent = b64EncodeUnicode(JSON.stringify(productJson, null, 2) + "\n");
+        const existingProduct = await githubGetFile(owner, repo, productRepoPath, token, branch);
+
+        await githubPutFile(
+          owner,
+          repo,
+          productRepoPath,
+          token,
+          branch,
+          productContent,
+          `Save ${productRepoPath}`,
+          existingProduct ? existingProduct.sha : null
+        );
+
+        setStatus("info", "Updating index.json...");
+        await updateIndexJson(owner, repo, token, branch, data.category, data.brandSlug, data.titleSlug);
+
+        setStatus(
+          "ok",
+          `Done successfully.\n\nImage: ${paths.imagePath}\nProduct: ${paths.productPath}\nIndex updated: ${paths.indexPath}`
+        );
+      } catch (err) {
+        setStatus("err", err.message || "Unknown error");
+      }
+    }
+
+    function resetForm() {
+      document.getElementById("brand").value = "";
+      document.getElementById("title").value = "";
+      document.getElementById("devices_count").value = "1";
+      document.getElementById("down_payment").value = "0 KD";
+      document.getElementById("monthly").value = "";
+      document.getElementById("duration").value = "";
+      document.getElementById("available").checked = true;
+      document.getElementById("hot_offer").checked = false;
+      document.getElementById("productImage").value = "";
+      document.getElementById("jsonPreview").value = "";
+      document.getElementById("brandSlugPreview").textContent = "-";
+      document.getElementById("titleSlugPreview").textContent = "-";
+      document.getElementById("imagePathPreview").textContent = "-";
+      document.getElementById("productPathPreview").textContent = "-";
+      document.getElementById("indexPathPreview").textContent = "-";
+      previewImageFile(null);
+      clearStatus();
+    }
+
+    document.getElementById("productImage").addEventListener("change", () => {
+      const file = document.getElementById("productImage").files[0];
+      previewImageFile(file);
+    });
+  </script>
 </body>
 </html>
