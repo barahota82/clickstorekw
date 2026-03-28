@@ -99,10 +99,11 @@ function closeCart() {
   document.getElementById("cartOverlay")?.classList.remove("open");
 }
 
-// ===== SETTINGS LOADER (AI READY) =====
+// ===== SETTINGS LOADER =====
 async function loadWhatsAppSettings() {
   try {
-    const res = await fetch("/settings/whatsapp.md");
+    // أضفنا التاريخ لمنع الكاش وضمان جلب البيانات من السيرفر
+    const res = await fetch("/settings/whatsapp.md?v=" + Date.now());
     const text = await res.text();
 
     const data = {};
@@ -116,11 +117,12 @@ async function loadWhatsAppSettings() {
 
     return data;
   } catch {
-    return {};
+    // في حال فشل السيرفر، نضع بيانات افتراضية لكي لا يتوقف الزر
+    return { phone: "67680877", employee_name: "Sales", greeting: "Welcome 👋" };
   }
 }
 
-// ===== BUILD MESSAGE (SMART AI STYLE) =====
+// ===== BUILD MESSAGE =====
 function buildOrderMessage(data, lines) {
   let greeting = data.greeting || "Welcome 👋";
 
@@ -163,7 +165,14 @@ async function sendOrderWhatsApp() {
 
   const phone = "965" + (data.phone || "67680877");
 
-  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+  // التعديل الجوهري للموبايل: استخدام api.whatsapp لضمان الفتح المباشر
+  const finalURL = `https://api.whatsapp.com{phone}&text=${encoded}`;
+  
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      window.location.href = finalURL; // الفتح في نفس النافذة للموبايل لتجنب الحظر
+  } else {
+      window.open(finalURL, "_blank"); // الفتح في نافذة جديدة للكمبيوتر
+  }
 }
 
 // ===== DIRECT WHATSAPP =====
@@ -178,7 +187,13 @@ async function openWhatsAppDirect() {
 
   const phone = "965" + (data.phone || "67680877");
 
-  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+  const finalURL = `https://api.whatsapp.com{phone}&text=${encoded}`;
+  
+  if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      window.location.href = finalURL;
+  } else {
+      window.open(finalURL, "_blank");
+  }
 }
 
 // ===== INIT =====
