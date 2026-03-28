@@ -1,12 +1,13 @@
 /* ================================
    CART SYSTEM - CLICK COMPANY
    Professional Version 🔥
+   (Mobile-Optimized & WhatsApp Fix)
 ================================ */
 
 // ===== INIT CART =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// إصلاح البيانات القديمة
+// إصلاح البيانات القديمة وضمان صحة الكميات
 cart = cart.map(item => ({
   ...item,
   quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
@@ -102,7 +103,8 @@ function closeCart() {
 // ===== SETTINGS LOADER (AI READY) =====
 async function loadWhatsAppSettings() {
   try {
-    const res = await fetch("/settings/whatsapp.md");
+    // إضافة تيم-ستامب لمنع الكاش عند التحديث من الأدمن
+    const res = await fetch("/settings/whatsapp.md?v=" + new Date().getTime());
     const text = await res.text();
 
     const data = {};
@@ -115,7 +117,8 @@ async function loadWhatsAppSettings() {
     });
 
     return data;
-  } catch {
+  } catch (error) {
+    console.error("Error loading WhatsApp settings:", error);
     return {};
   }
 }
@@ -123,16 +126,31 @@ async function loadWhatsAppSettings() {
 // ===== BUILD MESSAGE (SMART AI STYLE) =====
 function buildOrderMessage(data, lines) {
   let greeting = data.greeting || "Welcome 👋";
-
   greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
 
   return `${greeting}
 
-🛒 New Order
+🛒 *New Order*
 
 ${lines.join("\n\n")}
 
-📍 Please confirm availability & total price.`;
+📍 *Please confirm availability & total price.*`;
+}
+
+/**
+ * دالة ذكية لفتح واتساب تدعم الموبايل والكمبيوتر
+ * تحل مشكلة حظر النوافذ المنبثقة في متصفحات الموبايل
+ */
+function triggerWhatsApp(phone, message) {
+    const encoded = encodeURIComponent(message);
+    const whatsappURL = `https://api.whatsapp.com{phone}&text=${encoded}`;
+    
+    // استخدام window.open للكمبيوتر و window.location للموبايل
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        window.location.href = whatsappURL;
+    } else {
+        window.open(whatsappURL, "_blank");
+    }
 }
 
 // ===== SEND ORDER =====
@@ -141,6 +159,10 @@ async function sendOrderWhatsApp() {
 
   const baseURL = window.location.origin;
 
+  // جلب الإعدادات
+  const data = await loadWhatsAppSettings();
+  const phone = "965" + (data.phone || "67680877");
+
   const lines = cart.map((item, i) => {
     let imageURL = item.image || "";
 
@@ -148,37 +170,29 @@ async function sendOrderWhatsApp() {
       imageURL = baseURL + imageURL;
     }
 
-    return `🔹 Product ${i + 1}
-📱 ${item.title || "Product"} × ${parseInt(item.quantity) || 1}
+    return `🔹 *Product ${i + 1}*
+📱 *${item.title || "Product"}* × ${parseInt(item.quantity) || 1}
 💰 ${item.price || ""}
 📆 ${item.months || ""}
 📸 ${imageURL}`;
   });
 
-  const data = await loadWhatsAppSettings();
-
   const msg = buildOrderMessage(data, lines);
 
-  const encoded = encodeURIComponent(msg);
-
-  const phone = "965" + (data.phone || "67680877");
-
-  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+  // تنفيذ الفتح باستخدام الدالة الذكية
+  triggerWhatsApp(phone, msg);
 }
 
 // ===== DIRECT WHATSAPP =====
 async function openWhatsAppDirect() {
   const data = await loadWhatsAppSettings();
-
-  let greeting = data.greeting || "Hello 👋";
-
-  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
-
-  const encoded = encodeURIComponent(greeting);
-
   const phone = "965" + (data.phone || "67680877");
 
-  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+  let greeting = data.greeting || "Hello 👋";
+  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+
+  // تنفيذ الفتح باستخدام الدالة الذكية
+  triggerWhatsApp(phone, greeting);
 }
 
 // ===== INIT =====
