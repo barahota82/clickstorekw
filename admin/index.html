@@ -463,26 +463,26 @@ function extractFinancialsFromText(text) {
     .replace(/I/g, "1")
     .replace(/l/g, "1")
     .replace(/S(?=\s*MONTH)/gi, "5")
-    .replace(/ZER0/gi, "ZERO")
     .trim();
 
   let downPayment = "";
   let monthly = "";
   let duration = "";
 
-  if (/zero\s*down\s*payment/i.test(clean)) {
-    downPayment = "0";
-  }
-
+  // -----------------------
+  // Monthly
+  // -----------------------
   const monthlyMatch =
     clean.match(/(\d+)\s*(kd|k\.d)\s*monthly/i) ||
-    clean.match(/(\d+)\s*(kd|k\.d)\b/i) ||
     clean.match(/monthly\s*(\d+)/i);
 
   if (monthlyMatch) {
     monthly = monthlyMatch[1];
   }
 
+  // -----------------------
+  // Duration (Months)
+  // -----------------------
   const durationMatch =
     clean.match(/(\d+)\s*months?\s*to\s*pay/i) ||
     clean.match(/(\d+)\s*months?/i) ||
@@ -492,15 +492,39 @@ function extractFinancialsFromText(text) {
     duration = durationMatch[1];
   }
 
-  if (!downPayment) {
-    const zeroMatch =
-      clean.match(/(?:zero|0)\s*down/i) ||
-      clean.match(/down\s*payment\s*(?:zero|0)/i) ||
-      clean.match(/(?:^|\s)(0)\s*(kd|k\.d)(?:\s|$)/i);
+  // -----------------------
+  // Down Payment (مش شرط يكون صفر)
+  // -----------------------
 
-    if (zeroMatch) {
-      downPayment = "0";
-    }
+  // حالة: 0 KD down payment
+  const downMatch =
+    clean.match(/(\d+)\s*(kd|k\.d)\s*(down|payment)/i) ||
+    clean.match(/(down|payment)\s*(\d+)/i);
+
+  if (downMatch) {
+    downPayment = downMatch[1] || downMatch[2] || "";
+  }
+
+  // حالة: ZERO DOWN PAYMENT
+  if (!downPayment && /zero\s*(down|payment)/i.test(clean)) {
+    downPayment = "0";
+  }
+
+  // -----------------------
+  // Rescue ذكي
+  // -----------------------
+  const numbers = clean.match(/\d+/g) || [];
+
+  if (!monthly && numbers.length >= 1) {
+    monthly = numbers[0];
+  }
+
+  if (!duration && numbers.length >= 2) {
+    duration = numbers[1];
+  }
+
+  if (!downPayment && numbers.length >= 3) {
+    downPayment = numbers[2];
   }
 
   return {
@@ -510,6 +534,7 @@ function extractFinancialsFromText(text) {
     rawText: clean
   };
 }
+    
     async function runOCRFromImage(file) {
   const processedCanvas = await preprocessImageForOCR(file);
 
