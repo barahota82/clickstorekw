@@ -89,7 +89,7 @@
 
       <div class="catalog-filter-wrap">
         <label for="brandFilter" class="catalog-filter-label">Filter by Brand</label>
-        <select id="brandFilter" class="catalog-filter" onchange="applyAllFilters()">
+        <select id="brandFilter" class="catalog-filter" onchange="applyBrandFilter()">
           <option value="all">All Brands</option>
         </select>
       </div>
@@ -143,7 +143,7 @@
   <script src="/js/cart.js"></script>
 
   <script>
-    const renderedBrands = new Set();
+    let renderedBrands = new Set();
     let currentCategoryFilter = "all";
 
     function normalizeBrand(filePath) {
@@ -161,6 +161,7 @@
       const select = document.getElementById("brandFilter");
       if (!select) return;
 
+      const currentValue = select.value || "all";
       const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
 
       select.innerHTML = `<option value="all">All Brands</option>`;
@@ -171,6 +172,12 @@
         option.textContent = brand;
         select.appendChild(option);
       });
+
+      if ([...select.options].some(option => option.value === currentValue)) {
+        select.value = currentValue;
+      } else {
+        select.value = "all";
+      }
     }
 
     function filterProducts(category, buttonEl) {
@@ -188,17 +195,33 @@
 
     function applyAllFilters() {
       const selectedBrand = document.getElementById("brandFilter")?.value || "all";
-      const cards = document.querySelectorAll(".product-card[data-category][data-brand]");
+      const cards = document.querySelectorAll(".product-card");
+
+      renderedBrands = new Set();
+
+      cards.forEach(card => {
+        const cardCategory = card.getAttribute("data-category") || "";
+        const cardBrand = card.getAttribute("data-brand") || "";
+
+        const matchCategory = currentCategoryFilter === "all" || cardCategory === currentCategoryFilter;
+
+        if (matchCategory) {
+          renderedBrands.add(cardBrand);
+        }
+      });
+
+      populateBrandFilter();
+
+      const updatedSelectedBrand = document.getElementById("brandFilter")?.value || "all";
       let visibleCount = 0;
 
       cards.forEach(card => {
         const cardCategory = card.getAttribute("data-category") || "";
         const cardBrand = card.getAttribute("data-brand") || "";
 
-        const categoryMatch = currentCategoryFilter === "all" || cardCategory === currentCategoryFilter;
-        const brandMatch = selectedBrand === "all" || cardBrand === selectedBrand;
-
-        const shouldShow = categoryMatch && brandMatch;
+        const matchCategory = currentCategoryFilter === "all" || cardCategory === currentCategoryFilter;
+        const matchBrand = updatedSelectedBrand === "all" || cardBrand === updatedSelectedBrand;
+        const shouldShow = matchCategory && matchBrand;
 
         card.style.display = shouldShow ? "block" : "none";
 
@@ -298,7 +321,6 @@
           };
 
           grid.appendChild(card);
-          renderedBrands.add(brandName);
           rendered++;
         }
       }
@@ -308,7 +330,6 @@
         if (empty) empty.remove();
       }
 
-      populateBrandFilter();
       applyAllFilters();
     }
 
