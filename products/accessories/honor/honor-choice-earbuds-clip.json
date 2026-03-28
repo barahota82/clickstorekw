@@ -1,12 +1,16 @@
 {
   "title": "Honor Choice Earbuds Clip",
-  "image": "/images/accessories/honor/honor-choice-earbuds-clip.webp",
-  "available": true,
-  "hot_offer": true,
   "category": "accessories",
   "brand": "Honor",
 
+  "devices_count": 1,
+
+  "image": "/images/accessories/honor/honor-choice-earbuds-clip.webp",
+
   "down_payment": "0 KD",
   "monthly": "5 KD",
-  "duration": "9 Months"
+  "duration": "6 Months",
+
+  "available": true,
+  "hot_offer": false
 }
