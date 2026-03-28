@@ -481,7 +481,14 @@ function extractFinancialsFromText(text) {
 
   function hasMonthly(str) {
     const s = String(str || "").toLowerCase();
-    return s.includes("monthly");
+    return (
+      s.includes("monthly") ||
+      s.includes("m0nthly") ||
+      s.includes("month1y") ||
+      s.includes("monthiy") ||
+      s.includes("m0nth1y") ||
+      s.includes("m0nthiy")
+    );
   }
 
   function hasZero(str) {
@@ -492,20 +499,20 @@ function extractFinancialsFromText(text) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // القسط: فقط من السطر الذي يحتوي على monthly
+    // القسط: فقط من السطر المرتبط بـ monthly أو شبيهها
     if (hasMonthly(line)) {
       const monthlyMatch =
-        line.match(/(\d+)\s*(kd|k\.d)\s*monthly/i) ||
-        line.match(/(\d+).{0,12}?monthly/i) ||
-        line.match(/monthly.{0,12}?(\d+)/i);
+        line.match(/(\d+)\s*(kd|k\.d).{0,8}(monthly|m0nthly|month1y|monthiy)/i) ||
+        line.match(/(\d+).{0,12}(monthly|m0nthly|month1y|monthiy)/i) ||
+        line.match(/(monthly|m0nthly|month1y|monthiy).{0,12}(\d+)/i);
 
       if (monthlyMatch) {
-        monthly = monthlyMatch[1];
+        monthly = monthlyMatch[1] || monthlyMatch[2] || "";
       } else {
         monthly = firstNumber(line);
       }
 
-      // المقدم: من السطر اللي فوق مباشرة
+      // المقدم: السطر اللي فوق مباشرة
       if (i > 0) {
         const prevLine = lines[i - 1];
 
@@ -519,7 +526,7 @@ function extractFinancialsFromText(text) {
         downPayment = "0";
       }
 
-      // الشهور: من السطر اللي تحت مباشرة
+      // الشهور: السطر اللي تحت مباشرة
       if (i < lines.length - 1) {
         const nextLine = lines[i + 1];
         const nextNumber = firstNumber(nextLine);
