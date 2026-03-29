@@ -1,0 +1,9 @@
+Options -Indexes
+
+<Files ".htaccess">
+    Require all denied
+</Files>
+
+<FilesMatch "^(config\.php|make-password\.php)$">
+    Require all denied
+</FilesMatch>
