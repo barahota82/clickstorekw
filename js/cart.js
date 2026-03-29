@@ -35,9 +35,13 @@ function extractNumber(text) {
 
 function calculateItemTotal(item) {
   const monthly = extractNumber(item.price);
-  const months = extractNumber(item.months);
-  const downPayment = extractNumber(item.months);
   const quantity = parseInt(item.quantity) || 1;
+
+  const monthsMatch = String(item.months || "").match(/(\d+)\s*Months/i);
+  const downMatch = String(item.months || "").match(/(\d+)\s*KD\s*Down\s*Payment/i);
+
+  const months = monthsMatch ? parseFloat(monthsMatch[1]) : 0;
+  const downPayment = downMatch ? parseFloat(downMatch[1]) : 0;
 
   return (monthly * months * quantity) + (downPayment * quantity);
 }
