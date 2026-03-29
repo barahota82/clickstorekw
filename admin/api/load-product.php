@@ -1,10 +1,15 @@
 <?php
+session_start();
 header('Content-Type: application/json; charset=utf-8');
 
 function respond($ok, $data = [], $code = 200) {
     http_response_code($code);
     echo json_encode(array_merge(['ok' => $ok], $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
+}
+
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    respond(false, ['message' => 'Unauthorized'], 401);
 }
 
 $category = $_GET['category'] ?? '';
