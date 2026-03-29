@@ -14,7 +14,10 @@ function respond($ok, $data = [], $code = 200) {
 $configPath = dirname(__DIR__) . '/config.php';
 
 if (!file_exists($configPath)) {
-    respond(false, ['message' => 'Config file not found.'], 500);
+    respond(false, [
+        'message' => 'Config file not found',
+        'expected_path' => $configPath
+    ], 500);
 }
 
 $config = require $configPath;
