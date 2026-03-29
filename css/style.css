@@ -527,6 +527,55 @@ footer {
     height: 52px;
   }
 }
+/* ===== CART TOTAL DESIGN ===== */
+
+.cart-item-total {
+  font-size: 13px;
+  font-weight: 700;
+  color: #16a34a;
+  margin-top: 4px;
+}
+
+.cart-summary {
+  margin-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 16px;
+}
+
+.cart-summary span {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.cart-summary strong {
+  font-size: 18px;
+  color: #111827;
+}
+
+/* ===== تحسين شكل الكارت ===== */
+
+.cart-item {
+  transition: 0.2s ease;
+}
+
+.cart-item:hover {
+  background: #f9fafb;
+}
+
+/* ===== زر الحذف ===== */
+
+.cart-remove {
+  transition: 0.2s ease;
+}
+
+.cart-remove:hover {
+  background: #fecaca;
+  transform: scale(1.05);
+}
 .page-home .floating-cart {
   position: fixed;
   left: 18px;
