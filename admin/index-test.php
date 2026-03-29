@@ -257,7 +257,7 @@
         <div class="grid-3">
           <div>
             <label>الفئة</label>
-            <select id="editCategory">
+            <select id="editCategory" onchange="loadProductFileList()">
               <option>phones</option>
               <option>tablets</option>
               <option>laptops</option>
@@ -267,7 +267,9 @@
 
           <div>
             <label>اسم ملف المنتج</label>
-            <input id="editFile" type="text" placeholder="example.json" />
+            <select id="editFile">
+            <option value="">اختر المنتج</option>
+            </select>
           </div>
 
           <div style="display:flex;align-items:end;">
@@ -409,6 +411,31 @@
     }
 
     let currentProductContext = null;
+    async function loadProductFileList() {
+  const category = document.getElementById("editCategory").value;
+  const select = document.getElementById("editFile");
+
+  select.innerHTML = `<option value="">جاري تحميل المنتجات...</option>`;
+
+  try {
+    const res = await fetch(`/products/${category}/index.json`);
+    const files = await res.json();
+
+    select.innerHTML = `<option value="">اختر المنتج</option>`;
+
+    files.forEach(file => {
+      const option = document.createElement("option");
+      option.value = file;
+      option.textContent = file
+        .replace(".json", "")
+        .replace(/\//g, " / ")
+        .replace(/-/g, " ");
+      select.appendChild(option);
+    });
+  } catch (e) {
+    select.innerHTML = `<option value="">فشل تحميل المنتجات</option>`;
+  }
+}
 
     async function loadProduct() {
       clearStatus("editStatus");
@@ -504,6 +531,7 @@
     }
 
     bootApp();
+   loadProductFileList();
   </script>
 </body>
 </html>
