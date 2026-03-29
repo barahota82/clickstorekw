@@ -1,6 +1,6 @@
 /* ================================
    CART SYSTEM - CLICK COMPANY
-   FINAL PRO VERSION 🔥
+   FINAL PRO VERSION + UX 🔥
 ================================ */
 
 // ===== INIT CART =====
@@ -18,14 +18,108 @@ let whatsappSettings = {
   greeting: "Hello 👋"
 };
 
+// ===== PREVENT DOUBLE CLICK =====
+let isSending = false;
+
 // ===== DEVICE DETECTION =====
 function isMobile() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
+// ===== LOADING EFFECT =====
+function showLoading(btnId, text = "Opening...") {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+
+  if (!btn.dataset.originalText) {
+    btn.dataset.originalText = btn.innerText;
+  }
+
+  btn.innerText = text;
+  btn.style.opacity = "0.7";
+  btn.style.pointerEvents = "none";
+}
+
+function resetLoading(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+
+  if (btn.dataset.originalText) {
+    btn.innerText = btn.dataset.originalText;
+  }
+
+  btn.style.opacity = "";
+  btn.style.pointerEvents = "";
+}
+
+// ===== TOAST =====
+function ensureToastContainer() {
+  let toast = document.getElementById("globalToast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "globalToast";
+    toast.className = "global-toast";
+    document.body.appendChild(toast);
+  }
+
+  return toast;
+}
+
+function showToast(message) {
+  const toast = ensureToastContainer();
+
+  toast.textContent = message;
+  toast.classList.remove("show");
+
+  requestAnimationFrame(() => {
+    toast.classList.add("show");
+  });
+
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 1800);
+}
+
+// ===== CART ANIMATION =====
+function animateCartBadge() {
+  const targets = [
+    document.getElementById("cart-count-top"),
+    document.getElementById("count"),
+    document.getElementById("cart-count-floating")
+  ].filter(Boolean);
+
+  targets.forEach(el => {
+    el.classList.remove("cart-bump");
+    void el.offsetWidth;
+    el.classList.add("cart-bump");
+  });
+
+  const floatingCart =
+    document.querySelector(".floating-cart") ||
+    document.querySelector(".cart-btn");
+
+  if (floatingCart) {
+    floatingCart.classList.remove("cart-pulse");
+    void floatingCart.offsetWidth;
+    floatingCart.classList.add("cart-pulse");
+  }
+}
+
+// ===== OPEN WHATSAPP =====
+function openWhatsAppURL(url) {
+  if (isMobile()) {
+    window.location.href = url;
+  } else {
+    window.open(url, "_blank");
+  }
+}
+
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", async () => {
   updateCartUI();
+  ensureToastContainer();
 
   try {
     const res = await fetch("/settings/whatsapp.md");
@@ -44,7 +138,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       ...whatsappSettings,
       ...data
     };
-
   } catch {
     console.log("⚠️ Failed to load WhatsApp settings");
   }
@@ -93,18 +186,27 @@ function updateCartUI() {
 
 // ===== ADD =====
 function addToCart(newItem) {
-  const existingItem = cart.find(item => item.title === newItem.title);
+  const existingItem = cart.find(item =>
+    item.title === newItem.title && item.price === newItem.price
+  );
 
   if (existingItem) {
     existingItem.quantity = (parseInt(existingItem.quantity) || 1) + 1;
+    showToast("Quantity updated in cart");
   } else {
     cart.push({
       ...newItem,
       quantity: 1
     });
+    showToast("Added to cart");
   }
 
   updateCartUI();
+  animateCartBadge();
+
+  if (navigator.vibrate) {
+    navigator.vibrate(35);
+  }
 }
 
 // ===== REMOVE =====
@@ -113,8 +215,10 @@ function removeFromCart(index) {
 
   if ((parseInt(cart[index].quantity) || 1) > 1) {
     cart[index].quantity--;
+    showToast("Quantity decreased");
   } else {
     cart.splice(index, 1);
+    showToast("Removed from cart");
   }
 
   updateCartUI();
@@ -124,6 +228,7 @@ function removeFromCart(index) {
 function clearCart() {
   cart = [];
   updateCartUI();
+  showToast("Cart cleared");
 }
 
 // ===== OPEN / CLOSE =====
@@ -140,21 +245,31 @@ function closeCart() {
 // ===== BUILD MESSAGE =====
 function buildOrderMessage(data, lines) {
   let greeting = data.greeting || "Welcome 👋";
-
   greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
 
   return `${greeting}
 
-🛒 New Order
+🛒 New Order - Click Company
 
 ${lines.join("\n\n")}
 
-📍 Please confirm availability & total price.`;
+----------------------
+
+📍 Please confirm availability
+🚚 Delivery in Kuwait`;
 }
 
 // ===== SEND ORDER =====
 function sendOrderWhatsApp() {
-  if (!cart.length) return;
+  if (!cart.length) {
+    showToast("Your cart is empty");
+    return;
+  }
+
+  if (isSending) return;
+
+  isSending = true;
+  showLoading("whatsappBtn");
 
   const baseURL = window.location.origin;
 
@@ -175,22 +290,25 @@ function sendOrderWhatsApp() {
   const msg = buildOrderMessage(whatsappSettings, lines);
   const encoded = encodeURIComponent(msg);
   const phone = "965" + (whatsappSettings.phone || "67680877");
-
   const url = `https://wa.me/${phone}?text=${encoded}`;
 
-  if (isMobile()) {
-    window.location.href = url;
-  } else {
-    window.open(url, "_blank");
-  }
+  setTimeout(() => {
+    openWhatsAppURL(url);
+    isSending = false;
+    resetLoading("whatsappBtn");
+  }, 200);
 }
 
 // ===== DIRECT WHATSAPP =====
 function openWhatsAppDirect() {
+  if (isSending) return;
+
+  isSending = true;
+  showLoading("whatsappBtn");
+
   const phone = "965" + (whatsappSettings.phone || "67680877");
 
   let message = whatsappSettings.greeting || "Hello 👋";
-
   message = message.replace(
     "{{name}}",
     whatsappSettings.employee_name || "Sales"
@@ -199,9 +317,9 @@ function openWhatsAppDirect() {
   const encoded = encodeURIComponent(message);
   const url = `https://wa.me/${phone}?text=${encoded}`;
 
-  if (isMobile()) {
-    window.location.href = url;
-  } else {
-    window.open(url, "_blank");
-  }
+  setTimeout(() => {
+    openWhatsAppURL(url);
+    isSending = false;
+    resetLoading("whatsappBtn");
+  }, 200);
 }
