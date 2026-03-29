@@ -79,7 +79,46 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 14px;
     }
+    .edit-load-row {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 18px;
+}
 
+.edit-category-box {
+  width: 180px;
+  flex: 0 0 180px;
+}
+
+.edit-file-box {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.edit-load-btn-box {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: end;
+}
+
+.edit-load-btn-box button {
+  white-space: nowrap;
+}
+
+@media (max-width: 960px) {
+  .edit-load-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .edit-category-box,
+  .edit-file-box,
+  .edit-load-btn-box {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+}
     .full { grid-column: 1 / -1; }
 
     label {
@@ -254,28 +293,28 @@
       <div id="tab-edit-product" class="tab-panel active card">
         <h2>استدعاء منتج وتعديله</h2>
 
-        <div class="grid-3">
-          <div>
-            <label>الفئة</label>
-            <select id="editCategory" onchange="loadProductFileList()">
-              <option>phones</option>
-              <option>tablets</option>
-              <option>laptops</option>
-              <option>accessories</option>
-            </select>
-          </div>
+        <div class="edit-load-row">
+  <div class="edit-category-box">
+    <label>الفئة</label>
+    <select id="editCategory" onchange="loadProductFileList()">
+      <option>phones</option>
+      <option>tablets</option>
+      <option>laptops</option>
+      <option>accessories</option>
+    </select>
+  </div>
 
-          <div>
-            <label>اسم ملف المنتج</label>
-            <select id="editFile">
-            <option value="">اختر المنتج</option>
-            </select>
-          </div>
+  <div class="edit-file-box">
+    <label>اسم ملف المنتج</label>
+    <select id="editFile">
+      <option value="">اختر المنتج</option>
+    </select>
+  </div>
 
-          <div style="display:flex;align-items:end;">
-            <button class="btn-secondary" type="button" onclick="loadProduct()">استدعاء المنتج</button>
-          </div>
-        </div>
+  <div class="edit-load-btn-box">
+    <button class="btn-secondary" type="button" onclick="loadProduct()">استدعاء المنتج</button>
+  </div>
+</div>
 
         <div class="form-grid" style="margin-top:18px;">
           <div>
