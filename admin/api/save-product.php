@@ -3,23 +3,12 @@ header('Content-Type: application/json; charset=utf-8');
 
 function respond($ok, $data = [], $code = 200) {
     http_response_code($code);
-    echo json_encode(array_merge(['ok' => $ok], $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    echo json_encode(array_merge(['ok' => $ok], $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
-$raw = file_get_contents('php://input');
-if ($raw === false || $raw === '') {
-    respond(false, ['message' => 'Empty request body'], 400);
-}
-
-$input = json_decode($raw, true);
-if (!is_array($input)) {
-    respond(false, ['message' => 'Invalid JSON body'], 400);
-}
-
-$category = $input['category'] ?? '';
-$file = $input['file'] ?? '';
-$product = $input['product'] ?? null;
+$category = $_GET['category'] ?? '';
+$file = $_GET['file'] ?? '';
 
 $allowedCategories = ['phones', 'tablets', 'laptops', 'accessories'];
 
@@ -31,10 +20,6 @@ if ($file === '' || strpos($file, '..') !== false || !str_ends_with($file, '.jso
     respond(false, ['message' => 'Invalid file name'], 400);
 }
 
-if (!is_array($product)) {
-    respond(false, ['message' => 'Invalid product payload'], 400);
-}
-
 $basePath = dirname(__DIR__, 2);
 $productPath = $basePath . "/products/{$category}/{$file}";
 
@@ -42,49 +27,18 @@ if (!file_exists($productPath)) {
     respond(false, ['message' => 'Product file not found'], 404);
 }
 
-/**
- * نحافظ فقط على مفاتيح المنتج المطلوبة
- * ويمكنك زيادة مفاتيح أخرى لاحقًا بسهولة
- */
-$cleanProduct = [
-    'title' => (string)($product['title'] ?? ''),
-    'category' => (string)($product['category'] ?? $category),
-    'brand' => (string)($product['brand'] ?? ''),
-    'devices_count' => (int)($product['devices_count'] ?? 1),
-    'image' => (string)($product['image'] ?? ''),
-    'down_payment' => (string)($product['down_payment'] ?? ''),
-    'monthly' => (string)($product['monthly'] ?? ''),
-    'duration' => (string)($product['duration'] ?? ''),
-    'available' => (bool)($product['available'] ?? false),
-    'hot_offer' => (bool)($product['hot_offer'] ?? false),
-    'brand_priority' => isset($product['brand_priority']) ? (int)$product['brand_priority'] : 9999,
-    'priority' => isset($product['priority']) ? (int)$product['priority'] : 9999,
-];
-
-if ($cleanProduct['title'] === '') {
-    respond(false, ['message' => 'Title is required'], 400);
+$content = file_get_contents($productPath);
+if ($content === false) {
+    respond(false, ['message' => 'Failed to read product file'], 500);
 }
 
-if ($cleanProduct['brand'] === '') {
-    respond(false, ['message' => 'Brand is required'], 400);
-}
-
-if ($cleanProduct['devices_count'] < 1) {
-    $cleanProduct['devices_count'] = 1;
-}
-
-$json = json_encode($cleanProduct, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-if ($json === false) {
-    respond(false, ['message' => 'Failed to encode product JSON'], 500);
-}
-
-$result = file_put_contents($productPath, $json . PHP_EOL, LOCK_EX);
-
-if ($result === false) {
-    respond(false, ['message' => 'Failed to save product file'], 500);
+$data = json_decode($content, true);
+if (!is_array($data)) {
+    respond(false, ['message' => 'Invalid JSON in product file'], 500);
 }
 
 respond(true, [
-    'message' => 'Product saved successfully',
-    'path' => "products/{$category}/{$file}"
+    'product' => $data,
+    'category' => $category,
+    'file' => $file
 ]);
