@@ -1,5 +1,6 @@
 <?php
 session_start();
+$isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -12,7 +13,7 @@ session_start();
 </head>
 <body>
 
-  <div id="loginView" class="login-wrap">
+  <div id="loginView" class="login-wrap <?php echo $isLoggedIn ? 'hidden' : ''; ?>">
     <div class="login-card">
       <h1>تسجيل دخول الأدمن</h1>
       <p class="muted">دخول لوحة التحكم</p>
@@ -37,7 +38,7 @@ session_start();
     </div>
   </div>
 
-  <div id="appView" class="hidden">
+  <div id="appView" class="<?php echo $isLoggedIn ? '' : 'hidden'; ?>">
     <div class="wrap">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -240,6 +241,9 @@ session_start();
     </div>
   </div>
 
+  <script>
+    window.ADMIN_IS_LOGGED_IN = <?php echo $isLoggedIn ? 'true' : 'false'; ?>;
+  </script>
   <script src="assets/admin.js"></script>
 </body>
 </html>
