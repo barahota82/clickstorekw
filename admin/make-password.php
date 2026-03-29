@@ -1,2 +1,2 @@
 <?php
-echo password_hash('Admin@Hem@3282', PASSWORD_DEFAULT);
+echo password_hash('ادخل الباسوورد هنا لانشاء ملف تشفير', PASSWORD_DEFAULT);
