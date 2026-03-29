@@ -1,2 +1,2 @@
 <?php
-echo password_hash('@dmin-ST1', PASSWORD_DEFAULT);
+echo password_hash('Admin@Hem@', PASSWORD_DEFAULT);
