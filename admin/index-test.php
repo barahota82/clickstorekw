@@ -341,27 +341,27 @@
           <div>
             <label>المقدم (KD)</label>
             <input id="editDown" type="number" min="0" placeholder="مثال: 10" />
-        </div>
-
-        <div>
-          <label>القسط الشهري (KD)</label>
-          <input id="editMonthly" type="number" min="1" placeholder="مثال: 5" />
-       </div>
-
-       <div>
-        <label>عدد الشهور</label>
-        <input id="editDuration" type="number" min="1" placeholder="مثال: 12" />
-       </div>
+         </div>
 
           <div>
             <label>عدد الأجهزة</label>
             <input id="editDevices" type="number" min="1" />
           </div>
 
+         <div>
+           <label>القسط الشهري (KD)</label>
+           <input id="editMonthly" type="number" min="1" placeholder="مثال: 5" />
+        </div>
+
           <div>
             <label>ترتيب البراند</label>
             <input id="editBrandPriority" type="number" min="1" />
           </div>
+
+         <div>
+          <label>عدد الشهور</label>
+          <input id="editDuration" type="number" min="1" placeholder="مثال: 12" />
+         </div>
 
           <div>
             <label>ترتيب المنتج</label>
