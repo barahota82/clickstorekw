@@ -196,14 +196,23 @@ function updateCartUI() {
 
         return `
           <div class="cart-item">
-            <img src="${item.image}" alt="${item.title || "Product"}">
-            <div>
-              <div class="cart-item-title">${item.title || "Product"} × ${parseInt(item.quantity) || 1}</div>
-              <div class="cart-item-meta">${item.price || ""}</div>
-              <div class="cart-item-meta">${item.months || ""}</div>
+            <div class="cart-item-image-wrap">
+              <img src="${item.image}" alt="${item.title || "Product"}">
+            </div>
+
+            <div class="cart-item-content">
+              <div class="cart-item-top">
+                <div class="cart-item-title">${item.title || "Product"}</div>
+                <button class="cart-remove" onclick="removeFromCart(${index})" aria-label="Remove item">×</button>
+              </div>
+
+              <div class="cart-item-qty">Qty: ${parseInt(item.quantity) || 1}</div>
+
+              <div class="cart-item-meta-row">${item.price || ""}</div>
+              <div class="cart-item-meta-row">${item.months || ""}</div>
+
               <div class="cart-item-total">Total: ${itemTotal.toFixed(0)} KD</div>
             </div>
-            <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
           </div>
         `;
       }).join("") + `
