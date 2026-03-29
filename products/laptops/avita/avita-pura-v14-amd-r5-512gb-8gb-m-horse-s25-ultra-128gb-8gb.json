@@ -8,5 +8,7 @@
   "monthly": "10 KD",
   "duration": "17 Months",
   "available": true,
-  "hot_offer": true
+  "hot_offer": false,
+  "brand_priority": 1,
+  "priority": 8
 }
