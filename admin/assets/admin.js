@@ -15,8 +15,8 @@ function clearStatus(id) {
 async function login() {
   clearStatus("loginStatus");
 
-  const username = document.getElementById("loginUsername").value.trim();
-  const password = document.getElementById("loginPassword").value.trim();
+  const username = document.getElementById("loginUsername")?.value.trim() || "";
+  const password = document.getElementById("loginPassword")?.value.trim() || "";
 
   if (!username || !password) {
     setStatus("loginStatus", "err", "اكتب اسم المستخدم وكلمة المرور.");
@@ -47,8 +47,11 @@ async function login() {
 
 async function logout() {
   try {
-    await fetch("api/logout.php", { method: "POST" });
+    await fetch("api/logout.php", {
+      method: "POST"
+    });
   } catch (e) {}
+
   location.reload();
 }
 
@@ -94,6 +97,7 @@ async function authFetch(url, options = {}) {
 async function loadProductFileList() {
   const category = document.getElementById("editCategory")?.value;
   const select = document.getElementById("editFile");
+
   if (!category || !select) return;
 
   select.innerHTML = `<option value="">جاري تحميل المنتجات...</option>`;
@@ -107,7 +111,10 @@ async function loadProductFileList() {
     files.forEach(file => {
       const option = document.createElement("option");
       option.value = file;
-      option.textContent = file.replace(".json", "").replace(/\//g, " / ").replace(/-/g, " ");
+      option.textContent = file
+        .replace(".json", "")
+        .replace(/\//g, " / ")
+        .replace(/-/g, " ");
       select.appendChild(option);
     });
   } catch (e) {
@@ -118,8 +125,8 @@ async function loadProductFileList() {
 async function loadProduct() {
   clearStatus("editStatus");
 
-  const category = document.getElementById("editCategory").value;
-  const file = document.getElementById("editFile").value.trim();
+  const category = document.getElementById("editCategory")?.value || "";
+  const file = document.getElementById("editFile")?.value.trim() || "";
 
   if (!file) {
     setStatus("editStatus", "err", "اختر ملف المنتج أولًا.");
@@ -135,8 +142,11 @@ async function loadProduct() {
       return;
     }
 
-    const p = data.product;
-    currentProductContext = { category: data.category, file: data.file };
+    const p = data.product || {};
+    currentProductContext = {
+      category: data.category,
+      file: data.file
+    };
 
     document.getElementById("editTitle").value = p.title || "";
     document.getElementById("editBrand").value = p.brand || "";
@@ -240,11 +250,17 @@ function titleCaseWord(word) {
 }
 
 function titleFromDeviceSlug(slug) {
-  return slug.split("-").filter(Boolean).map(titleCaseWord).join(" ");
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map(titleCaseWord)
+    .join(" ");
 }
 
 function previewOCRImageFile(file) {
   const img = document.getElementById("ocrPreviewImage");
+  if (!img) return;
+
   if (!file) {
     img.style.display = "none";
     img.removeAttribute("src");
@@ -262,12 +278,14 @@ function previewOCRImageFile(file) {
 function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+
     reader.onload = e => {
       const img = new Image();
       img.onload = () => resolve(img);
       img.onerror = reject;
       img.src = e.target.result;
     };
+
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -288,7 +306,11 @@ async function preprocessImageForOCR(file) {
   const sourceWidth = img.width * 0.45;
   const sourceHeight = img.height * 0.45;
 
-  ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+    img,
+    sourceX, sourceY, sourceWidth, sourceHeight,
+    0, 0, canvas.width, canvas.height
+  );
 
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
@@ -297,8 +319,10 @@ async function preprocessImageForOCR(file) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
+
     let gray = 0.299 * r + 0.587 * g + 0.114 * b;
     gray = gray > 145 ? 255 : gray < 110 ? 0 : gray;
+
     data[i] = gray;
     data[i + 1] = gray;
     data[i + 2] = gray;
@@ -356,7 +380,10 @@ function extractFinancialsFromText(text) {
     .replace(/S(?=\s*MONTH)/gi, "5")
     .trim();
 
-  const lines = clean.split("\n").map(line => line.trim()).filter(Boolean);
+  const lines = clean
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
 
   let downPayment = "";
   let monthly = "";
@@ -369,12 +396,22 @@ function extractFinancialsFromText(text) {
 
   function hasMonthly(str) {
     const s = String(str || "").toLowerCase();
-    return s.includes("monthly") || s.includes("month1y") || s.includes("monthiy") || s.includes("m0nthly");
+    return (
+      s.includes("monthly") ||
+      s.includes("month1y") ||
+      s.includes("monthiy") ||
+      s.includes("m0nthly")
+    );
   }
 
   function hasDownPayment(str) {
     const s = String(str || "").toLowerCase();
-    return s.includes("down") || s.includes("payment") || s.includes("paynent") || s.includes("payrnent");
+    return (
+      s.includes("down") ||
+      s.includes("payment") ||
+      s.includes("paynent") ||
+      s.includes("payrnent")
+    );
   }
 
   function hasZero(str) {
@@ -384,7 +421,14 @@ function extractFinancialsFromText(text) {
 
   function hasDuration(str) {
     const s = String(str || "").toLowerCase();
-    return s.includes("months") || s.includes("month") || s.includes("m0nths") || s.includes("to pay") || s.includes("topay") || s.includes("pay");
+    return (
+      s.includes("months") ||
+      s.includes("month") ||
+      s.includes("m0nths") ||
+      s.includes("to pay") ||
+      s.includes("topay") ||
+      s.includes("pay")
+    );
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -395,6 +439,7 @@ function extractFinancialsFromText(text) {
 
       if (i > 0) {
         const prevLine = lines[i - 1];
+
         if (hasZero(prevLine)) {
           downPayment = "0";
         } else {
@@ -494,7 +539,7 @@ async function ocrSmartAutoFill() {
   ocrClearStatus();
 
   const fileInput = document.getElementById("ocrProductImage");
-  const file = fileInput.files[0];
+  const file = fileInput?.files?.[0];
 
   if (!file) {
     ocrSetStatus("err", "اختر صورة أولًا.");
@@ -518,16 +563,27 @@ async function ocrSmartAutoFill() {
   try {
     const fromOCR = await runOCRFromImage(file);
 
-    if (fromOCR.downPayment) document.getElementById("ocrDownPayment").value = fromOCR.downPayment;
-    if (fromOCR.monthly) document.getElementById("ocrMonthly").value = fromOCR.monthly;
-    if (fromOCR.duration) document.getElementById("ocrDuration").value = fromOCR.duration;
+    if (fromOCR.downPayment) {
+      document.getElementById("ocrDownPayment").value = fromOCR.downPayment;
+    }
+
+    if (fromOCR.monthly) {
+      document.getElementById("ocrMonthly").value = fromOCR.monthly;
+    }
+
+    if (fromOCR.duration) {
+      document.getElementById("ocrDuration").value = fromOCR.duration;
+    }
 
     document.getElementById("ocrRawText").value = fromOCR.rawText || "";
 
-    ocrSetStatus("ok", `تم استخراج البيانات بنجاح.
+    ocrSetStatus(
+      "ok",
+      `تم استخراج البيانات بنجاح.
 المقدم: ${document.getElementById("ocrDownPayment").value || "-"}
 القسط: ${document.getElementById("ocrMonthly").value || "-"}
-المدة: ${document.getElementById("ocrDuration").value || "-"}`);
+المدة: ${document.getElementById("ocrDuration").value || "-"}`
+    );
   } catch (err) {
     ocrSetStatus("err", `فشل OCR\n${err.message}`);
   }
@@ -573,6 +629,7 @@ document.addEventListener("change", function(e) {
 });
 
 bootApp();
+
 if (window.ADMIN_IS_LOGGED_IN === true) {
   loadProductFileList();
 }
