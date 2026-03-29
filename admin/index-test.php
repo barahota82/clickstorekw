@@ -217,7 +217,7 @@
 
         <div class="full">
           <label for="loginPassword">كلمة المرور</label>
-          <input id="loginPassword" type="password" placeholder="admin123" />
+          <input id="loginPassword" type="password" placeholder="اكتب كلمة المرور" />
         </div>
       </div>
 
