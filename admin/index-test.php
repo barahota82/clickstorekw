@@ -139,6 +139,17 @@
       outline: none;
     }
 
+    select {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* علشان ما تطلعش فوق الشاشة */
+.edit-file-box select {
+  max-height: 300px;
+  overflow-y: auto;
+}
+ 
     textarea {
       min-height: 120px;
       resize: vertical;
