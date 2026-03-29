@@ -92,9 +92,8 @@
 }
 
 .edit-file-box {
-  flex: 0 1 520px;
-  min-width: 320px;
-  max-width: 520px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .edit-load-btn-box {
