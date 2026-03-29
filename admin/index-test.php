@@ -92,8 +92,9 @@
 }
 
 .edit-file-box {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 0 1 520px;
+  min-width: 320px;
+  max-width: 520px;
 }
 
 .edit-load-btn-box {
@@ -461,6 +462,11 @@
     }
 
     let currentProductContext = null;
+    function extractNumberOnly(value) {
+  const text = String(value || "").trim();
+  const match = text.match(/\d+/);
+  return match ? match[0] : "";
+}
     async function loadProductFileList() {
   const category = document.getElementById("editCategory").value;
   const select = document.getElementById("editFile");
@@ -512,9 +518,9 @@
 
         document.getElementById("editTitle").value = p.title || "";
         document.getElementById("editBrand").value = p.brand || "";
-        document.getElementById("editMonthly").value = p.monthly || "";
-        document.getElementById("editDuration").value = p.duration || "";
-        document.getElementById("editDown").value = p.down_payment || "";
+        document.getElementById("editMonthly").value = extractNumberOnly(p.monthly);
+        document.getElementById("editDuration").value = extractNumberOnly(p.duration);
+        document.getElementById("editDown").value = extractNumberOnly(p.down_payment);
         document.getElementById("editDevices").value = p.devices_count || 1;
         document.getElementById("editImage").value = p.image || "";
         document.getElementById("editAvailable").checked = !!p.available;
