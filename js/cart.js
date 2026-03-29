@@ -1,6 +1,6 @@
 /* ================================
    CART SYSTEM - CLICK COMPANY
-   FINAL PROFESSIONAL VERSION 🔥
+   FINAL PRO VERSION 🔥
 ================================ */
 
 // ===== INIT CART =====
@@ -11,14 +11,19 @@ cart = cart.map(item => ({
   quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
 }));
 
-// ===== WHATSAPP SETTINGS (PRELOAD) =====
+// ===== WHATSAPP SETTINGS =====
 let whatsappSettings = {
   phone: "67680877",
   employee_name: "Sales",
   greeting: "Hello 👋"
 };
 
-// ===== LOAD SETTINGS ON START =====
+// ===== DEVICE DETECTION =====
+function isMobile() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+// ===== INIT =====
 document.addEventListener("DOMContentLoaded", async () => {
   updateCartUI();
 
@@ -40,8 +45,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       ...data
     };
 
-  } catch (e) {
-    console.log("⚠️ WhatsApp settings failed to load");
+  } catch {
+    console.log("⚠️ Failed to load WhatsApp settings");
   }
 });
 
@@ -147,7 +152,7 @@ ${lines.join("\n\n")}
 📍 Please confirm availability & total price.`;
 }
 
-// ===== SEND ORDER WHATSAPP =====
+// ===== SEND ORDER =====
 function sendOrderWhatsApp() {
   if (!cart.length) return;
 
@@ -171,8 +176,13 @@ function sendOrderWhatsApp() {
   const encoded = encodeURIComponent(msg);
   const phone = "965" + (whatsappSettings.phone || "67680877");
 
-  // 🔥 الحل النهائي للموبايل
-  window.location.href = `https://wa.me/${phone}?text=${encoded}`;
+  const url = `https://wa.me/${phone}?text=${encoded}`;
+
+  if (isMobile()) {
+    window.location.href = url;
+  } else {
+    window.open(url, "_blank");
+  }
 }
 
 // ===== DIRECT WHATSAPP =====
@@ -187,7 +197,11 @@ function openWhatsAppDirect() {
   );
 
   const encoded = encodeURIComponent(message);
+  const url = `https://wa.me/${phone}?text=${encoded}`;
 
-  // 🔥 الحل النهائي للموبايل
-  window.location.href = `https://wa.me/${phone}?text=${encoded}`;
+  if (isMobile()) {
+    window.location.href = url;
+  } else {
+    window.open(url, "_blank");
+  }
 }
