@@ -1,16 +1,49 @@
 /* ================================
    CART SYSTEM - CLICK COMPANY
-   Professional Version 🔥
+   FINAL PROFESSIONAL VERSION 🔥
 ================================ */
 
 // ===== INIT CART =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// إصلاح البيانات القديمة
 cart = cart.map(item => ({
   ...item,
   quantity: parseInt(item.quantity) > 0 ? parseInt(item.quantity) : 1
 }));
+
+// ===== WHATSAPP SETTINGS (PRELOAD) =====
+let whatsappSettings = {
+  phone: "67680877",
+  employee_name: "Sales",
+  greeting: "Hello 👋"
+};
+
+// ===== LOAD SETTINGS ON START =====
+document.addEventListener("DOMContentLoaded", async () => {
+  updateCartUI();
+
+  try {
+    const res = await fetch("/settings/whatsapp.md");
+    const text = await res.text();
+
+    const data = {};
+
+    text.split("\n").forEach(line => {
+      if (line.includes(":")) {
+        const [key, ...rest] = line.split(":");
+        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
+      }
+    });
+
+    whatsappSettings = {
+      ...whatsappSettings,
+      ...data
+    };
+
+  } catch (e) {
+    console.log("⚠️ WhatsApp settings failed to load");
+  }
+});
 
 // ===== SAVE =====
 function saveCart() {
@@ -99,28 +132,7 @@ function closeCart() {
   document.getElementById("cartOverlay")?.classList.remove("open");
 }
 
-// ===== SETTINGS LOADER (AI READY) =====
-async function loadWhatsAppSettings() {
-  try {
-    const res = await fetch("/settings/whatsapp.md");
-    const text = await res.text();
-
-    const data = {};
-
-    text.split("\n").forEach(line => {
-      if (line.includes(":")) {
-        const [key, ...rest] = line.split(":");
-        data[key.trim()] = rest.join(":").trim().replace(/"/g, "");
-      }
-    });
-
-    return data;
-  } catch {
-    return {};
-  }
-}
-
-// ===== BUILD MESSAGE (SMART AI STYLE) =====
+// ===== BUILD MESSAGE =====
 function buildOrderMessage(data, lines) {
   let greeting = data.greeting || "Welcome 👋";
 
@@ -135,8 +147,8 @@ ${lines.join("\n\n")}
 📍 Please confirm availability & total price.`;
 }
 
-// ===== SEND ORDER =====
-async function sendOrderWhatsApp() {
+// ===== SEND ORDER WHATSAPP =====
+function sendOrderWhatsApp() {
   if (!cart.length) return;
 
   const baseURL = window.location.origin;
@@ -155,33 +167,27 @@ async function sendOrderWhatsApp() {
 📸 ${imageURL}`;
   });
 
-  const data = await loadWhatsAppSettings();
-
-  const msg = buildOrderMessage(data, lines);
-
+  const msg = buildOrderMessage(whatsappSettings, lines);
   const encoded = encodeURIComponent(msg);
+  const phone = "965" + (whatsappSettings.phone || "67680877");
 
-  const phone = "965" + (data.phone || "67680877");
-
-  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+  // 🔥 الحل النهائي للموبايل
+  window.location.href = `https://wa.me/${phone}?text=${encoded}`;
 }
 
 // ===== DIRECT WHATSAPP =====
-async function openWhatsAppDirect() {
-  const data = await loadWhatsAppSettings();
+function openWhatsAppDirect() {
+  const phone = "965" + (whatsappSettings.phone || "67680877");
 
-  let greeting = data.greeting || "Hello 👋";
+  let message = whatsappSettings.greeting || "Hello 👋";
 
-  greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
+  message = message.replace(
+    "{{name}}",
+    whatsappSettings.employee_name || "Sales"
+  );
 
-  const encoded = encodeURIComponent(greeting);
+  const encoded = encodeURIComponent(message);
 
-  const phone = "965" + (data.phone || "67680877");
-
-  window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
+  // 🔥 الحل النهائي للموبايل
+  window.location.href = `https://wa.me/${phone}?text=${encoded}`;
 }
-
-// ===== INIT =====
-document.addEventListener("DOMContentLoaded", () => {
-  updateCartUI();
-});
