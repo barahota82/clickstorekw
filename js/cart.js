@@ -138,6 +138,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       ...whatsappSettings,
       ...data
     };
+
   } catch {
     console.log("⚠️ Failed to load WhatsApp settings");
   }
@@ -245,6 +246,7 @@ function closeCart() {
 // ===== BUILD MESSAGE =====
 function buildOrderMessage(data, lines) {
   let greeting = data.greeting || "Welcome 👋";
+
   greeting = greeting.replace("{{name}}", data.employee_name || "Sales");
 
   return `${greeting}
@@ -309,6 +311,7 @@ function openWhatsAppDirect() {
   const phone = "965" + (whatsappSettings.phone || "67680877");
 
   let message = whatsappSettings.greeting || "Hello 👋";
+
   message = message.replace(
     "{{name}}",
     whatsappSettings.employee_name || "Sales"
