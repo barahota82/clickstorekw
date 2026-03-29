@@ -7,8 +7,8 @@
   "down_payment": "0 KD",
   "monthly": "15 KD",
   "duration": "11 Months",
-  "available": true,
-  "hot_offer": true,
+  "available": false,
+  "hot_offer": false,
   "brand_priority": 2,
   "priority": 2
 }
