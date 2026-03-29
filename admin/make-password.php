@@ -1,2 +1,2 @@
 <?php
-echo password_hash('ضع_هنا_كلمة_المرور_الجديدة', PASSWORD_DEFAULT);
+echo password_hash('@dmin-ST1', PASSWORD_DEFAULT);
