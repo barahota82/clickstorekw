@@ -851,3 +851,91 @@ footer {
     font-size: 16px;
   }
 }
+
+/* ================================
+   UX IMPROVEMENTS (SAFE ADD)
+================================ */
+
+/* ===== TOAST (رسالة تحت) ===== */
+.global-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 88px;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(17, 24, 39, 0.95);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  white-space: nowrap;
+}
+
+.global-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== CART BUMP ===== */
+.cart-bump {
+  animation: cartBump 0.32s ease;
+}
+
+@keyframes cartBump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+/* ===== CART PULSE ===== */
+.cart-pulse {
+  animation: cartPulse 0.36s ease;
+}
+
+@keyframes cartPulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* ===== BUTTON PRESS EFFECT ===== */
+.btn:active,
+.cart-add-btn:active,
+.cart-btn:active,
+.send-order-btn:active {
+  transform: scale(0.97);
+}
+
+/* ===== WHATSAPP BUTTON UX ===== */
+.floating-whatsapp:active {
+  transform: scale(0.95);
+}
+
+/* ===== HOVER IMPROVEMENT (DESKTOP) ===== */
+@media (hover: hover) {
+  .product-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 38px rgba(0,0,0,0.35);
+  }
+}
+
+/* ===== MOBILE FIX ===== */
+@media (max-width: 640px) {
+  .global-toast {
+    bottom: 78px;
+    font-size: 13px;
+    padding: 11px 16px;
+    max-width: calc(100vw - 28px);
+    text-align: center;
+    white-space: normal;
+  }
+}
