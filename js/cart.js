@@ -26,6 +26,22 @@ function isMobile() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
+// ===== NUMBER HELPERS =====
+function extractNumber(text) {
+  if (!text) return 0;
+  const match = String(text).match(/[\d.]+/);
+  return match ? parseFloat(match[0]) : 0;
+}
+
+function calculateItemTotal(item) {
+  const monthly = extractNumber(item.price);
+  const months = extractNumber(item.months);
+  const downPayment = extractNumber(item.months);
+  const quantity = parseInt(item.quantity) || 1;
+
+  return (monthly * months * quantity) + (downPayment * quantity);
+}
+
 // ===== LOADING EFFECT =====
 function showLoading(btnId, text = "Opening...") {
   const btn = document.getElementById(btnId);
@@ -168,17 +184,30 @@ function updateCartUI() {
     if (!cart.length) {
       cartItems.innerHTML = '<div class="cart-empty-text">Your cart is empty.</div>';
     } else {
-      cartItems.innerHTML = cart.map((item, index) => `
-        <div class="cart-item">
-          <img src="${item.image}" alt="${item.title || "Product"}">
-          <div>
-            <div class="cart-item-title">${item.title || "Product"} × ${parseInt(item.quantity) || 1}</div>
-            <div class="cart-item-meta">${item.price || ""}</div>
-            <div class="cart-item-meta">${item.months || ""}</div>
+      let totalCart = 0;
+
+      cartItems.innerHTML = cart.map((item, index) => {
+        const itemTotal = calculateItemTotal(item);
+        totalCart += itemTotal;
+
+        return `
+          <div class="cart-item">
+            <img src="${item.image}" alt="${item.title || "Product"}">
+            <div>
+              <div class="cart-item-title">${item.title || "Product"} × ${parseInt(item.quantity) || 1}</div>
+              <div class="cart-item-meta">${item.price || ""}</div>
+              <div class="cart-item-meta">${item.months || ""}</div>
+              <div class="cart-item-total">Total: ${itemTotal.toFixed(0)} KD</div>
+            </div>
+            <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
           </div>
-          <button class="cart-remove" onclick="removeFromCart(${index})">X</button>
+        `;
+      }).join("") + `
+        <div class="cart-summary">
+          <span>Total Cart</span>
+          <strong>${totalCart.toFixed(0)} KD</strong>
         </div>
-      `).join("");
+      `;
     }
   }
 
