@@ -1,5 +1,5 @@
 <?php
 return [
     'admin_username' => 'admin',
-    'admin_password_hash' => '$2y$10$RU5ZUYa4x5UmmuWT2XHshOhwuAhC2m353C8HySP0bpN3cjSRuYs82'
+    'admin_password_hash' => '$2y$10$oP/kOvDjlntqk9GGdBflGOSCijdQpbVzQvMIksHElOXN1AJRLlqb2'
 ];
