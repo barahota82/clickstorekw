@@ -1,7 +1,3 @@
-const STORAGE_SESSION_KEY = "click_admin_session";
-const DEFAULT_ADMIN_USER = "admin";
-const DEFAULT_ADMIN_PASS = "Admin@12345";
-
 function setStatus(id, type, message) {
   const box = document.getElementById(id);
   if (!box) return;
@@ -16,36 +12,55 @@ function clearStatus(id) {
   box.textContent = "";
 }
 
-function login() {
+async function login() {
   clearStatus("loginStatus");
 
   const username = document.getElementById("loginUsername").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
 
-  if (username === DEFAULT_ADMIN_USER && password === DEFAULT_ADMIN_PASS) {
-    localStorage.setItem(STORAGE_SESSION_KEY, "1");
-    bootApp();
+  if (!username || !password) {
+    setStatus("loginStatus", "err", "اكتب اسم المستخدم وكلمة المرور.");
     return;
   }
 
-  setStatus("loginStatus", "err", "بيانات الدخول غير صحيحة.");
+  try {
+    const res = await fetch("api/login.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      setStatus("loginStatus", "err", data.message || "فشل تسجيل الدخول.");
+      return;
+    }
+
+    location.reload();
+  } catch (e) {
+    setStatus("loginStatus", "err", "حدث خطأ أثناء تسجيل الدخول.");
+  }
 }
 
-function logout() {
-  localStorage.removeItem(STORAGE_SESSION_KEY);
-  document.getElementById("appView").classList.add("hidden");
-  document.getElementById("loginView").classList.remove("hidden");
+async function logout() {
+  try {
+    await fetch("api/logout.php", { method: "POST" });
+  } catch (e) {}
+  location.reload();
 }
 
 function bootApp() {
-  const loggedIn = localStorage.getItem(STORAGE_SESSION_KEY) === "1";
+  const loggedIn = window.ADMIN_IS_LOGGED_IN === true;
 
   if (loggedIn) {
-    document.getElementById("loginView").classList.add("hidden");
-    document.getElementById("appView").classList.remove("hidden");
+    document.getElementById("loginView")?.classList.add("hidden");
+    document.getElementById("appView")?.classList.remove("hidden");
   } else {
-    document.getElementById("appView").classList.add("hidden");
-    document.getElementById("loginView").classList.remove("hidden");
+    document.getElementById("appView")?.classList.add("hidden");
+    document.getElementById("loginView")?.classList.remove("hidden");
   }
 }
 
@@ -65,9 +80,21 @@ function extractNumberOnly(value) {
   return match ? match[0] : "";
 }
 
+async function authFetch(url, options = {}) {
+  const res = await fetch(url, options);
+
+  if (res.status === 401) {
+    location.reload();
+    throw new Error("Unauthorized");
+  }
+
+  return res;
+}
+
 async function loadProductFileList() {
-  const category = document.getElementById("editCategory").value;
+  const category = document.getElementById("editCategory")?.value;
   const select = document.getElementById("editFile");
+  if (!category || !select) return;
 
   select.innerHTML = `<option value="">جاري تحميل المنتجات...</option>`;
 
@@ -100,7 +127,7 @@ async function loadProduct() {
   }
 
   try {
-    const res = await fetch(`api/load-product.php?category=${encodeURIComponent(category)}&file=${encodeURIComponent(file)}`);
+    const res = await authFetch(`api/load-product.php?category=${encodeURIComponent(category)}&file=${encodeURIComponent(file)}`);
     const data = await res.json();
 
     if (!data.ok) {
@@ -125,7 +152,9 @@ async function loadProduct() {
 
     setStatus("editStatus", "ok", "تم تحميل المنتج بنجاح.");
   } catch (e) {
-    setStatus("editStatus", "err", "حدث خطأ أثناء تحميل المنتج.");
+    if (e.message !== "Unauthorized") {
+      setStatus("editStatus", "err", "حدث خطأ أثناء تحميل المنتج.");
+    }
   }
 }
 
@@ -156,7 +185,7 @@ async function saveProduct() {
   };
 
   try {
-    const res = await fetch("api/save-product.php", {
+    const res = await authFetch("api/save-product.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -177,7 +206,9 @@ async function saveProduct() {
 
     setStatus("editStatus", "ok", "تم حفظ التعديلات بنجاح.");
   } catch (e) {
-    setStatus("editStatus", "err", "حدث خطأ أثناء حفظ المنتج.");
+    if (e.message !== "Unauthorized") {
+      setStatus("editStatus", "err", "حدث خطأ أثناء حفظ المنتج.");
+    }
   }
 }
 
@@ -542,4 +573,6 @@ document.addEventListener("change", function(e) {
 });
 
 bootApp();
-loadProductFileList();
+if (window.ADMIN_IS_LOGGED_IN === true) {
+  loadProductFileList();
+}
