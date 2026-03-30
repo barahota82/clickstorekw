@@ -10,8 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $raw = file_get_contents('php://input');
 $data = json_decode($raw ?: '', true);
 
-$username = trim((string)($data['username'] ?? ''));
-$password = (string)($data['password'] ?? '');
+// لو JSON فاضي استخدم POST
+$username = trim((string)($data['username'] ?? $_POST['username'] ?? ''));
+$password = (string)($data['password'] ?? $_POST['password'] ?? '');
 
 if ($username === '' || $password === '') {
     json_response(false, ['message' => 'اسم المستخدم وكلمة المرور مطلوبان'], 422);
