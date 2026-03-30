@@ -1,6 +1,22 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
+
+$pdo = db();
+
+$categories = $pdo->query("
+    SELECT id, display_name, slug
+    FROM categories
+    WHERE is_active = 1
+    ORDER BY sort_order ASC, id ASC
+")->fetchAll();
+
+$brands = $pdo->query("
+    SELECT id, category_id, name, slug
+    FROM brands
+    WHERE is_active = 1
+    ORDER BY sort_order ASC, id ASC
+")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -68,61 +84,185 @@ require_once dirname(__DIR__) . '/config.php';
       font-size: 14px;
     }
 
-    .panel-grid {
+    .builder-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .sub-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .sub-title {
+      margin: 0 0 14px;
+      font-size: 17px;
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .full-col {
+      grid-column: 1 / -1;
+    }
+
+    .readonly-input {
+      opacity: 0.9;
+      background: #0a1120;
+    }
+
+    .image-stage {
+      width: 100%;
+      min-height: 420px;
+      border: 1px dashed rgba(255,255,255,0.14);
+      border-radius: 20px;
+      background: rgba(0,0,0,0.16);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    .image-stage img {
+      width: 100%;
+      height: 100%;
+      max-height: 520px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .image-placeholder {
+      color: #c8d4ea;
+      font-size: 14px;
+      line-height: 1.9;
+      text-align: center;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .mini-note {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #c8d4ea;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .data-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 18px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: right;
+      color: #fff;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .data-table th {
+      color: #c8d4ea;
+      font-weight: 800;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .table-thumb {
+      width: 66px;
+      height: 66px;
+      border-radius: 14px;
+      object-fit: contain;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 6px;
+      display: block;
+    }
+
+    .empty-box {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: #c8d4ea;
+      font-size: 14px;
+      line-height: 1.9;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(37,99,235,0.14);
+      border: 1px solid rgba(37,99,235,0.28);
+      color: #dce8ff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .danger-btn {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 12px 24px rgba(239,68,68,0.22);
+    }
+
+    .secondary-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: none;
+    }
+
+    .placeholder-panels {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
     }
 
-    .mini-card {
+    .placeholder-card {
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 18px;
       padding: 18px;
-      min-height: 120px;
     }
 
-    .mini-card strong {
+    .placeholder-card strong {
       display: block;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       font-size: 15px;
       color: #fff;
     }
 
-    .mini-card span {
-      color: #c8d4ea;
-      line-height: 1.8;
-      font-size: 14px;
+    .placeholder-card span {
       display: block;
-    }
-
-    .quick-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 18px;
-    }
-
-    .quick-actions a,
-    .quick-actions button {
-      border: 0;
-      border-radius: 14px;
-      padding: 12px 18px;
-      font-size: 14px;
-      font-weight: 800;
-      color: #fff;
-      cursor: pointer;
-      text-decoration: none;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      box-shadow: 0 12px 24px rgba(37,99,235,0.22);
-    }
-
-    .coming-soon {
-      margin-top: 16px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
       color: #c8d4ea;
       line-height: 1.8;
       font-size: 14px;
@@ -133,13 +273,15 @@ require_once dirname(__DIR__) . '/config.php';
         grid-template-columns: repeat(2, minmax(180px, 1fr));
       }
 
-      .panel-grid {
+      .builder-grid,
+      .placeholder-panels {
         grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 640px) {
-      .admin-main-tabs {
+    @media (max-width: 700px) {
+      .admin-main-tabs,
+      .form-grid-2 {
         grid-template-columns: 1fr;
       }
     }
@@ -209,12 +351,11 @@ require_once dirname(__DIR__) . '/config.php';
         <div>
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
           <p class="section-desc no-margin">
-            تم تسجيل الدخول بنجاح. هذه هي الواجهة الأساسية للإدارة، وبها التابات الرئيسية المتفق عليها.
+            الواجهة الحالية مركزة على قسمين فقط: إضافة المنتج عبر OCR، وتعديل / حذف المنتجات.
           </p>
         </div>
 
         <div class="dashboard-actions">
-          <a href="/admin/add-product.php" class="btn btn-primary">Add Product</a>
           <button id="logoutBtn" class="btn btn-primary" type="button">تسجيل خروج</button>
         </div>
       </div>
@@ -235,185 +376,390 @@ require_once dirname(__DIR__) . '/config.php';
       </div>
 
       <div class="admin-main-tabs">
-        <button class="admin-tab-btn active" data-tab="tab-ocr" type="button">OCR</button>
+        <button class="admin-tab-btn active" data-tab="tab-add-ocr" type="button">Add Product (OCR)</button>
+        <button class="admin-tab-btn" data-tab="tab-edit-delete" type="button">Edit / Delete Product</button>
+        <button class="admin-tab-btn" data-tab="tab-hot-offers" type="button">Hot Offers</button>
         <button class="admin-tab-btn" data-tab="tab-brand-order" type="button">Brand Ordering</button>
         <button class="admin-tab-btn" data-tab="tab-product-order" type="button">Product Ordering</button>
-        <button class="admin-tab-btn" data-tab="tab-hot-offers" type="button">Hot Offers</button>
-        <button class="admin-tab-btn" data-tab="tab-edit-delete" type="button">Edit / Delete Product</button>
         <button class="admin-tab-btn" data-tab="tab-stock" type="button">Stock Management</button>
         <button class="admin-tab-btn" data-tab="tab-users" type="button">User Permissions</button>
         <button class="admin-tab-btn" data-tab="tab-stats" type="button">Statistics / Orders</button>
       </div>
 
       <div class="admin-tab-panels">
-        <div id="tab-ocr" class="admin-panel active">
-          <h3 class="panel-title">OCR</h3>
+
+        <!-- ADD PRODUCT OCR -->
+        <div id="tab-add-ocr" class="admin-panel active">
+          <h3 class="panel-title">Add Product (OCR)</h3>
           <p class="panel-desc">
-            هذا القسم مخصص لتحليل صور المنتجات، واستخراج أسماء الأجهزة منها وربطها بالمخزون تلقائيًا مع الاستفادة من اسم الملف.
+            هذا القسم مخصص لإضافة منتج جديد. الـ OCR هنا مساعد فقط، بينما حفظ المنتج وربطه بالمخزن يعتمد أيضًا على اسم الملف والحقول المعيارية.
           </p>
 
-          <div class="panel-grid">
-            <div class="mini-card">
-              <strong>تحليل الصورة</strong>
-              <span>الاعتماد على OCR لاحقًا لاستخراج الأجهزة الموجودة في الصورة بدقة أعلى.</span>
+          <div class="builder-grid">
+            <div class="sub-card">
+              <h4 class="sub-title">Product Data</h4>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label for="ocrCategory">Category</label>
+                  <select id="ocrCategory">
+                    <option value="">Select Category</option>
+                    <?php foreach ($categories as $cat): ?>
+                      <option value="<?= (int)$cat['id'] ?>"><?= esc($cat['display_name']) ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrBrand">Brand</label>
+                  <select id="ocrBrand">
+                    <option value="">Select Brand</option>
+                    <?php foreach ($brands as $brand): ?>
+                      <option value="<?= (int)$brand['id'] ?>" data-category-id="<?= (int)$brand['category_id'] ?>">
+                        <?= esc($brand['name']) ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="form-group full-col">
+                  <label for="ocrFileName">File Name</label>
+                  <input id="ocrFileName" type="text" class="readonly-input" readonly placeholder="Auto from uploaded image">
+                </div>
+
+                <div class="form-group full-col">
+                  <label for="ocrTitle">Title</label>
+                  <input id="ocrTitle" type="text" placeholder="Product title">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrDownPayment">Down Payment</label>
+                  <input id="ocrDownPayment" type="number" step="0.001" min="0" placeholder="0">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrMonthlyAmount">Monthly Amount</label>
+                  <input id="ocrMonthlyAmount" type="number" step="0.001" min="0" placeholder="0">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrDurationMonths">Duration Months</label>
+                  <input id="ocrDurationMonths" type="number" min="1" placeholder="12">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrDevicesCount">Device Count</label>
+                  <input id="ocrDevicesCount" type="number" min="1" class="readonly-input" readonly placeholder="Auto">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrBrandFromFilename">Brand from Filename</label>
+                  <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrStockDisplayName">Stock Display Name</label>
+                  <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrNormalizedTitle">Normalized Stock Title</label>
+                  <input id="ocrNormalizedTitle" type="text" class="readonly-input" readonly placeholder="Auto normalized value">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrStorageValue">Storage</label>
+                  <input id="ocrStorageValue" type="text" placeholder="128GB / 256GB / 1TB">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrRamValue">RAM</label>
+                  <input id="ocrRamValue" type="text" placeholder="8GB RAM / 12GB RAM">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrNetworkValue">Network</label>
+                  <input id="ocrNetworkValue" type="text" placeholder="4G / 5G">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrSourceType">Source Type</label>
+                  <select id="ocrSourceType">
+                    <option value="filename">filename</option>
+                    <option value="ocr">ocr</option>
+                    <option value="merged" selected>merged</option>
+                    <option value="manual">manual</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrBrandOrder">Brand Order</label>
+                  <input id="ocrBrandOrder" type="number" min="0" placeholder="9999">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrProductOrder">Product Order</label>
+                  <input id="ocrProductOrder" type="number" min="0" placeholder="9999">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrSku">SKU</label>
+                  <input id="ocrSku" type="text" placeholder="Auto or manual SKU">
+                </div>
+
+                <div class="form-group">
+                  <label for="ocrNeedsReview">Needs Review</label>
+                  <select id="ocrNeedsReview">
+                    <option value="0" selected>No</option>
+                    <option value="1">Yes</option>
+                  </select>
+                </div>
+
+                <div class="form-group full-col">
+                  <label class="check-item">
+                    <input id="ocrHotOffer" type="checkbox">
+                    Hot Offer
+                  </label>
+                </div>
+              </div>
+
+              <div class="action-row">
+                <button class="btn btn-primary" type="button" id="ocrUploadBtn">Upload Image</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrAnalyzeBtn">Analyze (OCR)</button>
+                <button class="btn btn-primary" type="button" id="ocrSaveBtn">Save Product</button>
+              </div>
+
+              <div class="mini-note">
+                الربط بالمخزن يعتمد من البداية على:
+                <br>
+                File Name + Brand from Filename + Device Count + Normalized Stock Title + Storage + RAM + Network
+              </div>
             </div>
-            <div class="mini-card">
-              <strong>اسم الملف</strong>
-              <span>يتم الاستفادة من اسم الملف كمدخل مساعد لتحديد البراند والموديل والسعة والرام والـ 5G.</span>
+
+            <div class="sub-card">
+              <h4 class="sub-title">Display Image Preview</h4>
+
+              <div class="image-stage">
+                <img id="ocrPreviewImage" src="" alt="" class="hidden">
+                <div id="ocrPreviewPlaceholder" class="image-placeholder">
+                  ارفع صورة للمنتج لتظهر هنا بشكل واضح وكامل داخل المربع.
+                </div>
+              </div>
+
+              <input id="ocrImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
+
+              <div class="mini-note">
+                الصورة هنا للعرض الواضح فقط. الـ OCR أداة مساعدة في التحليل، وليس أداة لتغيير الصورة بعد الإضافة.
+              </div>
             </div>
-            <div class="mini-card">
-              <strong>منع التكرار</strong>
-              <span>الأجهزة المستخرجة تُقارن بجدول stock_catalog ويُضاف غير الموجود فقط.</span>
+          </div>
+        </div>
+
+        <!-- EDIT DELETE -->
+        <div id="tab-edit-delete" class="admin-panel">
+          <h3 class="panel-title">Edit / Delete Product</h3>
+          <p class="panel-desc">
+            هذا القسم مخصص لاستدعاء منتج موجود حسب الفئة والبراند، ثم تعديله أو حذفه. تغيير الصورة هنا يتم يدويًا فقط بدون OCR.
+          </p>
+
+          <div class="sub-card">
+            <h4 class="sub-title">Filters</h4>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label for="editCategory">Category</label>
+                <select id="editCategory">
+                  <option value="">Select Category</option>
+                  <?php foreach ($categories as $cat): ?>
+                    <option value="<?= (int)$cat['id'] ?>"><?= esc($cat['display_name']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="editBrand">Brand</label>
+                <select id="editBrand">
+                  <option value="">Select Brand</option>
+                  <?php foreach ($brands as $brand): ?>
+                    <option value="<?= (int)$brand['id'] ?>" data-category-id="<?= (int)$brand['category_id'] ?>">
+                      <?= esc($brand['name']) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            </div>
+
+            <div class="action-row">
+              <button class="btn btn-primary" type="button">Load Products</button>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Image</th>
+                    <th>Title</th>
+                    <th>SKU</th>
+                    <th>Price Logic</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><img src="/images/products/sample-product.webp" alt="" class="table-thumb"></td>
+                    <td>Sample Product Title</td>
+                    <td>SAMPLE-SKU</td>
+                    <td>Down / Monthly / Months</td>
+                    <td>
+                      <div class="action-row">
+                        <button class="btn btn-primary secondary-btn" type="button">Edit</button>
+                        <button class="btn danger-btn" type="button">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="empty-box">
+              لاحقًا سيتم هنا تحميل المنتجات الفعلية بناءً على Category + Brand.
             </div>
           </div>
 
-          <div class="coming-soon">هذه الواجهة مركبة الآن كواجهة رئيسية، والربط الداخلي الكامل للـ OCR سنبنيه بعد تثبيت بقية الأقسام.</div>
+          <div class="builder-grid" style="margin-top:18px;">
+            <div class="sub-card">
+              <h4 class="sub-title">Edit Product</h4>
+
+              <div class="form-grid-2">
+                <div class="form-group full-col">
+                  <label for="editTitle">Title</label>
+                  <input id="editTitle" type="text" placeholder="Selected product title">
+                </div>
+
+                <div class="form-group">
+                  <label for="editDownPayment">Down Payment</label>
+                  <input id="editDownPayment" type="number" step="0.001" min="0">
+                </div>
+
+                <div class="form-group">
+                  <label for="editMonthlyAmount">Monthly Amount</label>
+                  <input id="editMonthlyAmount" type="number" step="0.001" min="0">
+                </div>
+
+                <div class="form-group">
+                  <label for="editDurationMonths">Duration Months</label>
+                  <input id="editDurationMonths" type="number" min="1">
+                </div>
+
+                <div class="form-group">
+                  <label for="editSku">SKU</label>
+                  <input id="editSku" type="text">
+                </div>
+
+                <div class="form-group">
+                  <label for="editStorageValue">Storage</label>
+                  <input id="editStorageValue" type="text">
+                </div>
+
+                <div class="form-group">
+                  <label for="editRamValue">RAM</label>
+                  <input id="editRamValue" type="text">
+                </div>
+
+                <div class="form-group">
+                  <label for="editNetworkValue">Network</label>
+                  <input id="editNetworkValue" type="text">
+                </div>
+
+                <div class="form-group full-col">
+                  <label class="check-item">
+                    <input id="editHotOffer" type="checkbox">
+                    Hot Offer
+                  </label>
+                </div>
+              </div>
+
+              <div class="action-row">
+                <button class="btn btn-primary" type="button">Save Changes</button>
+                <button class="btn danger-btn" type="button">Delete Product</button>
+              </div>
+            </div>
+
+            <div class="sub-card">
+              <h4 class="sub-title">Current Image / Change Image</h4>
+
+              <div class="image-stage">
+                <img id="editPreviewImage" src="/images/products/sample-product.webp" alt="" style="display:block;">
+              </div>
+
+              <input id="editImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
+
+              <div class="action-row">
+                <button class="btn btn-primary secondary-btn" type="button" id="editChangeImageBtn">Change Image</button>
+              </div>
+
+              <div class="mini-note">
+                تعديل الصورة هنا يتم يدويًا فقط. لا يوجد OCR داخل قسم التعديل والحذف.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLACEHOLDERS -->
+        <div id="tab-hot-offers" class="admin-panel">
+          <h3 class="panel-title">Hot Offers</h3>
+          <div class="placeholder-panels">
+            <div class="placeholder-card"><strong>Hot Offers</strong><span>سيتم ترتيب وعرض المنتجات المميزة هنا.</span></div>
+            <div class="placeholder-card"><strong>Visibility</strong><span>التحكم في إظهار وإخفاء العروض الساخنة.</span></div>
+            <div class="placeholder-card"><strong>Ordering</strong><span>ترتيب مستقل للعروض الساخنة.</span></div>
+          </div>
         </div>
 
         <div id="tab-brand-order" class="admin-panel">
           <h3 class="panel-title">Brand Ordering</h3>
-          <p class="panel-desc">
-            هذا القسم مسؤول عن ترتيب البراندات داخل كل فئة بما يظهر للعميل بشكل منظم واحترافي.
-          </p>
-
-          <div class="panel-grid">
-            <div class="mini-card">
-              <strong>ترتيب داخل الفئة</strong>
-              <span>كل فئة لها ترتيب مستقل للبراندات الخاصة بها.</span>
-            </div>
-            <div class="mini-card">
-              <strong>سحب وإفلات لاحقًا</strong>
-              <span>سيتم تجهيز واجهة سحب وإفلات للترتيب بسهولة.</span>
-            </div>
-            <div class="mini-card">
-              <strong>عرض بصري</strong>
-              <span>يُفضّل ربط البراند بصورة أو لوجو لسهولة الإدارة.</span>
-            </div>
+          <div class="placeholder-panels">
+            <div class="placeholder-card"><strong>Ordering by Category</strong><span>كل فئة لها ترتيب مستقل للبراندات.</span></div>
+            <div class="placeholder-card"><strong>Drag & Drop</strong><span>سيتم تجهيز الترتيب المرئي لاحقًا.</span></div>
+            <div class="placeholder-card"><strong>Brand Priority</strong><span>حفظ ترتيب البراند بطريقة منظمة.</span></div>
           </div>
         </div>
 
         <div id="tab-product-order" class="admin-panel">
           <h3 class="panel-title">Product Ordering</h3>
-          <p class="panel-desc">
-            هذا القسم مسؤول عن ترتيب المنتجات داخل كل براند أو قسم حسب ما تريد أن يظهر للعميل.
-          </p>
-
-          <div class="panel-grid">
-            <div class="mini-card">
-              <strong>ترتيب يدوي</strong>
-              <span>إمكانية التحكم في ترتيب المنتج بشكل مباشر.</span>
-            </div>
-            <div class="mini-card">
-              <strong>ترتيب حسب الحالة</strong>
-              <span>يمكن لاحقًا دعم ترتيب حسب التوفر أو العروض أو الأحدث.</span>
-            </div>
-            <div class="mini-card">
-              <strong>ربط مع hot offers</strong>
-              <span>بعض المنتجات قد يكون لها أولوية خاصة في العرض.</span>
-            </div>
+          <div class="placeholder-panels">
+            <div class="placeholder-card"><strong>Manual Product Order</strong><span>ترتيب المنتجات داخل البراند أو القسم.</span></div>
+            <div class="placeholder-card"><strong>Priority</strong><span>المنتجات الأهم أولاً.</span></div>
+            <div class="placeholder-card"><strong>Display Logic</strong><span>تجهيز منطق العرض للواجهة لاحقًا.</span></div>
           </div>
-        </div>
-
-        <div id="tab-hot-offers" class="admin-panel">
-          <h3 class="panel-title">Hot Offers</h3>
-          <p class="panel-desc">
-            قسم العروض الساخنة مسؤول عن المنتجات المميزة التي تريد إبرازها في الواجهة الرئيسية أو الأقسام.
-          </p>
-
-          <div class="panel-grid">
-            <div class="mini-card">
-              <strong>تفعيل سريع</strong>
-              <span>كل منتج يمكن تمييزه كعرض ساخن من صفحة الإضافة أو التعديل.</span>
-            </div>
-            <div class="mini-card">
-              <strong>ترتيب مستقل</strong>
-              <span>سيكون للعروض الساخنة ترتيب منفصل عن الترتيب العام للمنتجات.</span>
-            </div>
-            <div class="mini-card">
-              <strong>تحكم إداري</strong>
-              <span>إظهار أو إخفاء العروض حسب الحاجة.</span>
-            </div>
-          </div>
-        </div>
-
-        <div id="tab-edit-delete" class="admin-panel">
-          <h3 class="panel-title">Edit / Delete Product</h3>
-          <p class="panel-desc">
-            قسم تعديل وحذف المنتجات لعرض المنتجات الحالية، والبحث فيها، وفتح صفحة تعديل أو تنفيذ الحذف.
-          </p>
-
-          <div class="quick-actions">
-            <a href="/admin/add-product.php">إضافة منتج جديد</a>
-          </div>
-
-          <div class="coming-soon">واجهة الجدول والبحث والتعديل المباشر سنضيفها بعد تثبيت الحفظ والربط بالمخزن.</div>
         </div>
 
         <div id="tab-stock" class="admin-panel">
           <h3 class="panel-title">Stock Management</h3>
-          <p class="panel-desc">
-            هذا القسم هو قلب الربط بين المنتج المعروض والمخزن الفعلي عبر stock_catalog و product_stock_links.
-          </p>
-
-          <div class="panel-grid">
-            <div class="mini-card">
-              <strong>stock_catalog</strong>
-              <span>حفظ أسماء الأجهزة المعيارية مع بيانات السعة والرام والشبكة.</span>
-            </div>
-            <div class="mini-card">
-              <strong>product_stock_links</strong>
-              <span>ربط كل منتج في الموقع بجهاز أو أكثر داخل المخزن.</span>
-            </div>
-            <div class="mini-card">
-              <strong>تحليل تلقائي</strong>
-              <span>الربط يبدأ من اسم الملف حاليًا، ثم يتوسع لاحقًا مع OCR.</span>
-            </div>
+          <div class="placeholder-panels">
+            <div class="placeholder-card"><strong>stock_catalog</strong><span>تعريف الأصناف الفعلية في المخزن.</span></div>
+            <div class="placeholder-card"><strong>product_stock_links</strong><span>ربط المنتج المعروض بالمخزن.</span></div>
+            <div class="placeholder-card"><strong>Review Logic</strong><span>إدارة المراجعة والتأكيد للأصناف المستخرجة.</span></div>
           </div>
         </div>
 
         <div id="tab-users" class="admin-panel">
           <h3 class="panel-title">User Permissions</h3>
-          <p class="panel-desc">
-            هذا القسم مسؤول عن إدارة المستخدمين والأدوار والصلاحيات.
-          </p>
-
-          <div class="panel-grid">
-            <div class="mini-card">
-              <strong>Roles</strong>
-              <span>ربط كل مستخدم بدور محدد مثل Super Admin أو Viewer.</span>
-            </div>
-            <div class="mini-card">
-              <strong>Permissions</strong>
-              <span>تحديد ما الذي يستطيع المستخدم فتحه أو تعديله.</span>
-            </div>
-            <div class="mini-card">
-              <strong>Users API</strong>
-              <span>ملفات users-list و user-save و user-delete موجودة بالفعل كبنية أولية.</span>
-            </div>
+          <div class="placeholder-panels">
+            <div class="placeholder-card"><strong>Roles</strong><span>إدارة الأدوار مثل Super Admin و Viewer.</span></div>
+            <div class="placeholder-card"><strong>Permissions</strong><span>تحديد الصلاحيات لكل مستخدم أو دور.</span></div>
+            <div class="placeholder-card"><strong>Users API</strong><span>تمهيد لربط users-list و user-save و user-delete.</span></div>
           </div>
         </div>
 
         <div id="tab-stats" class="admin-panel">
           <h3 class="panel-title">Statistics / Orders</h3>
-          <p class="panel-desc">
-            هذا القسم مخصص لإحصائيات الطلبات والعمليات اليومية والشهرية، وسيتوسع لاحقًا إلى تقارير مفصلة.
-          </p>
-
-          <div class="panel-grid">
-            <div class="mini-card">
-              <strong>إحصاء يومي</strong>
-              <span>عدد الطلبات وقيمتها في اليوم الحالي.</span>
-            </div>
-            <div class="mini-card">
-              <strong>إحصاء شهري</strong>
-              <span>ملخص شهري للطلبات والمبيعات.</span>
-            </div>
-            <div class="mini-card">
-              <strong>مدى زمني مخصص</strong>
-              <span>اختيار من تاريخ إلى تاريخ لعرض النتائج.</span>
-            </div>
+          <div class="placeholder-panels">
+            <div class="placeholder-card"><strong>Daily</strong><span>إحصائيات يومية للطلبات.</span></div>
+            <div class="placeholder-card"><strong>Monthly</strong><span>إحصائيات شهرية للطلبات.</span></div>
+            <div class="placeholder-card"><strong>Custom Range</strong><span>تقارير حسب المدة الزمنية.</span></div>
           </div>
         </div>
+
       </div>
 
       <div id="dashboardStatus" class="status-box mt-20"></div>
@@ -512,6 +858,53 @@ require_once dirname(__DIR__) . '/config.php';
     }
   }
 
+  function bindCategoryBrandFilter(categoryId, brandId) {
+    const category = document.getElementById(categoryId);
+    const brand = document.getElementById(brandId);
+
+    if (!category || !brand) return;
+
+    category.addEventListener('change', function () {
+      const value = this.value;
+      brand.value = '';
+      brand.querySelectorAll('option').forEach(opt => {
+        if (!opt.value) {
+          opt.hidden = false;
+          return;
+        }
+        opt.hidden = opt.dataset.categoryId !== value;
+      });
+    });
+  }
+
+  function showImagePreview(inputId, imgId, placeholderId = null) {
+    const input = document.getElementById(inputId);
+    const img = document.getElementById(imgId);
+    const placeholder = placeholderId ? document.getElementById(placeholderId) : null;
+
+    if (!input || !img) return;
+
+    input.addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        img.src = e.target.result;
+        img.classList.remove('hidden');
+        img.style.display = 'block';
+        if (placeholder) {
+          placeholder.classList.add('hidden');
+        }
+      };
+      reader.readAsDataURL(file);
+
+      if (inputId === 'ocrImageInput') {
+        document.getElementById('ocrFileName').value = file.name;
+      }
+    });
+  }
+
   document.getElementById('loginBtn').addEventListener('click', doLogin);
   document.getElementById('logoutBtn').addEventListener('click', doLogout);
 
@@ -533,6 +926,19 @@ require_once dirname(__DIR__) . '/config.php';
       }
     });
   });
+
+  document.getElementById('ocrUploadBtn').addEventListener('click', function () {
+    document.getElementById('ocrImageInput').click();
+  });
+
+  document.getElementById('editChangeImageBtn').addEventListener('click', function () {
+    document.getElementById('editImageInput').click();
+  });
+
+  bindCategoryBrandFilter('ocrCategory', 'ocrBrand');
+  bindCategoryBrandFilter('editCategory', 'editBrand');
+  showImagePreview('ocrImageInput', 'ocrPreviewImage', 'ocrPreviewPlaceholder');
+  showImagePreview('editImageInput', 'editPreviewImage');
 
   checkAuth();
 </script>
