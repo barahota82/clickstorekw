@@ -227,27 +227,6 @@
       }
     }
 
-    function extractNumber(value) {
-  const raw = String(value || "").trim();
-  const match = raw.match(/\d+(\.\d+)?/);
-  return match ? match[0] : "";
-}
-
-function formatMonthly(value) {
-  const number = extractNumber(value);
-  return number ? `${number} KD` : "";
-}
-
-function formatDuration(value) {
-  const number = extractNumber(value);
-  return number ? `${number} Months` : "";
-}
-
-function formatDownPayment(value) {
-  const number = extractNumber(value);
-  return number ? `${number} KD Down Payment` : "0 KD Down Payment";
-}
-
     function buildProductCard(product) {
       const imagePath = (product.image || "/images/logo.png").trim();
       const brandName = normalizeBrandValue(product.brand);
