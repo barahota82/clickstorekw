@@ -182,8 +182,8 @@ require_once __DIR__ . '/config.php';
     }
 
     .submit-btn,
-    .logout-btn{
-      width:100%;
+    .logout-btn,
+    .nav-btn{
       border:0;
       border-radius:16px;
       padding:15px 18px;
@@ -194,10 +194,20 @@ require_once __DIR__ . '/config.php';
       background:linear-gradient(135deg, var(--primary), var(--primary-2));
       transition:0.2s ease;
       box-shadow:0 14px 28px rgba(37,99,235,0.25);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .submit-btn,
+    .logout-btn{
+      width:100%;
     }
 
     .submit-btn:hover,
-    .logout-btn:hover{
+    .logout-btn:hover,
+    .nav-btn:hover{
       transform:translateY(-1px);
     }
 
@@ -266,6 +276,13 @@ require_once __DIR__ . '/config.php';
       color:var(--muted);
       line-height:1.8;
       font-size:14px;
+    }
+
+    .dashboard-actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
     }
 
     .welcome-grid{
@@ -388,8 +405,11 @@ require_once __DIR__ . '/config.php';
           </p>
         </div>
 
-        <div style="width:min(220px,100%);">
-          <button id="logoutBtn" class="logout-btn" type="button">تسجيل خروج</button>
+        <div class="dashboard-actions">
+          <a href="add-product.php" class="nav-btn">Add Product</a>
+          <div style="width:min(220px,100%);">
+            <button id="logoutBtn" class="logout-btn" type="button">تسجيل خروج</button>
+          </div>
         </div>
       </div>
 
