@@ -337,20 +337,20 @@
 
     async function load() {
   try {
-    const res = await fetch("/products/phones/data.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to load phones data.json");
+    const res = await fetch("/products/accessories/data.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to load accessories data.json");
 
     const files = await res.json();
-    if (!Array.isArray(files)) throw new Error("phones data.json must be an array");
+    if (!Array.isArray(files)) throw new Error("accessories data.json must be an array");
 
     const productResults = await Promise.all(
       files.map(async (file) => {
         try {
-          const r = await fetch(`/products/phones/${file}`, { cache: "no-store" });
+          const r = await fetch(`/products/accessories/${file}`, { cache: "no-store" });
           if (!r.ok) return null;
           return await r.json();
         } catch (e) {
-          console.error("Failed to load phone file:", file, e);
+          console.error("Failed to load accessories file:", file, e);
           return null;
         }
       })
