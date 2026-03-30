@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 date_default_timezone_set('Asia/Kuwait');
 
 const DB_HOST = 'localhost';
-const DB_NAME = 'click_db';
+const DB_NAME = 'clickst1_click_db';
 const DB_USER = 'clickst1_click_user';
 const DB_PASS = 'ضع_هنا_كلمة_مرور_قاعدة_البيانات';
 
