@@ -1,50 +1,78 @@
 <?php
-session_start();
-header('Content-Type: application/json; charset=utf-8');
+declare(strict_types=1);
 
-function respond($ok, $data = [], $code = 200) {
-    http_response_code($code);
-    echo json_encode(
-        array_merge(['ok' => $ok], $data),
-        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-    );
-    exit;
+require_once dirname(__DIR__) . '/config.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    json_response(false, ['message' => 'Invalid request method'], 405);
 }
-
-$configPath = dirname(__DIR__) . '/config.php';
-
-if (!file_exists($configPath)) {
-    respond(false, [
-        'message' => 'Config file not found',
-        'expected_path' => $configPath
-    ], 500);
-}
-
-$config = require $configPath;
-
-$ADMIN_USERNAME = trim($config['admin_username'] ?? '');
-$ADMIN_PASSWORD_HASH = trim($config['admin_password_hash'] ?? '');
 
 $raw = file_get_contents('php://input');
-$input = json_decode($raw, true);
+$data = json_decode($raw ?: '', true);
 
-$username = trim($input['username'] ?? '');
-$password = trim($input['password'] ?? '');
+$username = trim((string)($data['username'] ?? ''));
+$password = (string)($data['password'] ?? '');
 
 if ($username === '' || $password === '') {
-    respond(false, ['message' => 'اسم المستخدم وكلمة المرور مطلوبان.'], 400);
+    json_response(false, ['message' => 'اسم المستخدم وكلمة المرور مطلوبان'], 422);
 }
 
-if ($ADMIN_USERNAME === '' || $ADMIN_PASSWORD_HASH === '') {
-    respond(false, ['message' => 'Admin config is incomplete.'], 500);
-}
+try {
+    $pdo = db();
 
-if ($username !== $ADMIN_USERNAME || !password_verify($password, $ADMIN_PASSWORD_HASH)) {
-    respond(false, ['message' => 'بيانات الدخول غير صحيحة.'], 401);
-}
+    $stmt = $pdo->prepare("
+        SELECT
+            u.id,
+            u.full_name,
+            u.username,
+            u.email,
+            u.password_hash,
+            u.role_id,
+            u.is_active,
+            r.name AS role_name,
+            r.code AS role_code
+        FROM users u
+        INNER JOIN roles r ON r.id = u.role_id
+        WHERE u.username = :username
+        LIMIT 1
+    ");
+    $stmt->execute(['username' => $username]);
+    $user = $stmt->fetch();
 
-session_regenerate_id(true);
-$_SESSION['admin_logged_in'] = true;
-$_SESSION['admin_username'] = $ADMIN_USERNAME;
+    if (!$user) {
+        json_response(false, ['message' => 'بيانات الدخول غير صحيحة'], 401);
+    }
 
-respond(true, ['message' => 'تم تسجيل الدخول بنجاح.']);
+    if ((int)$user['is_active'] !== 1) {
+        json_response(false, ['message' => 'هذا الحساب غير مفعل'], 403);
+    }
+
+    if (!password_verify($password, $user['password_hash'])) {
+        json_response(false, ['message' => 'بيانات الدخول غير صحيحة'], 401);
+    }
+
+    session_regenerate_id(true);
+
+    $_SESSION['admin_user_id'] = (int)$user['id'];
+    $_SESSION['admin_full_name'] = (string)$user['full_name'];
+    $_SESSION['admin_username'] = (string)$user['username'];
+    $_SESSION['admin_role_id'] = (int)$user['role_id'];
+    $_SESSION['admin_role_name'] = (string)$user['role_name'];
+    $_SESSION['admin_role_code'] = (string)$user['role_code'];
+
+    $update = $pdo->prepare("
+        UPDATE users
+        SET last_login_at = NOW()
+        WHERE id = :id
+    ");
+    $update->execute(['id' => (int)$user['id']]);
+
+    json_response(true, [
+        'message' => 'تم تسجيل الدخول بنجاح',
+        'user' => [
+            'id' => (int)$user['id'],
+            'full_name' => (string)$user['full_name'],
+            'username' => (string)$user['username'],
+            'role_name' => (string)$user['role_name'],
+            'role_code' => (string)$user['role_code'],
+        ]
