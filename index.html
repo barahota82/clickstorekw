@@ -433,19 +433,34 @@
     }
 
     async function loadCategoryHotData(categoryName) {
-      try {
-        const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
+  try {
+    const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
 
-        const data = await res.json();
-        return Array.isArray(data)
-          ? data.map(item => ({ ...item, category: categoryName }))
-          : [];
-      } catch (e) {
-        console.error(`Failed to load ${categoryName} hot data:`, e);
-        return [];
-      }
-    }
+    const files = await res.json();
+    if (!Array.isArray(files)) throw new Error(`${categoryName} data.json must be an array`);
+
+    const productResults = await Promise.all(
+      files.map(async (file) => {
+        try {
+          const r = await fetch(`/products/${categoryName}/${file}`, { cache: "no-store" });
+          if (!r.ok) return null;
+
+          const item = await r.json();
+          return { ...item, category: categoryName };
+        } catch (e) {
+          console.error(`Failed to load ${categoryName} hot file:`, file, e);
+          return null;
+        }
+      })
+    );
+
+    return productResults.filter(Boolean);
+  } catch (e) {
+    console.error(`Failed to load ${categoryName} hot data:`, e);
+    return [];
+  }
+}
 
     async function loadHotOffers() {
       const grid = document.getElementById("hot-offers-grid");
