@@ -1,49 +1,59 @@
 <?php
-session_start();
-header('Content-Type: application/json; charset=utf-8');
+declare(strict_types=1);
 
-function respond($ok, $data = [], $code = 200) {
-    http_response_code($code);
-    echo json_encode(array_merge(['ok' => $ok], $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
+require_once dirname(__DIR__, 2) . '/config.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    json_response(false, ['message' => 'Invalid request method'], 405);
 }
 
-if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
-    respond(false, ['message' => 'Unauthorized'], 401);
+require_admin_auth_json();
+
+$productId = (int)($_GET['id'] ?? 0);
+if ($productId <= 0) {
+    json_response(false, ['message' => 'Invalid product id'], 422);
 }
 
-$category = $_GET['category'] ?? '';
-$file = $_GET['file'] ?? '';
+$pdo = db();
 
-$allowedCategories = ['phones', 'tablets', 'laptops', 'accessories'];
+$stmt = $pdo->prepare("
+    SELECT
+        p.*,
+        c.display_name AS category_name,
+        b.name AS brand_name
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN brands b ON b.id = p.brand_id
+    WHERE p.id = :id
+    LIMIT 1
+");
+$stmt->execute(['id' => $productId]);
+$product = $stmt->fetch();
 
-if (!in_array($category, $allowedCategories, true)) {
-    respond(false, ['message' => 'Invalid category'], 400);
+if (!$product) {
+    json_response(false, ['message' => 'Product not found'], 404);
 }
 
-if ($file === '' || strpos($file, '..') !== false || !str_ends_with($file, '.json')) {
-    respond(false, ['message' => 'Invalid file name'], 400);
-}
+$links = $pdo->prepare("
+    SELECT
+        psl.id,
+        psl.device_index,
+        psl.source_type,
+        psl.extracted_name,
+        sc.id AS stock_catalog_id,
+        sc.title AS stock_title,
+        sc.normalized_title,
+        sc.storage_value,
+        sc.ram_value,
+        sc.network_value
+    FROM product_stock_links psl
+    INNER JOIN stock_catalog sc ON sc.id = psl.stock_catalog_id
+    WHERE psl.product_id = :product_id
+    ORDER BY psl.device_index ASC
+");
+$links->execute(['product_id' => $productId]);
 
-$basePath = dirname(__DIR__, 2);
-$productPath = $basePath . "/products/{$category}/{$file}";
-
-if (!file_exists($productPath)) {
-    respond(false, ['message' => 'Product file not found'], 404);
-}
-
-$content = file_get_contents($productPath);
-if ($content === false) {
-    respond(false, ['message' => 'Failed to read product file'], 500);
-}
-
-$data = json_decode($content, true);
-if (!is_array($data)) {
-    respond(false, ['message' => 'Invalid JSON in product file'], 500);
-}
-
-respond(true, [
-    'product' => $data,
-    'category' => $category,
-    'file' => $file
+json_response(true, [
+    'product' => $product,
+    'stock_links' => $links->fetchAll(),
 ]);
