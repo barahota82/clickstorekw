@@ -78,15 +78,15 @@ $brands = $pdo->query("
     }
 
     .panel-desc {
-      margin: 0 0 20px;
+      margin: 0 0 22px;
       color: #c8d4ea;
       line-height: 1.9;
       font-size: 14px;
     }
 
-    .builder-grid {
+    .top-grid {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
+      grid-template-columns: 1fr 1fr;
       gap: 20px;
       align-items: start;
     }
@@ -105,6 +105,12 @@ $brands = $pdo->query("
       font-weight: 800;
     }
 
+    .stack-gap {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
     .form-grid-2 {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -116,13 +122,13 @@ $brands = $pdo->query("
     }
 
     .readonly-input {
-      opacity: 0.9;
       background: #0a1120;
+      opacity: 0.92;
     }
 
     .image-stage {
       width: 100%;
-      min-height: 420px;
+      min-height: 440px;
       border: 1px dashed rgba(255,255,255,0.14);
       border-radius: 20px;
       background: rgba(0,0,0,0.16);
@@ -155,6 +161,17 @@ $brands = $pdo->query("
       margin-top: 16px;
     }
 
+    .secondary-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: none;
+    }
+
+    .danger-btn {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 12px 24px rgba(239,68,68,0.22);
+    }
+
     .mini-note {
       margin-top: 14px;
       padding: 14px 16px;
@@ -166,6 +183,18 @@ $brands = $pdo->query("
       font-size: 14px;
     }
 
+    .filter-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .filters-buffer {
+      padding-bottom: 10px;
+    }
+
     .data-table-wrap {
       width: 100%;
       overflow-x: auto;
@@ -175,7 +204,7 @@ $brands = $pdo->query("
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 820px;
+      min-width: 850px;
     }
 
     .data-table th,
@@ -216,29 +245,12 @@ $brands = $pdo->query("
       line-height: 1.9;
     }
 
-    .tag-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 32px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(37,99,235,0.14);
-      border: 1px solid rgba(37,99,235,0.28);
-      color: #dce8ff;
-      font-size: 12px;
-      font-weight: 700;
-    }
-
-    .danger-btn {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
-      box-shadow: 0 12px 24px rgba(239,68,68,0.22);
-    }
-
-    .secondary-btn {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: none;
+    .edit-layout {
+      display: grid;
+      grid-template-columns: 1fr 0.9fr;
+      gap: 20px;
+      align-items: start;
+      margin-top: 20px;
     }
 
     .placeholder-panels {
@@ -268,20 +280,27 @@ $brands = $pdo->query("
       font-size: 14px;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 1200px) {
       .admin-main-tabs {
         grid-template-columns: repeat(2, minmax(180px, 1fr));
       }
 
-      .builder-grid,
+      .top-grid,
+      .edit-layout,
       .placeholder-panels {
         grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 700px) {
-      .admin-main-tabs,
-      .form-grid-2 {
+    @media (max-width: 820px) {
+      .form-grid-2,
+      .filter-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .admin-main-tabs {
         grid-template-columns: 1fr;
       }
     }
@@ -351,7 +370,7 @@ $brands = $pdo->query("
         <div>
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
           <p class="section-desc no-margin">
-            الواجهة الحالية مركزة على قسمين فقط: إضافة المنتج عبر OCR، وتعديل / حذف المنتجات.
+            الواجهة الحالية مركزة أولًا على: إضافة المنتج عبر OCR، واستدعاء المنتج وتعديله أو حذفه بشكل منفصل.
           </p>
         </div>
 
@@ -392,164 +411,165 @@ $brands = $pdo->query("
         <div id="tab-add-ocr" class="admin-panel active">
           <h3 class="panel-title">Add Product (OCR)</h3>
           <p class="panel-desc">
-            هذا القسم مخصص لإضافة منتج جديد. الـ OCR هنا مساعد فقط، بينما حفظ المنتج وربطه بالمخزن يعتمد أيضًا على اسم الملف والحقول المعيارية.
+            هذا القسم لإضافة منتج جديد. الـ OCR هنا أداة مساعدة فقط، بينما حفظ وربط المنتج بالمخزن يعتمد أيضًا على اسم الملف والحقول المعيارية للمخزن.
           </p>
 
-          <div class="builder-grid">
+          <div class="top-grid">
             <div class="sub-card">
-              <h4 class="sub-title">Product Data</h4>
-
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label for="ocrCategory">Category</label>
-                  <select id="ocrCategory">
-                    <option value="">Select Category</option>
-                    <?php foreach ($categories as $cat): ?>
-                      <option value="<?= (int)$cat['id'] ?>"><?= esc($cat['display_name']) ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrBrand">Brand</label>
-                  <select id="ocrBrand">
-                    <option value="">Select Brand</option>
-                    <?php foreach ($brands as $brand): ?>
-                      <option value="<?= (int)$brand['id'] ?>" data-category-id="<?= (int)$brand['category_id'] ?>">
-                        <?= esc($brand['name']) ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-
-                <div class="form-group full-col">
-                  <label for="ocrFileName">File Name</label>
-                  <input id="ocrFileName" type="text" class="readonly-input" readonly placeholder="Auto from uploaded image">
-                </div>
-
-                <div class="form-group full-col">
-                  <label for="ocrTitle">Title</label>
-                  <input id="ocrTitle" type="text" placeholder="Product title">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrDownPayment">Down Payment</label>
-                  <input id="ocrDownPayment" type="number" step="0.001" min="0" placeholder="0">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrMonthlyAmount">Monthly Amount</label>
-                  <input id="ocrMonthlyAmount" type="number" step="0.001" min="0" placeholder="0">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrDurationMonths">Duration Months</label>
-                  <input id="ocrDurationMonths" type="number" min="1" placeholder="12">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrDevicesCount">Device Count</label>
-                  <input id="ocrDevicesCount" type="number" min="1" class="readonly-input" readonly placeholder="Auto">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrBrandFromFilename">Brand from Filename</label>
-                  <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrStockDisplayName">Stock Display Name</label>
-                  <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrNormalizedTitle">Normalized Stock Title</label>
-                  <input id="ocrNormalizedTitle" type="text" class="readonly-input" readonly placeholder="Auto normalized value">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrStorageValue">Storage</label>
-                  <input id="ocrStorageValue" type="text" placeholder="128GB / 256GB / 1TB">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrRamValue">RAM</label>
-                  <input id="ocrRamValue" type="text" placeholder="8GB RAM / 12GB RAM">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrNetworkValue">Network</label>
-                  <input id="ocrNetworkValue" type="text" placeholder="4G / 5G">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrSourceType">Source Type</label>
-                  <select id="ocrSourceType">
-                    <option value="filename">filename</option>
-                    <option value="ocr">ocr</option>
-                    <option value="merged" selected>merged</option>
-                    <option value="manual">manual</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrBrandOrder">Brand Order</label>
-                  <input id="ocrBrandOrder" type="number" min="0" placeholder="9999">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrProductOrder">Product Order</label>
-                  <input id="ocrProductOrder" type="number" min="0" placeholder="9999">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrSku">SKU</label>
-                  <input id="ocrSku" type="text" placeholder="Auto or manual SKU">
-                </div>
-
-                <div class="form-group">
-                  <label for="ocrNeedsReview">Needs Review</label>
-                  <select id="ocrNeedsReview">
-                    <option value="0" selected>No</option>
-                    <option value="1">Yes</option>
-                  </select>
-                </div>
-
-                <div class="form-group full-col">
-                  <label class="check-item">
-                    <input id="ocrHotOffer" type="checkbox">
-                    Hot Offer
-                  </label>
-                </div>
-              </div>
-
-              <div class="action-row">
-                <button class="btn btn-primary" type="button" id="ocrUploadBtn">Upload Image</button>
-                <button class="btn btn-primary secondary-btn" type="button" id="ocrAnalyzeBtn">Analyze (OCR)</button>
-                <button class="btn btn-primary" type="button" id="ocrSaveBtn">Save Product</button>
-              </div>
-
-              <div class="mini-note">
-                الربط بالمخزن يعتمد من البداية على:
-                <br>
-                File Name + Brand from Filename + Device Count + Normalized Stock Title + Storage + RAM + Network
-              </div>
-            </div>
-
-            <div class="sub-card">
-              <h4 class="sub-title">Display Image Preview</h4>
+              <h4 class="sub-title">Display Image</h4>
 
               <div class="image-stage">
                 <img id="ocrPreviewImage" src="" alt="" class="hidden">
                 <div id="ocrPreviewPlaceholder" class="image-placeholder">
-                  ارفع صورة للمنتج لتظهر هنا بشكل واضح وكامل داخل المربع.
+                  ارفع صورة للمنتج لتظهر هنا كاملة وواضحة داخل المربع.
                 </div>
               </div>
 
               <input id="ocrImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
 
+              <div class="action-row">
+                <button class="btn btn-primary" type="button" id="ocrUploadBtn">Upload Image</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrAnalyzeBtn">Analyze (OCR)</button>
+              </div>
+
               <div class="mini-note">
-                الصورة هنا للعرض الواضح فقط. الـ OCR أداة مساعدة في التحليل، وليس أداة لتغيير الصورة بعد الإضافة.
+                الصورة هي العنصر الأساسي في الإضافة. الـ OCR مجرد مساعد في التحليل، وليس بديلًا عن مراجعة البيانات يدويًا قبل الحفظ.
+              </div>
+            </div>
+
+            <div class="stack-gap">
+              <div class="sub-card">
+                <h4 class="sub-title">Basic Product Info</h4>
+
+                <div class="form-grid-2 filters-buffer">
+                  <div class="form-group">
+                    <label for="ocrCategory">Category</label>
+                    <select id="ocrCategory">
+                      <option value="">Select Category</option>
+                      <?php foreach ($categories as $cat): ?>
+                        <option value="<?= (int)$cat['id'] ?>"><?= esc($cat['display_name']) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrBrand">Brand</label>
+                    <select id="ocrBrand">
+                      <option value="">Select Brand</option>
+                      <?php foreach ($brands as $brand): ?>
+                        <option value="<?= (int)$brand['id'] ?>" data-category-id="<?= (int)$brand['category_id'] ?>">
+                          <?= esc($brand['name']) ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+
+                  <div class="form-group full-col">
+                    <label for="ocrFileName">File Name</label>
+                    <input id="ocrFileName" type="text" class="readonly-input" readonly placeholder="Auto from uploaded image">
+                  </div>
+
+                  <div class="form-group full-col">
+                    <label for="ocrTitle">Title</label>
+                    <input id="ocrTitle" type="text" placeholder="Product title">
+                  </div>
+                </div>
+              </div>
+
+              <div class="sub-card">
+                <h4 class="sub-title">Pricing & Display</h4>
+
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label for="ocrDownPayment">Down Payment</label>
+                    <input id="ocrDownPayment" type="number" step="0.001" min="0" placeholder="0">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrMonthlyAmount">Monthly Amount</label>
+                    <input id="ocrMonthlyAmount" type="number" step="0.001" min="0" placeholder="0">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrDurationMonths">Duration Months</label>
+                    <input id="ocrDurationMonths" type="number" min="1" placeholder="12">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrHotOffer">Hot Offer</label>
+                    <select id="ocrHotOffer">
+                      <option value="0" selected>No</option>
+                      <option value="1">Yes</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sub-card">
+                <h4 class="sub-title">Stock Linking Data</h4>
+
+                <div class="form-grid-2">
+                  <div class="form-group full-col">
+                    <label for="ocrStockDisplayName">Stock Display Name</label>
+                    <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
+                  </div>
+
+                  <div class="form-group full-col">
+                    <label for="ocrNormalizedTitle">Normalized Stock Title</label>
+                    <input id="ocrNormalizedTitle" type="text" class="readonly-input" readonly placeholder="Auto normalized value">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrStorageValue">Storage</label>
+                    <input id="ocrStorageValue" type="text" placeholder="128GB / 256GB / 1TB">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrRamValue">RAM</label>
+                    <input id="ocrRamValue" type="text" placeholder="8GB RAM / 12GB RAM">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrNetworkValue">Network</label>
+                    <input id="ocrNetworkValue" type="text" placeholder="4G / 5G">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrDevicesCount">Device Count</label>
+                    <input id="ocrDevicesCount" type="number" min="1" class="readonly-input" readonly placeholder="Auto">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrBrandFromFilename">Brand from Filename</label>
+                    <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrSourceType">Source Type</label>
+                    <select id="ocrSourceType">
+                      <option value="filename">filename</option>
+                      <option value="ocr">ocr</option>
+                      <option value="merged" selected>merged</option>
+                      <option value="manual">manual</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrNeedsReview">Needs Review</label>
+                    <select id="ocrNeedsReview">
+                      <option value="0" selected>No</option>
+                      <option value="1">Yes</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="mini-note">
+                  هذه الحقول تساعد في منع التكرار، وتحسين الربط مع `stock_catalog` و `product_stock_links` لاحقًا.
+                </div>
+              </div>
+
+              <div class="action-row">
+                <button class="btn btn-primary" type="button" id="ocrSaveBtn">Save Product</button>
               </div>
             </div>
           </div>
@@ -565,7 +585,7 @@ $brands = $pdo->query("
           <div class="sub-card">
             <h4 class="sub-title">Filters</h4>
 
-            <div class="form-grid-2">
+            <div class="filter-row filters-buffer">
               <div class="form-group">
                 <label for="editCategory">Category</label>
                 <select id="editCategory">
@@ -587,10 +607,10 @@ $brands = $pdo->query("
                   <?php endforeach; ?>
                 </select>
               </div>
-            </div>
 
-            <div class="action-row">
-              <button class="btn btn-primary" type="button">Load Products</button>
+              <div class="form-group">
+                <button class="btn btn-primary" type="button">Load Products</button>
+              </div>
             </div>
 
             <div class="data-table-wrap">
@@ -622,11 +642,11 @@ $brands = $pdo->query("
             </div>
 
             <div class="empty-box">
-              لاحقًا سيتم هنا تحميل المنتجات الفعلية بناءً على Category + Brand.
+              سيتم هنا تحميل المنتجات الفعلية بناءً على Category + Brand، ثم اختيار المنتج المطلوب للتعديل أو الحذف.
             </div>
           </div>
 
-          <div class="builder-grid" style="margin-top:18px;">
+          <div class="edit-layout">
             <div class="sub-card">
               <h4 class="sub-title">Edit Product</h4>
 
@@ -652,11 +672,6 @@ $brands = $pdo->query("
                 </div>
 
                 <div class="form-group">
-                  <label for="editSku">SKU</label>
-                  <input id="editSku" type="text">
-                </div>
-
-                <div class="form-group">
                   <label for="editStorageValue">Storage</label>
                   <input id="editStorageValue" type="text">
                 </div>
@@ -671,11 +686,12 @@ $brands = $pdo->query("
                   <input id="editNetworkValue" type="text">
                 </div>
 
-                <div class="form-group full-col">
-                  <label class="check-item">
-                    <input id="editHotOffer" type="checkbox">
-                    Hot Offer
-                  </label>
+                <div class="form-group">
+                  <label for="editHotOffer">Hot Offer</label>
+                  <select id="editHotOffer">
+                    <option value="0" selected>No</option>
+                    <option value="1">Yes</option>
+                  </select>
                 </div>
               </div>
 
@@ -686,7 +702,7 @@ $brands = $pdo->query("
             </div>
 
             <div class="sub-card">
-              <h4 class="sub-title">Current Image / Change Image</h4>
+              <h4 class="sub-title">Current Image</h4>
 
               <div class="image-stage">
                 <img id="editPreviewImage" src="/images/products/sample-product.webp" alt="" style="display:block;">
@@ -699,7 +715,7 @@ $brands = $pdo->query("
               </div>
 
               <div class="mini-note">
-                تعديل الصورة هنا يتم يدويًا فقط. لا يوجد OCR داخل قسم التعديل والحذف.
+                تعديل الصورة هنا يتم يدويًا فقط، والصورة تظهر كاملة داخل المربع بدون قص.
               </div>
             </div>
           </div>
