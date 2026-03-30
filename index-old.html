@@ -341,7 +341,7 @@
     if (/down payment/i.test(raw)) return raw;
     if (/kd/i.test(raw)) return `${raw} Down Payment`;
     const number = extractNumber(raw);
-    return number ? `${number} KD Down Payment` : "0 KD Down Payment";
+    return number ? `${number} KD Down Payment` : raw;
   }
 
   function populateHotBrandFilter() {
