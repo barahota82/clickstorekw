@@ -51,352 +51,213 @@
       color: #111827;
       min-height: 46px;
     }
-
-    .page-catalog .floating-cart,
-    .page-home .floating-cart,
-    .page-all-products .floating-cart {
-      position: fixed;
-      left: 18px;
-      bottom: 18px;
-      background: #2f6df1;
-      color: #fff;
-      border-radius: 999px;
-      height: 56px;
-      min-width: 56px;
-      padding: 0 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-weight: bold;
-      box-shadow: 0 10px 25px rgba(0,0,0,.3);
-      z-index: 1000;
-      border: 0;
-      cursor: pointer;
-      font-size: 22px;
-    }
-
-    .page-catalog .floating-cart span,
-    .page-home .floating-cart span,
-    .page-all-products .floating-cart span {
-      font-size: 17px;
-      line-height: 1;
-    }
-
-    @media (max-width: 640px) {
-      .catalog-filter {
-        max-width: 100%;
-      }
-
-      .page-catalog .floating-cart,
-      .page-home .floating-cart,
-      .page-all-products .floating-cart {
-        left: 14px;
-        bottom: 14px;
-        height: 52px;
-        min-width: 52px;
-        padding: 0 18px;
-      }
-    }
   </style>
 </head>
 <body class="page-catalog">
 
-  <header>
-    <div class="container nav">
-      <div class="brand">
-        <div class="brand-static">
-          <img src="/images/logo.png" alt="Click Company Logo" class="logo">
-          <div class="brand-text">
-            <h1>CLICK COMPANY</h1>
-            <span id="loopText">You Can Depend on Us</span>
-          </div>
+<header>
+  <div class="container nav">
+    <div class="brand">
+      <div class="brand-static">
+        <img src="/images/logo.png" class="logo">
+        <div class="brand-text">
+          <h1>CLICK COMPANY</h1>
+          <span id="loopText">You Can Depend on Us</span>
         </div>
       </div>
-
-      <nav class="nav-links">
-        <div class="nav-row main-row">
-          <a href="index.html">Home</a>
-          <a href="phones.html">Phones</a>
-          <a href="tablets.html" class="active">Tablets</a>
-          <a href="laptops.html">Laptops</a>
-          <a href="accessories.html">Accessories</a>
-
-          <button class="cart-btn" onclick="openCart()">
-            Cart <span class="cart-badge" id="cart-count-top">0</span>
-          </button>
-        </div>
-
-        <div class="nav-row hot-row">
-          <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
-        </div>
-      </nav>
     </div>
-  </header>
 
-  <section class="page-head">
-    <div class="container">
-      <h2>Tablets</h2>
-      <p>Browse all tablet offers.</p>
+    <nav class="nav-links">
+      <div class="nav-row main-row">
+        <a href="index.html">Home</a>
+        <a href="phones.html">Phones</a>
+        <a href="tablets.html" class="active">Tablets</a>
+        <a href="laptops.html">Laptops</a>
+        <a href="accessories.html">Accessories</a>
 
-      <div class="catalog-filter-wrap">
-        <label for="brandFilter" class="catalog-filter-label">Filter by Brand</label>
-        <select id="brandFilter" class="catalog-filter" onchange="applyBrandFilter()">
-          <option value="all">All Brands</option>
-        </select>
+        <button class="cart-btn" onclick="openCart()">
+          Cart <span class="cart-badge" id="cart-count-top">0</span>
+        </button>
+      </div>
+
+      <div class="nav-row hot-row">
+        <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<section class="page-head">
+  <div class="container">
+    <h2>Tablets</h2>
+    <p>Browse all tablet offers.</p>
+
+    <div class="catalog-filter-wrap">
+      <label class="catalog-filter-label">Filter by Brand</label>
+      <select id="brandFilter" class="catalog-filter" onchange="applyBrandFilter()">
+        <option value="all">All Brands</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<section class="container">
+  <div class="products-grid" id="grid">
+    <div class="loading-state" id="loading-state">Loading products...</div>
+    <div class="empty-state" id="empty-state" style="display:none;">No products available yet.</div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-box">
+    <div>©️ 2017–<span id="year"></span> Click Company</div>
+    <div>You Can Depend on Us</div>
+  </div>
+</footer>
+
+<script src="/js/cart.js"></script>
+
+<script>
+let renderedBrands = new Set();
+
+/* ================= FORMAT FIX ================= */
+
+function extractNumber(v){
+  const m = String(v||"").match(/\d+/);
+  return m ? m[0] : "";
+}
+
+function formatMonthly(v){
+  if(!v) return "";
+  if(/kd/i.test(v)) return v;
+  return extractNumber(v) + " KD";
+}
+
+function formatDuration(v){
+  if(!v) return "";
+  if(/month/i.test(v)) return v;
+  return extractNumber(v) + " Months";
+}
+
+function formatDown(v){
+  if(!v) return "0 KD Down Payment";
+  if(/down/i.test(v)) return v;
+  return extractNumber(v) + " KD Down Payment";
+}
+
+/* ================= BRAND ================= */
+
+function normalizeBrand(v){
+  if(!v) return "Other";
+  return v.replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+function populateBrandFilter(){
+  const select=document.getElementById("brandFilter");
+  const brands=[...renderedBrands].sort();
+
+  select.innerHTML='<option value="all">All Brands</option>';
+
+  brands.forEach(b=>{
+    const o=document.createElement("option");
+    o.value=b;
+    o.textContent=b;
+    select.appendChild(o);
+  });
+}
+
+/* ================= CARD ================= */
+
+function buildCard(p){
+  const brand=normalizeBrand(p.brand);
+
+  const card=document.createElement("div");
+  card.className="product-card";
+  card.setAttribute("data-brand",brand);
+
+  card.innerHTML=`
+    <div class="product-image">
+      <img src="${p.image || '/images/logo.png'}">
+    </div>
+
+    <div class="product-body">
+      <div class="product-title">${p.title || ""}</div>
+
+      <div class="row">
+        <div>
+          <div class="price">${formatMonthly(p.monthly)}</div>
+          <div class="months">${formatDuration(p.duration)}</div>
+          <div class="months">${formatDown(p.down_payment)}</div>
+        </div>
+        <button class="btn">+ Add To Cart</button>
       </div>
     </div>
-  </section>
+  `;
 
-  <section class="container">
-    <div class="products-grid" id="grid">
-      <div class="loading-state" id="loading-state">Loading products...</div>
-      <div class="empty-state" id="empty-state" style="display:none;">No products available yet.</div>
-    </div>
-  </section>
-
-  <footer>
-    <div class="container footer-box">
-      <div>©️ 2017–<span id="year"></span> Click Company. All rights reserved.</div>
-      <div>You Can Depend on Us</div>
-    </div>
-  </footer>
-
-  <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
-
-  <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">WhatsApp</button>
-
-  <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
-
-  <aside class="cart-panel" id="cartPanel">
-    <div class="cart-header">
-      <h3>Your Cart</h3>
-      <button class="cart-close" onclick="closeCart()">×</button>
-    </div>
-
-    <div class="cart-items" id="cartItems">
-      <div class="cart-empty-text">Your cart is empty.</div>
-    </div>
-
-    <div class="cart-footer">
-      <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
-    </div>
-  </aside>
-
-  <script>
-    window.addEventListener("DOMContentLoaded", function () {
-      document.getElementById("year").textContent = new Date().getFullYear();
+  card.querySelector(".btn").onclick=()=>{
+    addToCart({
+      title:p.title,
+      price:formatMonthly(p.monthly),
+      months:formatDuration(p.duration)+" • "+formatDown(p.down_payment),
+      image:p.image
     });
-  </script>
+  };
 
-  <script src="/js/cart.js"></script>
+  return {card,brand};
+}
 
-  <script>
-    let productsData = [];
-    let renderedBrands = new Set();
+/* ================= FILTER ================= */
 
-    function normalizeBrandValue(value) {
-      const raw = String(value || "").trim();
-      if (!raw) return "Other";
+function applyBrandFilter(){
+  const val=document.getElementById("brandFilter").value;
+  let visible=0;
 
-      return raw
-        .replace(/\s*\/\s*/g, " / ")
-        .replace(/\b\w/g, char => char.toUpperCase());
-    }
+  document.querySelectorAll(".product-card").forEach(c=>{
+    const show = val==="all" || c.dataset.brand===val;
+    c.style.display=show?"":"none";
+    if(show) visible++;
+  });
 
-    function populateBrandFilter() {
-      const select = document.getElementById("brandFilter");
-      if (!select) return;
+  const empty=document.getElementById("empty-state");
+  empty.style.display = visible? "none":"block";
+}
 
-      const currentValue = select.value || "all";
-      const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
+/* ================= LOAD ================= */
 
-      select.innerHTML = '<option value="all">All Brands</option>';
+async function load(){
+  try{
+    const res=await fetch("/products/tablets/data.json",{cache:"no-store"});
+    const files=await res.json();
 
-      brands.forEach(brand => {
-        const option = document.createElement("option");
-        option.value = brand;
-        option.textContent = brand;
-        select.appendChild(option);
-      });
-
-      if ([...select.options].some(option => option.value === currentValue)) {
-        select.value = currentValue;
-      } else {
-        select.value = "all";
-      }
-    }
-
-    function buildProductCard(product) {
-      const imagePath = (product.image || "/images/logo.png").trim();
-      const brandName = normalizeBrandValue(product.brand);
-
-      const card = document.createElement("div");
-      card.className = "product-card";
-      card.setAttribute("data-brand", brandName);
-
-      card.innerHTML = `
-        <div class="product-image">
-          <img src="${imagePath}" alt="${product.title || "Product"}" loading="lazy">
-        </div>
-
-        <div class="product-body">
-          <div class="product-title">${product.title || ""}</div>
-
-          <div class="row">
-            <div>
-              <div class="price">${product.monthly || ""}</div>
-              <div class="months">${product.duration || ""}</div>
-              <div class="months">${product.down_payment || ""} Down Payment</div>
-            </div>
-            <button class="btn">+ Add To Cart</button>
-          </div>
-        </div>
-      `;
-
-      card.querySelector(".btn").onclick = () => {
-        addToCart({
-          title: product.title || "Product",
-          price: product.monthly ? `${product.monthly} Monthly` : "",
-          months: `${product.duration || ""}${product.down_payment ? ` • ${product.down_payment} Down Payment` : ""}`,
-          image: imagePath
-        });
-      };
-
-      return { card, brandName };
-    }
-
-    function applyBrandFilter() {
-      const selectedBrand = document.getElementById("brandFilter")?.value || "all";
-      const cards = document.querySelectorAll(".product-card[data-brand]");
-      const empty = document.getElementById("empty-state");
-      let visibleCount = 0;
-
-      cards.forEach(card => {
-        const cardBrand = card.getAttribute("data-brand") || "";
-        const shouldShow = selectedBrand === "all" || cardBrand === selectedBrand;
-
-        card.style.display = shouldShow ? "" : "none";
-        if (shouldShow) visibleCount++;
-      });
-
-      if (empty) {
-        if (visibleCount === 0) {
-          empty.style.display = "";
-          empty.textContent = "No products available for this brand.";
-        } else {
-          empty.style.display = "none";
-        }
-      }
-    }
-
-    function renderProducts(items) {
-      const grid = document.getElementById("grid");
-      const loading = document.getElementById("loading-state");
-      const empty = document.getElementById("empty-state");
-
-      document.querySelectorAll(".product-card").forEach(card => card.remove());
-      renderedBrands = new Set();
-
-      const visibleProducts = items
-        .filter(item => item && item.available === true)
-        .sort((a, b) => {
-          const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
-          const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
-          if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
-
-          const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
-          const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
-          if (aPriority !== bPriority) return aPriority - bPriority;
-
-          return String(a.title || "").localeCompare(String(b.title || ""));
-        });
-
-      if (loading) loading.remove();
-
-      if (!visibleProducts.length) {
-        if (empty) {
-          empty.style.display = "";
-          empty.textContent = "No products available yet.";
-        }
-        populateBrandFilter();
-        return;
-      }
-
-      visibleProducts.forEach(product => {
-        const { card, brandName } = buildProductCard(product);
-        grid.appendChild(card);
-        renderedBrands.add(brandName);
-      });
-
-      if (empty) empty.style.display = "none";
-
-      populateBrandFilter();
-      applyBrandFilter();
-    }
-
-    async function load() {
-  try {
-    const res = await fetch("/products/tablets/data.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to load tablets data.json");
-
-    const files = await res.json();
-    if (!Array.isArray(files)) throw new Error("tablets data.json must be an array");
-
-    const productResults = await Promise.all(
-      files.map(async (file) => {
-        try {
-          const r = await fetch(`/products/tablets/${file}`, { cache: "no-store" });
-          if (!r.ok) return null;
-          return await r.json();
-        } catch (e) {
-          console.error("Failed to load tablets file:", file, e);
-          return null;
-        }
-      })
+    const results=await Promise.all(
+      files.map(f=>fetch(`/products/tablets/${f}`).then(r=>r.json()).catch(()=>null))
     );
 
-    productsData = productResults.filter(Boolean);
-    renderProducts(productsData);
-  } catch (e) {
-    console.error("Failed to load tablets data:", e);
+    const data=results.filter(Boolean).filter(p=>p.available);
 
-    const loading = document.getElementById("loading-state");
-    const empty = document.getElementById("empty-state");
+    document.getElementById("loading-state").remove();
 
-    if (loading) loading.remove();
-    if (empty) {
-      empty.style.display = "";
-      empty.textContent = "Failed to load products.";
+    if(!data.length){
+      document.getElementById("empty-state").style.display="block";
+      return;
     }
+
+    data.forEach(p=>{
+      const {card,brand}=buildCard(p);
+      document.getElementById("grid").appendChild(card);
+      renderedBrands.add(brand);
+    });
+
+    populateBrandFilter();
+    applyBrandFilter();
+
+  }catch(e){
+    console.error(e);
   }
 }
 
-    load();
-  </script>
-
-  <script>
-    const texts = [
-      "You Can Depend on Us",
-      "Best Deals in Kuwait",
-      "Easy Monthly Installments",
-      "Fast Delivery"
-    ];
-
-    let i = 0;
-    const el = document.getElementById("loopText");
-
-    setInterval(() => {
-      if (!el) return;
-      el.style.opacity = 0;
-
-      setTimeout(() => {
-        i = (i + 1) % texts.length;
-        el.textContent = texts[i];
-        el.style.opacity = 1;
-      }, 400);
-    }, 3000);
-  </script>
+load();
+</script>
 
 </body>
 </html>
