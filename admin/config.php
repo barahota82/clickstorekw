@@ -47,13 +47,5 @@ function json_response(bool $ok, array $data = [], int $statusCode = 200): void
 
 function is_admin_logged_in(): bool
 {
-    return !empty($_SESSION['admin_user_id']);
-}
-
-function require_admin_login(): void
-{
-    if (!is_admin_logged_in()) {
-        header('Location: /admin/index.php');
-        exit;
-    }
+    return isset($_SESSION['admin_user_id']) && (int)$_SESSION['admin_user_id'] > 0;
 }
