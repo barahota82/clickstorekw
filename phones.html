@@ -204,6 +204,37 @@
         .replace(/\b\w/g, char => char.toUpperCase());
     }
 
+    function extractNumber(value) {
+      const raw = String(value || "").trim();
+      const match = raw.match(/\d+(\.\d+)?/);
+      return match ? match[0] : "";
+    }
+
+    function formatMonthly(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (/kd/i.test(raw)) return raw;
+      const number = extractNumber(raw);
+      return number ? `${number} KD` : raw;
+    }
+
+    function formatDuration(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (/month/i.test(raw)) return raw;
+      const number = extractNumber(raw);
+      return number ? `${number} Months` : raw;
+    }
+
+    function formatDownPayment(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "0 KD Down Payment";
+      if (/down payment/i.test(raw)) return raw;
+      if (/kd/i.test(raw)) return `${raw} Down Payment`;
+      const number = extractNumber(raw);
+      return number ? `${number} KD Down Payment` : "0 KD Down Payment";
+    }
+
     function populateBrandFilter() {
       const select = document.getElementById("brandFilter");
       if (!select) return;
@@ -231,6 +262,10 @@
       const imagePath = (product.image || "/images/logo.png").trim();
       const brandName = normalizeBrandValue(product.brand);
 
+      const monthlyText = formatMonthly(product.monthly);
+      const durationText = formatDuration(product.duration);
+      const downPaymentText = formatDownPayment(product.down_payment);
+
       const card = document.createElement("div");
       card.className = "product-card";
       card.setAttribute("data-brand", brandName);
@@ -245,9 +280,9 @@
 
           <div class="row">
             <div>
-              <div class="price">${product.monthly || ""}</div>
-              <div class="months">${product.duration || ""}</div>
-              <div class="months">${product.down_payment || ""} Down Payment</div>
+              <div class="price">${monthlyText}</div>
+              <div class="months">${durationText}</div>
+              <div class="months">${downPaymentText}</div>
             </div>
             <button class="btn">+ Add To Cart</button>
           </div>
@@ -257,8 +292,8 @@
       card.querySelector(".btn").onclick = () => {
         addToCart({
           title: product.title || "Product",
-          price: product.monthly ? `${product.monthly} Monthly` : "",
-          months: `${product.duration || ""}${product.down_payment ? ` • ${product.down_payment} Down Payment` : ""}`,
+          price: `${monthlyText} Monthly`,
+          months: `${durationText} • ${downPaymentText}`,
           image: imagePath
         });
       };
@@ -336,41 +371,41 @@
     }
 
     async function load() {
-  try {
-    const res = await fetch("/products/phones/data.json", { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to load phones data.json");
+      try {
+        const res = await fetch("/products/phones/data.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load phones data.json");
 
-    const files = await res.json();
-    if (!Array.isArray(files)) throw new Error("phones data.json must be an array");
+        const files = await res.json();
+        if (!Array.isArray(files)) throw new Error("phones data.json must be an array");
 
-    const productResults = await Promise.all(
-      files.map(async (file) => {
-        try {
-          const r = await fetch(`/products/phones/${file}`, { cache: "no-store" });
-          if (!r.ok) return null;
-          return await r.json();
-        } catch (e) {
-          console.error("Failed to load phone file:", file, e);
-          return null;
+        const productResults = await Promise.all(
+          files.map(async (file) => {
+            try {
+              const r = await fetch(`/products/phones/${file}`, { cache: "no-store" });
+              if (!r.ok) return null;
+              return await r.json();
+            } catch (e) {
+              console.error("Failed to load phone file:", file, e);
+              return null;
+            }
+          })
+        );
+
+        productsData = productResults.filter(Boolean);
+        renderProducts(productsData);
+      } catch (e) {
+        console.error("Failed to load phones data:", e);
+
+        const loading = document.getElementById("loading-state");
+        const empty = document.getElementById("empty-state");
+
+        if (loading) loading.remove();
+        if (empty) {
+          empty.style.display = "";
+          empty.textContent = "Failed to load products.";
         }
-      })
-    );
-
-    productsData = productResults.filter(Boolean);
-    renderProducts(productsData);
-  } catch (e) {
-    console.error("Failed to load phones data:", e);
-
-    const loading = document.getElementById("loading-state");
-    const empty = document.getElementById("empty-state");
-
-    if (loading) loading.remove();
-    if (empty) {
-      empty.style.display = "";
-      empty.textContent = "Failed to load products.";
+      }
     }
-  }
-}
 
     load();
   </script>
