@@ -86,7 +86,7 @@ $brands = $pdo->query("
 
     .top-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.05fr 0.95fr;
       gap: 20px;
       align-items: start;
     }
@@ -128,7 +128,7 @@ $brands = $pdo->query("
 
     .image-stage {
       width: 100%;
-      min-height: 440px;
+      min-height: 470px;
       border: 1px dashed rgba(255,255,255,0.14);
       border-radius: 20px;
       background: rgba(0,0,0,0.16);
@@ -137,14 +137,17 @@ $brands = $pdo->query("
       justify-content: center;
       overflow: hidden;
       padding: 16px;
+      position: relative;
     }
 
     .image-stage img {
       width: 100%;
       height: 100%;
-      max-height: 520px;
+      max-height: 560px;
       object-fit: contain;
       display: block;
+      user-select: none;
+      pointer-events: none;
     }
 
     .image-placeholder {
@@ -152,6 +155,55 @@ $brands = $pdo->query("
       font-size: 14px;
       line-height: 1.9;
       text-align: center;
+    }
+
+    .ocr-boxes-layer {
+      position: absolute;
+      inset: 16px;
+      pointer-events: auto;
+    }
+
+    .ocr-box {
+      position: absolute;
+      border: 2px solid #60a5fa;
+      background: rgba(96,165,250,0.10);
+      border-radius: 10px;
+      min-width: 60px;
+      min-height: 40px;
+      cursor: move;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .ocr-box.selected {
+      border-color: #22c55e;
+      background: rgba(34,197,94,0.10);
+    }
+
+    .ocr-box-label {
+      position: absolute;
+      top: -28px;
+      right: 0;
+      background: rgba(15,23,42,0.92);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .ocr-box-handle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: -1px;
+      bottom: -1px;
+      background: #60a5fa;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      cursor: nwse-resize;
     }
 
     .action-row {
@@ -181,6 +233,32 @@ $brands = $pdo->query("
       color: #c8d4ea;
       line-height: 1.8;
       font-size: 14px;
+    }
+
+    .box-list {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .box-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .box-item-grid {
+      display: grid;
+      grid-template-columns: 120px 1fr 180px auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .box-item small {
+      color: #c8d4ea;
+      display: block;
+      margin-top: 6px;
     }
 
     .filter-row {
@@ -288,6 +366,10 @@ $brands = $pdo->query("
       .top-grid,
       .edit-layout,
       .placeholder-panels {
+        grid-template-columns: 1fr;
+      }
+
+      .box-item-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -411,30 +493,36 @@ $brands = $pdo->query("
         <div id="tab-add-ocr" class="admin-panel active">
           <h3 class="panel-title">Add Product (OCR)</h3>
           <p class="panel-desc">
-            هذا القسم لإضافة منتج جديد. الـ OCR هنا أداة مساعدة فقط، بينما حفظ وربط المنتج بالمخزن يعتمد أيضًا على اسم الملف والحقول المعيارية للمخزن.
+            هذا القسم لإضافة منتج جديد. اسم الملف هو الأساس، والـ OCR مساعد للتحقق أو قراءة مناطق محددة من الصورة.
           </p>
 
           <div class="top-grid">
             <div class="sub-card">
               <h4 class="sub-title">Display Image</h4>
 
-              <div class="image-stage">
+              <div id="ocrImageStage" class="image-stage">
                 <img id="ocrPreviewImage" src="" alt="" class="hidden">
                 <div id="ocrPreviewPlaceholder" class="image-placeholder">
                   ارفع صورة للمنتج لتظهر هنا كاملة وواضحة داخل المربع.
                 </div>
+                <div id="ocrBoxesLayer" class="ocr-boxes-layer"></div>
               </div>
 
               <input id="ocrImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
 
               <div class="action-row">
                 <button class="btn btn-primary" type="button" id="ocrUploadBtn">Upload Image</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrInsertBoxBtn">Insert Box</button>
                 <button class="btn btn-primary secondary-btn" type="button" id="ocrAnalyzeBtn">Analyze (OCR)</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrClearDataBtn">Clear Form</button>
+                <button class="btn danger-btn" type="button" id="ocrClearBoxesBtn">Clear Boxes</button>
               </div>
 
               <div class="mini-note">
-                الصورة هي العنصر الأساسي في الإضافة. الـ OCR مجرد مساعد في التحليل، وليس بديلًا عن مراجعة البيانات يدويًا قبل الحفظ.
+                عند رفع صورة جديدة أو تفريغ البيانات، تبقى آخر أماكن المربعات محفوظة كما هي.
               </div>
+
+              <div class="box-list" id="ocrBoxesList"></div>
             </div>
 
             <div class="stack-gap">
@@ -446,9 +534,6 @@ $brands = $pdo->query("
                     <label for="ocrCategory">Category</label>
                     <select id="ocrCategory">
                       <option value="">Select Category</option>
-                      <?php foreach ($categories as $cat): ?>
-                        <option value="<?= (int)$cat['id'] ?>"><?= esc($cat['display_name']) ?></option>
-                      <?php endforeach; ?>
                     </select>
                   </div>
 
@@ -456,11 +541,6 @@ $brands = $pdo->query("
                     <label for="ocrBrand">Brand</label>
                     <select id="ocrBrand">
                       <option value="">Select Brand</option>
-                      <?php foreach ($brands as $brand): ?>
-                        <option value="<?= (int)$brand['id'] ?>" data-category-id="<?= (int)$brand['category_id'] ?>">
-                          <?= esc($brand['name']) ?>
-                        </option>
-                      <?php endforeach; ?>
                     </select>
                   </div>
 
@@ -472,6 +552,11 @@ $brands = $pdo->query("
                   <div class="form-group full-col">
                     <label for="ocrTitle">Title</label>
                     <input id="ocrTitle" type="text" placeholder="Product title">
+                  </div>
+
+                  <div class="form-group full-col">
+                    <label for="ocrStockDisplayName">Stock Display Name</label>
+                    <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
                   </div>
                 </div>
               </div>
@@ -506,34 +591,9 @@ $brands = $pdo->query("
               </div>
 
               <div class="sub-card">
-                <h4 class="sub-title">Stock Linking Data</h4>
+                <h4 class="sub-title">OCR Summary</h4>
 
                 <div class="form-grid-2">
-                  <div class="form-group full-col">
-                    <label for="ocrStockDisplayName">Stock Display Name</label>
-                    <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
-                  </div>
-
-                  <div class="form-group full-col">
-                    <label for="ocrNormalizedTitle">Normalized Stock Title</label>
-                    <input id="ocrNormalizedTitle" type="text" class="readonly-input" readonly placeholder="Auto normalized value">
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrStorageValue">Storage</label>
-                    <input id="ocrStorageValue" type="text" placeholder="128GB / 256GB / 1TB">
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrRamValue">RAM</label>
-                    <input id="ocrRamValue" type="text" placeholder="8GB RAM / 12GB RAM">
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrNetworkValue">Network</label>
-                    <input id="ocrNetworkValue" type="text" placeholder="4G / 5G">
-                  </div>
-
                   <div class="form-group">
                     <label for="ocrDevicesCount">Device Count</label>
                     <input id="ocrDevicesCount" type="number" min="1" class="readonly-input" readonly placeholder="Auto">
@@ -541,30 +601,12 @@ $brands = $pdo->query("
 
                   <div class="form-group">
                     <label for="ocrBrandFromFilename">Brand from Filename</label>
-                    <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto">
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrSourceType">Source Type</label>
-                    <select id="ocrSourceType">
-                      <option value="filename">filename</option>
-                      <option value="ocr">ocr</option>
-                      <option value="merged" selected>merged</option>
-                      <option value="manual">manual</option>
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrNeedsReview">Needs Review</label>
-                    <select id="ocrNeedsReview">
-                      <option value="0" selected>No</option>
-                      <option value="1">Yes</option>
-                    </select>
+                    <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="From first device only">
                   </div>
                 </div>
 
                 <div class="mini-note">
-                  هذه الحقول تساعد في منع التكرار، وتحسين الربط مع `stock_catalog` و `product_stock_links` لاحقًا.
+                  Brand from Filename يعتمد على أول جهاز فقط. لو العرض Combo وكان أول جهاز Samsung، يتم اعتماد Samsung.
                 </div>
               </div>
 
@@ -590,9 +632,6 @@ $brands = $pdo->query("
                 <label for="editCategory">Category</label>
                 <select id="editCategory">
                   <option value="">Select Category</option>
-                  <?php foreach ($categories as $cat): ?>
-                    <option value="<?= (int)$cat['id'] ?>"><?= esc($cat['display_name']) ?></option>
-                  <?php endforeach; ?>
                 </select>
               </div>
 
@@ -600,11 +639,6 @@ $brands = $pdo->query("
                 <label for="editBrand">Brand</label>
                 <select id="editBrand">
                   <option value="">Select Brand</option>
-                  <?php foreach ($brands as $brand): ?>
-                    <option value="<?= (int)$brand['id'] ?>" data-category-id="<?= (int)$brand['category_id'] ?>">
-                      <?= esc($brand['name']) ?>
-                    </option>
-                  <?php endforeach; ?>
                 </select>
               </div>
 
@@ -642,7 +676,7 @@ $brands = $pdo->query("
             </div>
 
             <div class="empty-box">
-              سيتم هنا تحميل المنتجات الفعلية بناءً على Category + Brand، ثم اختيار المنتج المطلوب للتعديل أو الحذف.
+              سيتم هنا تحميل المنتجات الفعلية بناءً على Category + Brand.
             </div>
           </div>
 
@@ -669,21 +703,6 @@ $brands = $pdo->query("
                 <div class="form-group">
                   <label for="editDurationMonths">Duration Months</label>
                   <input id="editDurationMonths" type="number" min="1">
-                </div>
-
-                <div class="form-group">
-                  <label for="editStorageValue">Storage</label>
-                  <input id="editStorageValue" type="text">
-                </div>
-
-                <div class="form-group">
-                  <label for="editRamValue">RAM</label>
-                  <input id="editRamValue" type="text">
-                </div>
-
-                <div class="form-group">
-                  <label for="editNetworkValue">Network</label>
-                  <input id="editNetworkValue" type="text">
                 </div>
 
                 <div class="form-group">
@@ -783,180 +802,12 @@ $brands = $pdo->query("
   </div>
 </div>
 
-<script src="/admin/assets/admin.js"></script>
 <script>
-  function showDashboard(user) {
-    document.getElementById('loginPage').classList.add('hidden');
-    document.getElementById('dashboardPage').classList.remove('hidden');
-
-    document.getElementById('viewerFullName').textContent = user?.full_name || '-';
-    document.getElementById('viewerUsername').textContent = user?.username || '-';
-    document.getElementById('viewerRole').textContent = user?.role_name || '-';
-  }
-
-  function showLogin() {
-    document.getElementById('dashboardPage').classList.add('hidden');
-    document.getElementById('loginPage').classList.remove('hidden');
-  }
-
-  async function checkAuth() {
-    try {
-      const res = await fetch('/admin/api/check-auth.php', {
-        method: 'GET',
-        credentials: 'same-origin'
-      });
-      const data = await res.json();
-
-      if (data.ok) {
-        showDashboard(data.user);
-      } else {
-        showLogin();
-      }
-    } catch (e) {
-      showLogin();
-    }
-  }
-
-  async function doLogin() {
-    adminSetStatus('loginStatus', 'info', 'جاري تسجيل الدخول...');
-
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-
-    if (!username || !password) {
-      adminSetStatus('loginStatus', 'error', 'اكتب اسم المستخدم وكلمة المرور.');
-      return;
-    }
-
-    try {
-      const res = await fetch('/admin/api/login.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ username, password })
-      });
-
-      const data = await res.json();
-
-      if (!data.ok) {
-        adminSetStatus('loginStatus', 'error', data.message || 'فشل تسجيل الدخول.');
-        return;
-      }
-
-      adminSetStatus('loginStatus', 'success', data.message || 'تم تسجيل الدخول بنجاح.');
-      await checkAuth();
-    } catch (e) {
-      adminSetStatus('loginStatus', 'error', 'حدث خطأ أثناء تسجيل الدخول.');
-    }
-  }
-
-  async function doLogout() {
-    adminSetStatus('dashboardStatus', 'info', 'جاري تسجيل الخروج...');
-
-    try {
-      const res = await fetch('/admin/api/logout.php', {
-        method: 'POST',
-        credentials: 'same-origin'
-      });
-
-      const data = await res.json();
-
-      if (!data.ok) {
-        adminSetStatus('dashboardStatus', 'error', data.message || 'فشل تسجيل الخروج.');
-        return;
-      }
-
-      document.getElementById('password').value = '';
-      adminSetStatus('loginStatus', 'success', 'تم تسجيل الخروج بنجاح.');
-      showLogin();
-    } catch (e) {
-      adminSetStatus('dashboardStatus', 'error', 'حدث خطأ أثناء تسجيل الخروج.');
-    }
-  }
-
-  function bindCategoryBrandFilter(categoryId, brandId) {
-    const category = document.getElementById(categoryId);
-    const brand = document.getElementById(brandId);
-
-    if (!category || !brand) return;
-
-    category.addEventListener('change', function () {
-      const value = this.value;
-      brand.value = '';
-      brand.querySelectorAll('option').forEach(opt => {
-        if (!opt.value) {
-          opt.hidden = false;
-          return;
-        }
-        opt.hidden = opt.dataset.categoryId !== value;
-      });
-    });
-  }
-
-  function showImagePreview(inputId, imgId, placeholderId = null) {
-    const input = document.getElementById(inputId);
-    const img = document.getElementById(imgId);
-    const placeholder = placeholderId ? document.getElementById(placeholderId) : null;
-
-    if (!input || !img) return;
-
-    input.addEventListener('change', function () {
-      const file = this.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        img.src = e.target.result;
-        img.classList.remove('hidden');
-        img.style.display = 'block';
-        if (placeholder) {
-          placeholder.classList.add('hidden');
-        }
-      };
-      reader.readAsDataURL(file);
-
-      if (inputId === 'ocrImageInput') {
-        document.getElementById('ocrFileName').value = file.name;
-      }
-    });
-  }
-
-  document.getElementById('loginBtn').addEventListener('click', doLogin);
-  document.getElementById('logoutBtn').addEventListener('click', doLogout);
-
-  document.getElementById('password').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      doLogin();
-    }
-  });
-
-  document.querySelectorAll('.admin-tab-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
-
-      this.classList.add('active');
-      const target = document.getElementById(this.dataset.tab);
-      if (target) {
-        target.classList.add('active');
-      }
-    });
-  });
-
-  document.getElementById('ocrUploadBtn').addEventListener('click', function () {
-    document.getElementById('ocrImageInput').click();
-  });
-
-  document.getElementById('editChangeImageBtn').addEventListener('click', function () {
-    document.getElementById('editImageInput').click();
-  });
-
-  bindCategoryBrandFilter('ocrCategory', 'ocrBrand');
-  bindCategoryBrandFilter('editCategory', 'editBrand');
-  showImagePreview('ocrImageInput', 'ocrPreviewImage', 'ocrPreviewPlaceholder');
-  showImagePreview('editImageInput', 'editPreviewImage');
-
-  checkAuth();
+  window.ADMIN_BOOTSTRAP = {
+    categories: <?= json_encode($categories, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+    brands: <?= json_encode($brands, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+  };
 </script>
+<script src="/admin/assets/admin.js"></script>
 </body>
 </html>
