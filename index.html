@@ -173,371 +173,402 @@
   </div>
 </header>
 
-  <section class="hero">
-    <div class="container hero-box">
-      <div class="hero-content">
-        <div class="badge">Easy Installments in Kuwait</div>
-        <h2>Own It Today, Pay Monthly</h2>
-        <p>
-          Shop phones, tablets, laptops and accessories with easy monthly payments,
-          fast approval and direct WhatsApp ordering.
-        </p>
+<section class="hero">
+  <div class="container hero-box">
+    <div class="hero-content">
+      <div class="badge">Easy Installments in Kuwait</div>
+      <h2>Own It Today, Pay Monthly</h2>
+      <p>
+        Shop phones, tablets, laptops and accessories with easy monthly payments,
+        fast approval and direct WhatsApp ordering.
+      </p>
 
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#hot-offers">View Hot Offers</a>
-          <button class="btn btn-secondary" onclick="openCart()">Open Cart</button>
-        </div>
-
-        <div class="hero-points">
-          <div class="hero-points-row">
-            <span>No Downpayment</span>
-            <span>Easy Monthly Payments</span>
-          </div>
-          <div class="hero-points-row">
-            <span>Fast Approval</span>
-            <span>Fast Delivery</span>
-            <span>Latest Offers</span>
-          </div>
-        </div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#hot-offers">View Hot Offers</a>
+        <button class="btn btn-secondary" onclick="openCart()">Open Cart</button>
       </div>
 
-      <div class="hero-side">
-        <div class="mini-card">
-          <h3>Elevate Your Tech</h3>
-          <p>Own the latest Smartphones, Tablets, Laptops, and Accessories with tailored installment plans.</p>
-          <div class="mini-highlight">Seamless WhatsApp Ordering</div>
+      <div class="hero-points">
+        <div class="hero-points-row">
+          <span>No Downpayment</span>
+          <span>Easy Monthly Payments</span>
         </div>
-
-        <div class="mini-card">
-          <h3>Multi Product Order</h3>
-          <p>Add multiple products to your cart and send your entire order in one tap via WhatsApp. A fast, optimized experience designed for your convenience.</p>
-          <a href="/all-products.html" class="btn btn-primary">Start Order</a>
+        <div class="hero-points-row">
+          <span>Fast Approval</span>
+          <span>Fast Delivery</span>
+          <span>Latest Offers</span>
         </div>
       </div>
     </div>
-  </section>
 
-  <section class="section" id="hot-offers">
-    <div class="container">
-      <h2 class="section-title">Hot Offers</h2>
-
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="all" onclick="filterHot('all', this)">All</button>
-        <button class="filter-btn" data-filter="phones" onclick="filterHot('phones', this)">Phones</button>
-        <button class="filter-btn" data-filter="tablets" onclick="filterHot('tablets', this)">Tablets</button>
-        <button class="filter-btn" data-filter="laptops" onclick="filterHot('laptops', this)">Laptops</button>
-        <button class="filter-btn" data-filter="accessories" onclick="filterHot('accessories', this)">Accessories</button>
+    <div class="hero-side">
+      <div class="mini-card">
+        <h3>Elevate Your Tech</h3>
+        <p>Own the latest Smartphones, Tablets, Laptops, and Accessories with tailored installment plans.</p>
+        <div class="mini-highlight">Seamless WhatsApp Ordering</div>
       </div>
 
-      <div class="catalog-filter-wrap">
-        <label for="hotBrandFilter" class="catalog-filter-label">Filter by Brand</label>
-        <select id="hotBrandFilter" class="catalog-filter" onchange="applyHotBrandFilter()">
-          <option value="all">All Brands</option>
-        </select>
-      </div>
-
-      <div class="products-grid" id="hot-offers-grid">
-        <div class="loading-state" id="hot-loading-state">Loading hot offers...</div>
-        <div class="empty-state" id="hot-offers-empty" style="display:none;">No hot offers available yet.</div>
+      <div class="mini-card">
+        <h3>Multi Product Order</h3>
+        <p>Add multiple products to your cart and send your entire order in one tap via WhatsApp. A fast, optimized experience designed for your convenience.</p>
+        <a href="/all-products.html" class="btn btn-primary">Start Order</a>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <footer>
-    <div class="container footer-box">
-      <div>©️ 2017–<span id="year"></span> Click Company. All rights reserved.</div>
-      <div>You Can Depend on Us</div>
-    </div>
-  </footer>
+<section class="section" id="hot-offers">
+  <div class="container">
+    <h2 class="section-title">Hot Offers</h2>
 
-  <button class="floating-cart" onclick="openCart()">
-    🛒 <span id="cart-count-floating">0</span>
-  </button>
-
-  <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">WhatsApp</button>
-
-  <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
-
-  <aside class="cart-panel" id="cartPanel">
-    <div class="cart-header">
-      <h3>Your Cart</h3>
-      <button class="cart-close" onclick="closeCart()">×</button>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="filterHot('all', this)">All</button>
+      <button class="filter-btn" data-filter="phones" onclick="filterHot('phones', this)">Phones</button>
+      <button class="filter-btn" data-filter="tablets" onclick="filterHot('tablets', this)">Tablets</button>
+      <button class="filter-btn" data-filter="laptops" onclick="filterHot('laptops', this)">Laptops</button>
+      <button class="filter-btn" data-filter="accessories" onclick="filterHot('accessories', this)">Accessories</button>
     </div>
 
-    <div class="cart-items" id="cartItems">
-      <div class="cart-empty-text">Your cart is empty.</div>
+    <div class="catalog-filter-wrap">
+      <label for="hotBrandFilter" class="catalog-filter-label">Filter by Brand</label>
+      <select id="hotBrandFilter" class="catalog-filter" onchange="applyHotBrandFilter()">
+        <option value="all">All Brands</option>
+      </select>
     </div>
 
-    <div class="cart-footer">
-      <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
+    <div class="products-grid" id="hot-offers-grid">
+      <div class="loading-state" id="hot-loading-state">Loading hot offers...</div>
+      <div class="empty-state" id="hot-offers-empty" style="display:none;">No hot offers available yet.</div>
     </div>
-  </aside>
+  </div>
+</section>
 
-  <script>
-    window.addEventListener("DOMContentLoaded", function () {
-      document.getElementById("year").textContent = new Date().getFullYear();
+<footer>
+  <div class="container footer-box">
+    <div>©️ 2017–<span id="year"></span> Click Company. All rights reserved.</div>
+    <div>You Can Depend on Us</div>
+  </div>
+</footer>
+
+<button class="floating-cart" onclick="openCart()">
+  🛒 <span id="cart-count-floating">0</span>
+</button>
+
+<button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">WhatsApp</button>
+
+<div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
+
+<aside class="cart-panel" id="cartPanel">
+  <div class="cart-header">
+    <h3>Your Cart</h3>
+    <button class="cart-close" onclick="closeCart()">×</button>
+  </div>
+
+  <div class="cart-items" id="cartItems">
+    <div class="cart-empty-text">Your cart is empty.</div>
+  </div>
+
+  <div class="cart-footer">
+    <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
+  </div>
+</aside>
+
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("year").textContent = new Date().getFullYear();
+  });
+</script>
+
+<script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.init();
+
+    if (window.location.hash.includes("recovery_token")) {
+      window.netlifyIdentity.open("recovery");
+    }
+
+    if (window.location.hash.includes("invite_token")) {
+      window.netlifyIdentity.open("signup");
+    }
+
+    window.netlifyIdentity.on("login", function () {
+      window.location.href = "/admin/";
     });
-  </script>
-
-  <script>
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.init();
-
-      if (window.location.hash.includes("recovery_token")) {
-        window.netlifyIdentity.open("recovery");
-      }
-
-      if (window.location.hash.includes("invite_token")) {
-        window.netlifyIdentity.open("signup");
-      }
-
-      window.netlifyIdentity.on("login", function () {
-        window.location.href = "/admin/";
-      });
-    }
-  </script>
-
-  <script src="/js/cart.js"></script>
-
-  <script>
-    let hotBrands = new Set();
-    let currentHotCategory = "all";
-    let hotOffersData = [];
-
-    function normalizeBrandValue(value) {
-      const raw = String(value || "").trim();
-      if (!raw) return "Other";
-
-      return raw
-        .replace(/\s*\/\s*/g, " / ")
-        .replace(/\b\w/g, char => char.toUpperCase());
-    }
-
-    function populateHotBrandFilter() {
-      const select = document.getElementById("hotBrandFilter");
-      if (!select) return;
-
-      const currentValue = select.value || "all";
-      const brands = Array.from(hotBrands).sort((a, b) => a.localeCompare(b));
-
-      select.innerHTML = '<option value="all">All Brands</option>';
-
-      brands.forEach(brand => {
-        const option = document.createElement("option");
-        option.value = brand;
-        option.textContent = brand;
-        select.appendChild(option);
-      });
-
-      if ([...select.options].some(option => option.value === currentValue)) {
-        select.value = currentValue;
-      } else {
-        select.value = "all";
-      }
-    }
-
-    function filterHot(category, buttonEl) {
-      currentHotCategory = category;
-
-      document.querySelectorAll("#hot-offers .filter-btn").forEach(btn => btn.classList.remove("active"));
-      if (buttonEl) buttonEl.classList.add("active");
-
-      applyHotFilters();
-    }
-
-    function applyHotBrandFilter() {
-      applyHotFilters();
-    }
-
-    function buildHotCard(product) {
-      const imagePath = (product.image || "/images/logo.png").trim();
-      const brandName = normalizeBrandValue(product.brand);
-
-      const card = document.createElement("div");
-      card.className = "product-card hot-card";
-      card.setAttribute("data-category", product.category || "");
-      card.setAttribute("data-brand", brandName);
-
-      card.innerHTML = `
-        <div class="product-image">
-          <img src="${imagePath}" alt="${product.title || "Product"}" loading="lazy">
-        </div>
-
-        <div class="product-body">
-          <div class="product-title">${product.title || ""}</div>
-
-          <div class="row">
-            <div>
-              <div class="price">${product.monthly || ""}</div>
-              <div class="months">${product.duration || ""}</div>
-              <div class="months">${product.down_payment || ""} Down Payment</div>
-            </div>
-            <button class="cart-add-btn">+ Add To Cart</button>
-          </div>
-        </div>
-      `;
-
-      card.querySelector(".cart-add-btn").addEventListener("click", () => {
-        addToCart({
-          title: product.title || "Product",
-          price: product.monthly ? `${product.monthly} Monthly` : "",
-          months: `${product.duration || ""}${product.down_payment ? ` • ${product.down_payment} Down Payment` : ""}`,
-          image: imagePath
-        });
-      });
-
-      return card;
-    }
-
-    function applyHotFilters() {
-      const cards = document.querySelectorAll(".hot-card");
-      const empty = document.getElementById("hot-offers-empty");
-
-      hotBrands = new Set();
-
-      cards.forEach(card => {
-        const cardCategory = card.getAttribute("data-category") || "";
-        const cardBrand = card.getAttribute("data-brand") || "";
-        const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
-
-        if (matchCategory) {
-          hotBrands.add(cardBrand);
-        }
-      });
-
-      populateHotBrandFilter();
-
-      const selectedBrand = document.getElementById("hotBrandFilter")?.value || "all";
-      let visibleCount = 0;
-
-      cards.forEach(card => {
-        const cardCategory = card.getAttribute("data-category") || "";
-        const cardBrand = card.getAttribute("data-brand") || "";
-
-        const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
-        const matchBrand = selectedBrand === "all" || cardBrand === selectedBrand;
-        const shouldShow = matchCategory && matchBrand;
-
-        card.style.display = shouldShow ? "block" : "none";
-        if (shouldShow) visibleCount++;
-      });
-
-      if (empty) {
-        if (visibleCount === 0) {
-          empty.style.display = "";
-          empty.textContent = "No hot offers available for this filter.";
-        } else {
-          empty.style.display = "none";
-        }
-      }
-    }
-
-    async function loadCategoryHotData(categoryName) {
-  try {
-    const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
-
-    const files = await res.json();
-    if (!Array.isArray(files)) throw new Error(`${categoryName} data.json must be an array`);
-
-    const productResults = await Promise.all(
-      files.map(async (file) => {
-        try {
-          const r = await fetch(`/products/${categoryName}/${file}`, { cache: "no-store" });
-          if (!r.ok) return null;
-
-          const item = await r.json();
-          return { ...item, category: categoryName };
-        } catch (e) {
-          console.error(`Failed to load ${categoryName} hot file:`, file, e);
-          return null;
-        }
-      })
-    );
-
-    return productResults.filter(Boolean);
-  } catch (e) {
-    console.error(`Failed to load ${categoryName} hot data:`, e);
-    return [];
   }
-}
+</script>
 
-    async function loadHotOffers() {
-      const grid = document.getElementById("hot-offers-grid");
-      const loading = document.getElementById("hot-loading-state");
-      const empty = document.getElementById("hot-offers-empty");
+<script src="/js/cart.js"></script>
 
-      try {
-        const categories = ["phones", "tablets", "laptops", "accessories"];
-        const results = await Promise.all(categories.map(loadCategoryHotData));
-        hotOffersData = results
-          .flat()
-          .filter(item => item && item.available === true && item.hot_offer === true)
-          .sort((a, b) => {
-            const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
-            const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
-            if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
+<script>
+  let hotBrands = new Set();
+  let currentHotCategory = "all";
+  let hotOffersData = [];
 
-            const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
-            const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
-            if (aPriority !== bPriority) return aPriority - bPriority;
+  function normalizeBrandValue(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "Other";
 
-            return String(a.title || "").localeCompare(String(b.title || ""));
-          });
+    return raw
+      .replace(/\s*\/\s*/g, " / ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
 
-        document.querySelectorAll(".hot-card").forEach(card => card.remove());
-        if (loading) loading.remove();
+  function extractNumber(value) {
+    const raw = String(value || "").trim();
+    const match = raw.match(/\d+(\.\d+)?/);
+    return match ? match[0] : "";
+  }
 
-        if (!hotOffersData.length) {
-          if (empty) {
-            empty.style.display = "";
-            empty.textContent = "No hot offers available yet.";
+  function formatMonthly(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (/kd/i.test(raw)) return raw;
+    const number = extractNumber(raw);
+    return number ? `${number} KD` : raw;
+  }
+
+  function formatDuration(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (/month/i.test(raw)) return raw;
+    const number = extractNumber(raw);
+    return number ? `${number} Months` : raw;
+  }
+
+  function formatDownPayment(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "0 KD Down Payment";
+    if (/down payment/i.test(raw)) return raw;
+    if (/kd/i.test(raw)) return `${raw} Down Payment`;
+    const number = extractNumber(raw);
+    return number ? `${number} KD Down Payment` : "0 KD Down Payment";
+  }
+
+  function populateHotBrandFilter() {
+    const select = document.getElementById("hotBrandFilter");
+    if (!select) return;
+
+    const currentValue = select.value || "all";
+    const brands = Array.from(hotBrands).sort((a, b) => a.localeCompare(b));
+
+    select.innerHTML = '<option value="all">All Brands</option>';
+
+    brands.forEach(brand => {
+      const option = document.createElement("option");
+      option.value = brand;
+      option.textContent = brand;
+      select.appendChild(option);
+    });
+
+    if ([...select.options].some(option => option.value === currentValue)) {
+      select.value = currentValue;
+    } else {
+      select.value = "all";
+    }
+  }
+
+  function filterHot(category, buttonEl) {
+    currentHotCategory = category;
+
+    document.querySelectorAll("#hot-offers .filter-btn").forEach(btn => btn.classList.remove("active"));
+    if (buttonEl) buttonEl.classList.add("active");
+
+    applyHotFilters();
+  }
+
+  function applyHotBrandFilter() {
+    applyHotFilters();
+  }
+
+  function buildHotCard(product) {
+    const imagePath = (product.image || "/images/logo.png").trim();
+    const brandName = normalizeBrandValue(product.brand);
+
+    const card = document.createElement("div");
+    card.className = "product-card hot-card";
+    card.setAttribute("data-category", product.category || "");
+    card.setAttribute("data-brand", brandName);
+
+    card.innerHTML = `
+      <div class="product-image">
+        <img src="${imagePath}" alt="${product.title || "Product"}" loading="lazy">
+      </div>
+
+      <div class="product-body">
+        <div class="product-title">${product.title || ""}</div>
+
+        <div class="row">
+          <div>
+            <div class="price">${formatMonthly(product.monthly)}</div>
+            <div class="months">${formatDuration(product.duration)}</div>
+            <div class="months">${formatDownPayment(product.down_payment)}</div>
+          </div>
+          <button class="cart-add-btn">+ Add To Cart</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector(".cart-add-btn").addEventListener("click", () => {
+      addToCart({
+        title: product.title || "Product",
+        price: `${formatMonthly(product.monthly)} Monthly`,
+        months: `${formatDuration(product.duration)} • ${formatDownPayment(product.down_payment)}`,
+        image: imagePath
+      });
+    });
+
+    return card;
+  }
+
+  function applyHotFilters() {
+    const cards = document.querySelectorAll(".hot-card");
+    const empty = document.getElementById("hot-offers-empty");
+
+    hotBrands = new Set();
+
+    cards.forEach(card => {
+      const cardCategory = card.getAttribute("data-category") || "";
+      const cardBrand = card.getAttribute("data-brand") || "";
+      const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
+
+      if (matchCategory) {
+        hotBrands.add(cardBrand);
+      }
+    });
+
+    populateHotBrandFilter();
+
+    const selectedBrand = document.getElementById("hotBrandFilter")?.value || "all";
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardCategory = card.getAttribute("data-category") || "";
+      const cardBrand = card.getAttribute("data-brand") || "";
+
+      const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
+      const matchBrand = selectedBrand === "all" || cardBrand === selectedBrand;
+      const shouldShow = matchCategory && matchBrand;
+
+      card.style.display = shouldShow ? "block" : "none";
+      if (shouldShow) visibleCount++;
+    });
+
+    if (empty) {
+      if (visibleCount === 0) {
+        empty.style.display = "";
+        empty.textContent = "No hot offers available for this filter.";
+      } else {
+        empty.style.display = "none";
+      }
+    }
+  }
+
+  async function loadCategoryHotData(categoryName) {
+    try {
+      const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
+
+      const files = await res.json();
+      if (!Array.isArray(files)) throw new Error(`${categoryName} data.json must be an array`);
+
+      const productResults = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const r = await fetch(`/products/${categoryName}/${file}`, { cache: "no-store" });
+            if (!r.ok) return null;
+
+            const item = await r.json();
+            return { ...item, category: categoryName };
+          } catch (e) {
+            console.error(`Failed to load ${categoryName} hot file:`, file, e);
+            return null;
           }
-          populateHotBrandFilter();
-          return;
-        }
+        })
+      );
 
-        hotOffersData.forEach(product => {
-          grid.appendChild(buildHotCard(product));
+      return productResults.filter(Boolean);
+    } catch (e) {
+      console.error(`Failed to load ${categoryName} hot data:`, e);
+      return [];
+    }
+  }
+
+  async function loadHotOffers() {
+    const grid = document.getElementById("hot-offers-grid");
+    const loading = document.getElementById("hot-loading-state");
+    const empty = document.getElementById("hot-offers-empty");
+
+    try {
+      const categories = ["phones", "tablets", "laptops", "accessories"];
+      const results = await Promise.all(categories.map(loadCategoryHotData));
+      hotOffersData = results
+        .flat()
+        .filter(item => item && item.available === true && item.hot_offer === true)
+        .sort((a, b) => {
+          const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
+          const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
+          if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
+
+          const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
+          const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
+          if (aPriority !== bPriority) return aPriority - bPriority;
+
+          return String(a.title || "").localeCompare(String(b.title || ""));
         });
 
-        if (empty) empty.style.display = "none";
-        applyHotFilters();
-      } catch (e) {
-        console.error("Failed to load hot offers:", e);
+      document.querySelectorAll(".hot-card").forEach(card => card.remove());
+      if (loading) loading.remove();
 
-        if (loading) loading.remove();
+      if (!hotOffersData.length) {
         if (empty) {
           empty.style.display = "";
-          empty.textContent = "Failed to load hot offers.";
+          empty.textContent = "No hot offers available yet.";
         }
+        populateHotBrandFilter();
+        return;
+      }
+
+      hotOffersData.forEach(product => {
+        grid.appendChild(buildHotCard(product));
+      });
+
+      if (empty) empty.style.display = "none";
+      applyHotFilters();
+    } catch (e) {
+      console.error("Failed to load hot offers:", e);
+
+      if (loading) loading.remove();
+      if (empty) {
+        empty.style.display = "";
+        empty.textContent = "Failed to load hot offers.";
       }
     }
+  }
 
-    loadHotOffers();
-  </script>
+  loadHotOffers();
+</script>
 
-  <script>
-    const texts = [
-      "You Can Depend on Us",
-      "Best Deals in Kuwait",
-      "Easy Monthly Installments",
-      "Fast Delivery"
-    ];
+<script>
+  const texts = [
+    "You Can Depend on Us",
+    "Best Deals in Kuwait",
+    "Easy Monthly Installments",
+    "Fast Delivery"
+  ];
 
-    let i = 0;
-    const el = document.getElementById("loopText");
+  let i = 0;
+  const el = document.getElementById("loopText");
 
-    setInterval(() => {
-      if (!el) return;
-      el.style.opacity = 0;
+  setInterval(() => {
+    if (!el) return;
+    el.style.opacity = 0;
 
-      setTimeout(() => {
-        i = (i + 1) % texts.length;
-        el.textContent = texts[i];
-        el.style.opacity = 1;
-      }, 400);
-    }, 3000);
-  </script>
+    setTimeout(() => {
+      i = (i + 1) % texts.length;
+      el.textContent = texts[i];
+      el.style.opacity = 1;
+    }, 400);
+  }, 3000);
+</script>
 </body>
 </html>
