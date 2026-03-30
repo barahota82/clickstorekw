@@ -47,7 +47,7 @@ try {
         json_response(false, ['message' => 'هذا الحساب غير مفعل'], 403);
     }
 
-    if (!password_verify($password, $user['password_hash'])) {
+    if (!password_verify($password, (string)$user['password_hash'])) {
         json_response(false, ['message' => 'بيانات الدخول غير صحيحة'], 401);
     }
 
@@ -69,10 +69,8 @@ try {
 
     json_response(true, [
         'message' => 'تم تسجيل الدخول بنجاح',
-        'user' => [
-            'id' => (int)$user['id'],
-            'full_name' => (string)$user['full_name'],
-            'username' => (string)$user['username'],
-            'role_name' => (string)$user['role_name'],
-            'role_code' => (string)$user['role_code'],
-        ]
+        'redirect' => '/admin/index.php'
+    ]);
+} catch (Throwable $e) {
+    json_response(false, ['message' => 'حدث خطأ في تسجيل الدخول'], 500);
+}
