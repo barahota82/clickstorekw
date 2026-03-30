@@ -368,37 +368,34 @@
     }
 
     async function loadCategory(categoryName) {
-      try {
-        const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
+  try {
+    const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
 
-        const data = await res.json();
-        return Array.isArray(data) ? data.map(item => ({ ...item, category: categoryName })) : [];
-      } catch (e) {
-        console.error(`Failed to load ${categoryName} data:`, e);
-        return [];
-      }
-    }
+    const files = await res.json();
+    if (!Array.isArray(files)) throw new Error(`${categoryName} data.json must be an array`);
 
-    async function load() {
-      try {
-        const categories = ["phones", "tablets", "laptops", "accessories"];
-        const results = await Promise.all(categories.map(loadCategory));
-        allProductsData = results.flat();
-        renderProducts(allProductsData);
-      } catch (e) {
-        console.error("Failed to load all products data:", e);
+    const productResults = await Promise.all(
+      files.map(async (file) => {
+        try {
+          const r = await fetch(`/products/${categoryName}/${file}`, { cache: "no-store" });
+          if (!r.ok) return null;
 
-        const loading = document.getElementById("loading-state");
-        const empty = document.getElementById("empty-state");
-
-        if (loading) loading.remove();
-        if (empty) {
-          empty.style.display = "";
-          empty.textContent = "Failed to load products.";
+          const item = await r.json();
+          return { ...item, category: categoryName };
+        } catch (e) {
+          console.error(`Failed to load ${categoryName} file:`, file, e);
+          return null;
         }
-      }
-    }
+      })
+    );
+
+    return productResults.filter(Boolean);
+  } catch (e) {
+    console.error(`Failed to load ${categoryName} data:`, e);
+    return [];
+  }
+}
 
     load();
   </script>
