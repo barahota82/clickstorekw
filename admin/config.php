@@ -10,7 +10,7 @@ date_default_timezone_set('Asia/Kuwait');
 const DB_HOST = 'localhost';
 const DB_NAME = 'clickst1_click_db';
 const DB_USER = 'clickst1_click_user';
-const DB_PASS = 'ضع_هنا_كلمة_مرور_قاعدة_البيانات';
+const DB_PASS = 'Admin@Hem@3282';
 
 function db(): PDO
 {
