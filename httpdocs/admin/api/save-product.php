@@ -1,147 +1,203 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../config.php';
+require_once dirname(__DIR__, 2) . '/config.php';
+require_once dirname(__DIR__) . '/helpers/filename_parser.php';
+require_once dirname(__DIR__) . '/helpers/stock_helper.php';
+require_once __DIR__ . '/link-product-stock.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-header('Content-Type: application/json');
-
-// تحقق تسجيل الدخول
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['ok' => false, 'message' => 'Unauthorized']);
-    exit;
-}
-
-// تحقق method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['ok' => false, 'message' => 'Invalid request method']);
-    exit;
+    json_response(false, ['message' => 'Invalid request method'], 405);
 }
 
-// استقبال البيانات
-$title = trim($_POST['title'] ?? '');
-$sku = trim($_POST['sku'] ?? '');
+require_admin_auth_json();
+
+$title = trim((string)($_POST['title'] ?? ''));
+$sku = trim((string)($_POST['sku'] ?? ''));
 $category_id = (int)($_POST['category_id'] ?? 0);
 $brand_id = (int)($_POST['brand_id'] ?? 0);
-$devices_count = (int)($_POST['devices_count'] ?? 1);
-$duration_months = (int)($_POST['duration_months'] ?? 0);
+$devices_count = max(1, (int)($_POST['devices_count'] ?? 1));
+$duration_months = max(1, (int)($_POST['duration_months'] ?? 1));
 $down_payment = (float)($_POST['down_payment'] ?? 0);
 $monthly_amount = (float)($_POST['monthly_amount'] ?? 0);
 $is_available = isset($_POST['is_available']) ? 1 : 0;
 $is_hot_offer = isset($_POST['is_hot_offer']) ? 1 : 0;
 
-// تحقق أساسي
-if (!$title || !$sku || !$category_id || !$brand_id || !isset($_FILES['image'])) {
-    echo json_encode(['ok' => false, 'message' => 'Missing required fields']);
-    exit;
+if ($title === '' || $sku === '' || $category_id <= 0 || $brand_id <= 0) {
+    json_response(false, ['message' => 'Missing required fields'], 422);
 }
 
-// رفع الصورة
-$uploadDir = __DIR__ . '/../../images/products/';
-
-if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
+if (!isset($_FILES['image']) || !is_uploaded_file($_FILES['image']['tmp_name'])) {
+    json_response(false, ['message' => 'Image is required'], 422);
 }
 
-$ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-$filename = time() . '_' . uniqid() . '.' . $ext;
-$filepath = $uploadDir . $filename;
+$image = $_FILES['image'];
 
-if (!move_uploaded_file($_FILES['image']['tmp_name'], $filepath)) {
-    echo json_encode(['ok' => false, 'message' => 'Image upload failed']);
-    exit;
+if (($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+    json_response(false, ['message' => 'Image upload failed'], 422);
 }
 
-// تحليل الاسم (بديل OCR)
-function normalize_title($text) {
-    $text = strtolower($text);
-    $text = str_replace(['-', '_', '+'], ' ', $text);
-    $text = preg_replace('/[^a-z0-9 ]/', '', $text);
-    return trim(preg_replace('/\s+/', ' ', $text));
+$allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+$ext = strtolower((string)pathinfo((string)$image['name'], PATHINFO_EXTENSION));
+
+if (!in_array($ext, $allowedExtensions, true)) {
+    json_response(false, ['message' => 'Unsupported image type'], 422);
 }
 
-// تقسيم الأجهزة لو أكثر من جهاز
-function extract_devices_from_filename($filename) {
-    $name = pathinfo($filename, PATHINFO_FILENAME);
-    $parts = explode('+', $name);
-    return array_map('trim', $parts);
+$uploadDir = dirname(__DIR__, 2) . '/images/products/';
+if (!is_dir($uploadDir) && !mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+    json_response(false, ['message' => 'Failed to create upload directory'], 500);
 }
+
+$filename = time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+$absolutePath = $uploadDir . $filename;
+$relativePath = '/images/products/' . $filename;
+
+if (!move_uploaded_file((string)$image['tmp_name'], $absolutePath)) {
+    json_response(false, ['message' => 'Failed to save uploaded image'], 500);
+}
+
+$pdo = db();
 
 try {
-    $pdo = db();
+    $pdo->beginTransaction();
 
-    // إضافة المنتج
-    $stmt = $pdo->prepare("
-        INSERT INTO products
-        (title, sku, category_id, brand_id, devices_count, duration_months, down_payment, monthly_amount, is_available, is_hot_offer, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-    ");
-
-    $stmt->execute([
-        $title,
-        $sku,
-        $category_id,
-        $brand_id,
-        $devices_count,
-        $duration_months,
-        $down_payment,
-        $monthly_amount,
-        $is_available,
-        $is_hot_offer
-    ]);
-
-    $product_id = $pdo->lastInsertId();
-
-    // استخراج الأجهزة
-    $devices = extract_devices_from_filename($_FILES['image']['name']);
-
-    $added_devices = [];
-
-    foreach ($devices as $device) {
-
-        $normalized = normalize_title($device);
-
-        // هل موجود في stock_catalog؟
-        $stmt = $pdo->prepare("
-            SELECT id FROM stock_catalog WHERE normalized_title = ?
-        ");
-        $stmt->execute([$normalized]);
-        $existing = $stmt->fetch();
-
-        if ($existing) {
-            $stock_id = $existing['id'];
-        } else {
-            // إضافة جديد
-            $stmt = $pdo->prepare("
-                INSERT INTO stock_catalog (title, normalized_title, is_active, created_at)
-                VALUES (?, ?, 1, NOW())
-            ");
-            $stmt->execute([$device, $normalized]);
-            $stock_id = $pdo->lastInsertId();
-        }
-
-        // ربط المنتج بالمخزن
-        $stmt = $pdo->prepare("
-            INSERT INTO product_stock_links (product_id, stock_catalog_id, device_index)
-            VALUES (?, ?, ?)
-        ");
-
-        $stmt->execute([$product_id, $stock_id, 0]);
-
-        $added_devices[] = $device;
+    $checkSku = $pdo->prepare("SELECT id FROM products WHERE sku = :sku LIMIT 1");
+    $checkSku->execute(['sku' => $sku]);
+    if ($checkSku->fetch()) {
+        $pdo->rollBack();
+        @unlink($absolutePath);
+        json_response(false, ['message' => 'SKU already exists'], 409);
     }
 
-    echo json_encode([
-        'ok' => true,
-        'message' => "تم حفظ المنتج وربط الأجهزة:\n" . implode("\n", $added_devices)
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9\-\s]+/i', '', $slug);
+    $slug = preg_replace('/\s+/', '-', (string)$slug);
+    $slug = trim((string)$slug, '-');
+    if ($slug === '') {
+        $slug = 'product-' . time();
+    }
+
+    $insertProduct = $pdo->prepare("
+        INSERT INTO products (
+            category_id,
+            brand_id,
+            title,
+            slug,
+            sku,
+            devices_count,
+            image_path,
+            down_payment,
+            monthly_amount,
+            duration_months,
+            is_available,
+            is_hot_offer,
+            product_order,
+            json_file_path,
+            is_active,
+            created_by,
+            updated_by,
+            created_at,
+            updated_at
+        ) VALUES (
+            :category_id,
+            :brand_id,
+            :title,
+            :slug,
+            :sku,
+            :devices_count,
+            :image_path,
+            :down_payment,
+            :monthly_amount,
+            :duration_months,
+            :is_available,
+            :is_hot_offer,
+            9999,
+            NULL,
+            1,
+            :created_by,
+            :updated_by,
+            NOW(),
+            NOW()
+        )
+    ");
+
+    $insertProduct->execute([
+        'category_id' => $category_id,
+        'brand_id' => $brand_id,
+        'title' => $title,
+        'slug' => $slug,
+        'sku' => $sku,
+        'devices_count' => $devices_count,
+        'image_path' => $relativePath,
+        'down_payment' => $down_payment,
+        'monthly_amount' => $monthly_amount,
+        'duration_months' => $duration_months,
+        'is_available' => $is_available,
+        'is_hot_offer' => $is_hot_offer,
+        'created_by' => (int)$_SESSION['admin_user_id'],
+        'updated_by' => (int)$_SESSION['admin_user_id'],
     ]);
 
-} catch (Exception $e) {
-    echo json_encode([
-        'ok' => false,
-        'message' => 'Error: ' . $e->getMessage()
+    $productId = (int)$pdo->lastInsertId();
+
+    $insertMedia = $pdo->prepare("
+        INSERT INTO product_media (
+            product_id,
+            file_path,
+            sort_order,
+            is_primary,
+            created_at
+        ) VALUES (
+            :product_id,
+            :file_path,
+            1,
+            1,
+            NOW()
+        )
+    ");
+    $insertMedia->execute([
+        'product_id' => $productId,
+        'file_path' => $relativePath,
     ]);
+
+    if ($is_hot_offer === 1) {
+        $insertHot = $pdo->prepare("
+            INSERT INTO hot_offers (
+                product_id,
+                sort_order,
+                is_active,
+                created_at,
+                updated_at
+            ) VALUES (
+                :product_id,
+                9999,
+                1,
+                NOW(),
+                NOW()
+            )
+        ");
+        $insertHot->execute(['product_id' => $productId]);
+    }
+
+    link_product_to_stock($pdo, $productId, $brand_id, $category_id, (string)$image['name']);
+
+    $pdo->commit();
+
+    json_response(true, [
+        'message' => 'تم حفظ المنتج بنجاح وربطه بالمخزن',
+        'product_id' => $productId,
+        'image_path' => $relativePath
+    ]);
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    @unlink($absolutePath);
+
+    json_response(false, [
+        'message' => 'فشل حفظ المنتج',
+        'error' => $e->getMessage()
+    ], 500);
 }
