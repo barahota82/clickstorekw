@@ -1,35 +1,105 @@
 <?php
+declare(strict_types=1);
 
-require_once __DIR__ . '/../config.php';
+function normalize_stock_title(string $text): string
+{
+    $text = strtolower($text);
+    $text = str_replace(['_', '-'], ' ', $text);
+    $text = preg_replace('/\s+/', ' ', $text);
+    return trim((string)$text);
+}
 
-function find_or_create_stock($device) {
-    $pdo = db();
+function make_stock_slug(string $title): string
+{
+    $slug = strtolower($title);
+    $slug = preg_replace('/[^a-z0-9\-\s]+/i', '', $slug);
+    $slug = preg_replace('/\s+/', '-', (string)$slug);
+    return trim((string)$slug, '-');
+}
 
-    // هل موجود؟
-    $stmt = $pdo->prepare("SELECT id FROM stock_catalog WHERE normalized_title = ?");
-    $stmt->execute([$device['normalized']]);
-    $found = $stmt->fetch();
-
-    if ($found) {
-        return $found['id'];
-    }
-
-    // إضافة جديد
-    $stmt = $pdo->prepare("
-        INSERT INTO stock_catalog 
-        (title, slug, normalized_title, storage_value, ram_value, created_at)
-        VALUES (?, ?, ?, ?, ?, NOW())
+function find_or_create_stock_catalog(
+    PDO $pdo,
+    int $brandId,
+    int $categoryId,
+    string $title,
+    string $normalizedTitle,
+    ?string $storageValue = null,
+    ?string $ramValue = null,
+    ?string $networkValue = null
+): int {
+    $query = $pdo->prepare("
+        SELECT id
+        FROM stock_catalog
+        WHERE normalized_title = :normalized_title
+        LIMIT 1
     ");
-
-    $slug = str_replace(' ', '-', $device['normalized']);
-
-    $stmt->execute([
-        $device['title'],
-        $slug,
-        $device['normalized'],
-        $device['storage'],
-        $device['ram']
+    $query->execute([
+        'normalized_title' => $normalizedTitle
     ]);
 
-    return $pdo->lastInsertId();
+    $existing = $query->fetch();
+    if ($existing) {
+        return (int)$existing['id'];
+    }
+
+    $slugBase = make_stock_slug($normalizedTitle);
+    if ($slugBase === '') {
+        $slugBase = 'stock-item';
+    }
+
+    $slug = $slugBase;
+    $counter = 2;
+
+    while (true) {
+        $check = $pdo->prepare("SELECT id FROM stock_catalog WHERE slug = :slug LIMIT 1");
+        $check->execute(['slug' => $slug]);
+        if (!$check->fetch()) {
+            break;
+        }
+        $slug = $slugBase . '-' . $counter;
+        $counter++;
+    }
+
+    $insert = $pdo->prepare("
+        INSERT INTO stock_catalog (
+            category_id,
+            brand_id,
+            title,
+            slug,
+            normalized_title,
+            storage_value,
+            ram_value,
+            network_value,
+            sku,
+            is_active,
+            created_at,
+            updated_at
+        ) VALUES (
+            :category_id,
+            :brand_id,
+            :title,
+            :slug,
+            :normalized_title,
+            :storage_value,
+            :ram_value,
+            :network_value,
+            NULL,
+            1,
+            NOW(),
+            NOW()
+        )
+    ");
+
+    $insert->execute([
+        'category_id' => $categoryId,
+        'brand_id' => $brandId,
+        'title' => $title,
+        'slug' => $slug,
+        'normalized_title' => $normalizedTitle,
+        'storage_value' => $storageValue,
+        'ram_value' => $ramValue,
+        'network_value' => $networkValue,
+    ]);
+
+    return (int)$pdo->lastInsertId();
 }
