@@ -1,6 +1,7 @@
 <?php
-session_start();
-header('Content-Type: application/json; charset=utf-8');
+declare(strict_types=1);
+
+require_once dirname(__DIR__) . '/config.php';
 
 $_SESSION = [];
 
@@ -12,14 +13,14 @@ if (ini_get('session.use_cookies')) {
         time() - 42000,
         $params['path'],
         $params['domain'],
-        $params['secure'],
-        $params['httponly']
+        (bool)$params['secure'],
+        (bool)$params['httponly']
     );
 }
 
 session_destroy();
 
-echo json_encode([
-    'ok' => true,
-    'message' => 'تم تسجيل الخروج.'
-], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+json_response(true, [
+    'message' => 'تم تسجيل الخروج بنجاح',
+    'redirect' => '/admin/index.php'
+]);
