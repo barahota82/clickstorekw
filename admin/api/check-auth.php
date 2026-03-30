@@ -1,19 +1,19 @@
 <?php
-session_start();
-header('Content-Type: application/json; charset=utf-8');
+declare(strict_types=1);
 
-$isLoggedIn = isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true;
+require_once dirname(__DIR__) . '/config.php';
 
-if (!$isLoggedIn) {
-    http_response_code(401);
-    echo json_encode([
-        'ok' => false,
-        'message' => 'Unauthorized'
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    exit;
+if (!is_admin_logged_in()) {
+    json_response(false, ['message' => 'Unauthorized'], 401);
 }
 
-echo json_encode([
-    'ok' => true,
-    'username' => $_SESSION['admin_username'] ?? 'admin'
-], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+json_response(true, [
+    'user' => [
+        'id' => (int)($_SESSION['admin_user_id'] ?? 0),
+        'full_name' => (string)($_SESSION['admin_full_name'] ?? ''),
+        'username' => (string)($_SESSION['admin_username'] ?? ''),
+        'role_id' => (int)($_SESSION['admin_role_id'] ?? 0),
+        'role_name' => (string)($_SESSION['admin_role_name'] ?? ''),
+        'role_code' => (string)($_SESSION['admin_role_code'] ?? '')
+    ]
+]);
