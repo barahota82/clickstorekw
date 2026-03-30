@@ -3,994 +3,572 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - Product Uploader</title>
+  <title>Click Company</title>
+  <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
+  <link rel="stylesheet" href="/css/style.css" />
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b1220;
-      color: #fff;
-    }
-    .wrap {
-      width: min(1200px, 94%);
-      margin: 24px auto 40px;
-    }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 30px;
-    }
-    p.muted {
-      margin: 0 0 24px;
-      color: #b9c5da;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1.15fr 0.85fr;
-      gap: 18px;
-    }
-    .card {
-      background: #121b2d;
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-    }
-    .section-title {
-      margin: 0 0 14px;
-      font-size: 20px;
-    }
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-    }
-    .full { grid-column: 1 / -1; }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 13px;
-      color: #c7d4e8;
-    }
-    input, select, textarea {
-      width: 100%;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: #0d1525;
-      color: #fff;
-      border-radius: 12px;
-      padding: 12px 13px;
-      font-size: 14px;
-      outline: none;
-    }
-    textarea {
-      min-height: 180px;
-      resize: vertical;
-      font-family: Consolas, monospace;
-      line-height: 1.45;
-    }
-    input[type="checkbox"] {
-      width: auto;
-      transform: scale(1.1);
-      margin-right: 8px;
-    }
-    .checkline {
+    .catalog-filter-wrap {
+      margin-top: 12px;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       gap: 6px;
-      min-height: 46px;
-      padding-top: 22px;
     }
-    .btns {
+
+    .catalog-filter-label {
+      font-size: 13px;
+      color: #c9d4e7;
+      font-weight: bold;
+    }
+
+    .catalog-filter {
+      max-width: 260px;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #fff;
+      color: #111827;
+      padding: 0 12px;
+      font-weight: bold;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .filter-bar {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
+      gap: 12px;
+      margin: 18px 0 14px;
     }
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-weight: bold;
+
+    .filter-btn {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      border-radius: 18px;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 700;
       cursor: pointer;
-      font-size: 14px;
+      transition: 0.25s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
     }
-    .btn-primary { background: #22c55e; color: #fff; }
-    .btn-secondary { background: #2563eb; color: #fff; }
-    .btn-dark { background: #1f2937; color: #fff; }
-    .btn-danger { background: #b91c1c; color: #fff; }
-    .preview-box {
-      background: #0d1525;
-      border: 1px dashed rgba(255,255,255,0.12);
-      border-radius: 16px;
-      padding: 14px;
-      min-height: 140px;
+
+    .filter-btn:hover {
+      background: rgba(255,255,255,0.08);
+      transform: translateY(-1px);
     }
-    .small {
-      font-size: 12px;
-      color: #aebbd0;
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, #37a0ff, #2f6bff);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 10px 24px rgba(55,160,255,0.35);
+    }
+
+    .loading-state {
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 24px;
+      color: #c9d4e7;
+      text-align: center;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .product-title {
+      font-size: 15px;
+      font-weight: 700;
       line-height: 1.5;
-      word-break: break-word;
+      margin-bottom: 10px;
+      color: #111827;
+      min-height: 46px;
     }
-    .path {
-      font-family: Consolas, monospace;
-      color: #93c5fd;
+
+    .page-catalog .floating-cart,
+    .page-home .floating-cart,
+    .page-all-products .floating-cart {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      background: #2f6df1;
+      color: #fff;
+      border-radius: 999px;
+      height: 56px;
+      min-width: 56px;
+      padding: 0 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: bold;
+      box-shadow: 0 10px 25px rgba(0,0,0,.3);
+      z-index: 1000;
+      border: 0;
+      cursor: pointer;
+      font-size: 22px;
     }
-    .image-preview {
-      width: 100%;
-      max-height: 380px;
-      object-fit: contain;
-      display: block;
-      border-radius: 14px;
-      background: #fff;
-      margin-top: 10px;
+
+    .page-catalog .floating-cart span,
+    .page-home .floating-cart span,
+    .page-all-products .floating-cart span {
+      font-size: 17px;
+      line-height: 1;
     }
-    .status {
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      font-size: 14px;
-      display: none;
-      white-space: pre-wrap;
-    }
-    .status.ok {
-      display: block;
-      background: rgba(34,197,94,0.12);
-      border: 1px solid rgba(34,197,94,0.28);
-      color: #bbf7d0;
-    }
-    .status.err {
-      display: block;
-      background: rgba(239,68,68,0.12);
-      border: 1px solid rgba(239,68,68,0.28);
-      color: #fecaca;
-    }
-    .status.info {
-      display: block;
-      background: rgba(37,99,235,0.12);
-      border: 1px solid rgba(37,99,235,0.28);
-      color: #bfdbfe;
-    }
-    @media (max-width: 960px) {
-      .grid { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
-      .checkline { padding-top: 0; }
+
+    @media (max-width: 640px) {
+      .catalog-filter {
+        max-width: 100%;
+      }
+
+      .filter-bar {
+        gap: 10px;
+      }
+
+      .filter-btn {
+        padding: 12px 20px;
+        font-size: 15px;
+      }
+
+      .page-catalog .floating-cart,
+      .page-home .floating-cart,
+      .page-all-products .floating-cart {
+        left: 14px;
+        bottom: 14px;
+        height: 52px;
+        min-width: 52px;
+        padding: 0 18px;
+      }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
-<body>
-  <div class="wrap">
-    <h1>Product Admin</h1>
-    <p class="muted">Upload image → review fields → generate JSON → save to GitHub automatically.</p>
-
-    <div class="grid">
-      <div class="card">
-        <h2 class="section-title">Repository Settings</h2>
-        <div class="form-grid">
-          <div>
-            <label for="githubToken">GitHub Token</label>
-            <input id="githubToken" type="password" placeholder="Paste your GitHub token here" />
-          </div>
-
-          <div>
-            <label for="owner">Repository Owner</label>
-            <input id="owner" type="text" value="barahota82" />
-          </div>
-
-          <div>
-            <label for="repo">Repository Name</label>
-            <input id="repo" type="text" value="clickstorekw" />
-          </div>
-
-          <div>
-            <label for="branch">Branch</label>
-            <input id="branch" type="text" value="main" />
-          </div>
+<body class="page-home">
+<header>
+  <div class="container nav">
+    <div class="brand">
+      <div class="brand-static">
+        <img src="/images/logo.png" alt="Click Company Logo" class="logo">
+        <div class="brand-text">
+          <h1>CLICK COMPANY</h1>
+          <span id="loopText">You Can Depend on Us</span>
         </div>
+      </div>
+    </div>
 
-        <h2 class="section-title" style="margin-top:20px;">Product Data</h2>
-        <div class="form-grid">
-          <div>
-            <label for="category">Category</label>
-            <select id="category">
-              <option value="phones">phones</option>
-              <option value="tablets">tablets</option>
-              <option value="laptops">laptops</option>
-              <option value="accessories">accessories</option>
-            </select>
-          </div>
+    <nav class="nav-links">
+      <div class="nav-row main-row">
+        <a href="index.html" class="active">Home</a>
+        <a href="phones.html">Phones</a>
+        <a href="tablets.html">Tablets</a>
+        <a href="laptops.html">Laptops</a>
+        <a href="accessories.html">Accessories</a>
 
-          <div>
-            <label for="brand">Brand</label>
-            <input id="brand" type="text" placeholder="e.g. Honor / Samsung / Huawei" />
-          </div>
-
-          <div class="full">
-            <label for="title">Title</label>
-            <input id="title" type="text" placeholder="Product title or offer title" />
-          </div>
-
-          <div>
-            <label for="devices_count">Devices Count</label>
-            <input id="devices_count" type="number" min="1" step="1" value="1" />
-          </div>
-
-          <div>
-            <label for="down_payment">Down Payment</label>
-            <input id="down_payment" type="number" min="0" step="1" value="0" placeholder="e.g. 0" />
-          </div>
-
-          <div>
-            <label for="monthly">Monthly</label>
-            <input id="monthly" type="number" min="0" step="1" placeholder="e.g. 10" />
-          </div>
-
-          <div>
-            <label for="duration">Duration</label>
-            <input id="duration" type="number" min="1" step="1" placeholder="e.g. 12" />
-          </div>
-
-          <div class="checkline">
-            <label style="margin:0;">
-              <input id="available" type="checkbox" checked />
-              available
-            </label>
-          </div>
-
-          <div class="checkline">
-            <label style="margin:0;">
-              <input id="hot_offer" type="checkbox" />
-              hot_offer
-            </label>
-          </div>
-
-          <div class="full">
-            <label for="productImage">Product Image</label>
-            <input id="productImage" type="file" accept=".webp,.png,.jpg,.jpeg" />
-          </div>
-        </div>
-
-        <div class="btns">
-          <button class="btn-secondary" type="button" onclick="smartAutoFill()">Smart Auto Fill</button>
-          <button class="btn-dark" type="button" onclick="generatePreview()">Generate Preview</button>
-          <button class="btn-primary" type="button" onclick="saveAll()">Save to GitHub</button>
-          <button class="btn-danger" type="button" onclick="resetForm()">Reset</button>
-        </div>
-
-        <div id="statusBox" class="status info"></div>
+        <button class="cart-btn" onclick="openCart()">
+          Cart <span class="cart-badge" id="cart-count-top">0</span>
+        </button>
       </div>
 
-      <div class="card">
-        <h2 class="section-title">Preview</h2>
+      <div class="nav-row hot-row">
+        <a href="#hot-offers" class="hot-link">Hot Offers</a>
+      </div>
+    </nav>
+  </div>
+</header>
 
-        <div class="preview-box">
-          <div class="small"><strong>Storage Brand (first device only):</strong> <span id="storageBrandPreview">-</span></div>
-          <div class="small"><strong>Brand slug:</strong> <span id="brandSlugPreview">-</span></div>
-          <div class="small"><strong>Title slug:</strong> <span id="titleSlugPreview">-</span></div>
-          <div class="small"><strong>Image path:</strong> <span id="imagePathPreview" class="path">-</span></div>
-          <div class="small"><strong>Product path:</strong> <span id="productPathPreview" class="path">-</span></div>
-          <div class="small"><strong>Index path:</strong> <span id="indexPathPreview" class="path">-</span></div>
+<section class="hero">
+  <div class="container hero-box">
+    <div class="hero-content">
+      <div class="badge">Easy Installments in Kuwait</div>
+      <h2>Own It Today, Pay Monthly</h2>
+      <p>
+        Shop phones, tablets, laptops and accessories with easy monthly payments,
+        fast approval and direct WhatsApp ordering.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#hot-offers">View Hot Offers</a>
+        <button class="btn btn-secondary" onclick="openCart()">Open Cart</button>
+      </div>
+
+      <div class="hero-points">
+        <div class="hero-points-row">
+          <span>No Downpayment</span>
+          <span>Easy Monthly Payments</span>
         </div>
+        <div class="hero-points-row">
+          <span>Fast Approval</span>
+          <span>Fast Delivery</span>
+          <span>Latest Offers</span>
+        </div>
+      </div>
+    </div>
 
-        <img id="previewImage" class="image-preview" style="display:none;" alt="Preview" />
+    <div class="hero-side">
+      <div class="mini-card">
+        <h3>Elevate Your Tech</h3>
+        <p>Own the latest Smartphones, Tablets, Laptops, and Accessories with tailored installment plans.</p>
+        <div class="mini-highlight">Seamless WhatsApp Ordering</div>
+      </div>
 
-        <h2 class="section-title" style="margin-top:18px;">JSON Preview</h2>
-        <textarea id="jsonPreview" readonly></textarea>
+      <div class="mini-card">
+        <h3>Multi Product Order</h3>
+        <p>Add multiple products to your cart and send your entire order in one tap via WhatsApp. A fast, optimized experience designed for your convenience.</p>
+        <a href="/all-products.html" class="btn btn-primary">Start Order</a>
       </div>
     </div>
   </div>
+</section>
 
-  <script>
-    function slugify(text) {
-      return String(text || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/_/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/\s*\+\s*/g, "+")
-        .replace(/[^a-z0-9\-+]/g, "")
-        .replace(/-+/g, "-")
-        .replace(/^\-+|\-+$/g, "");
-    }
+<section class="section" id="hot-offers">
+  <div class="container">
+    <h2 class="section-title">Hot Offers</h2>
 
-    function titleCaseWord(word) {
-      if (!word) return "";
-      if (/^\d+[a-z]+$/i.test(word)) return word.toUpperCase();
-      return word.charAt(0).toUpperCase() + word.slice(1);
-    }
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="filterHot('all', this)">All</button>
+      <button class="filter-btn" data-filter="phones" onclick="filterHot('phones', this)">Phones</button>
+      <button class="filter-btn" data-filter="tablets" onclick="filterHot('tablets', this)">Tablets</button>
+      <button class="filter-btn" data-filter="laptops" onclick="filterHot('laptops', this)">Laptops</button>
+      <button class="filter-btn" data-filter="accessories" onclick="filterHot('accessories', this)">Accessories</button>
+    </div>
 
-    function titleFromDeviceSlug(slug) {
-      return slug
-        .split("-")
-        .filter(Boolean)
-        .map(titleCaseWord)
-        .join(" ");
-    }
+    <div class="catalog-filter-wrap">
+      <label for="hotBrandFilter" class="catalog-filter-label">Filter by Brand</label>
+      <select id="hotBrandFilter" class="catalog-filter" onchange="applyHotBrandFilter()">
+        <option value="all">All Brands</option>
+      </select>
+    </div>
 
-    function getImageExt(fileName) {
-      const match = String(fileName || "").match(/\.([a-zA-Z0-9]+)$/);
-      return match ? match[0].toLowerCase() : ".webp";
-    }
+    <div class="products-grid" id="hot-offers-grid">
+      <div class="loading-state" id="hot-loading-state">Loading hot offers...</div>
+      <div class="empty-state" id="hot-offers-empty" style="display:none;">No hot offers available yet.</div>
+    </div>
+  </div>
+</section>
 
-    function b64EncodeUnicode(str) {
-      return btoa(unescape(encodeURIComponent(str)));
-    }
+<footer>
+  <div class="container footer-box">
+    <div>©️ 2017–<span id="year"></span> Click Company. All rights reserved.</div>
+    <div>You Can Depend on Us</div>
+  </div>
+</footer>
 
-    function b64DecodeUnicode(str) {
-      return decodeURIComponent(escape(atob(str)));
-    }
+<button class="floating-cart" onclick="openCart()">
+  🛒 <span id="cart-count-floating">0</span>
+</button>
 
-    function setStatus(type, message) {
-      const box = document.getElementById("statusBox");
-      box.className = `status ${type}`;
-      box.style.display = "block";
-      box.textContent = message;
-    }
+<button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">WhatsApp</button>
 
-    function clearStatus() {
-      const box = document.getElementById("statusBox");
-      box.className = "status info";
-      box.style.display = "none";
-      box.textContent = "";
-    }
+<div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
 
-    function previewImageFile(file) {
-      const img = document.getElementById("previewImage");
-      if (!file) {
-        img.style.display = "none";
-        img.removeAttribute("src");
-        return;
-      }
+<aside class="cart-panel" id="cartPanel">
+  <div class="cart-header">
+    <h3>Your Cart</h3>
+    <button class="cart-close" onclick="closeCart()">×</button>
+  </div>
 
-      const reader = new FileReader();
-      reader.onload = e => {
-        img.src = e.target.result;
-        img.style.display = "block";
-      };
-      reader.readAsDataURL(file);
-    }
-function loadImageFromFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+  <div class="cart-items" id="cartItems">
+    <div class="cart-empty-text">Your cart is empty.</div>
+  </div>
+
+  <div class="cart-footer">
+    <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
+  </div>
+</aside>
+
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("year").textContent = new Date().getFullYear();
   });
-}
+</script>
 
-async function preprocessImageForOCR(file) {
-  const img = await loadImageFromFile(file);
+<script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.init();
 
-  const scale = 2.5;
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.floor(img.width * scale);
-  canvas.height = Math.floor(img.height * scale);
-
-  const ctx = canvas.getContext("2d");
-  const sourceX = img.width * 0.55;     // آخر ربع عرض
-const sourceY = img.height * 0.55;    // آخر ربع ارتفاع
-const sourceWidth = img.width * 0.45; 
-const sourceHeight = img.height * 0.45;
-
-ctx.drawImage(
-  img,
-  sourceX, sourceY, sourceWidth, sourceHeight,
-  0, 0, canvas.width, canvas.height
-);
-  
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-
-    let gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    gray = gray > 145 ? 255 : gray < 110 ? 0 : gray;
-
-    data[i] = gray;
-    data[i + 1] = gray;
-    data[i + 2] = gray;
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-  return canvas;
-}
-    function splitOfferPartsFromFilename(fileName) {
-      const raw = String(fileName || "").replace(/\.[^/.]+$/, "");
-      return raw
-        .split("+")
-        .map(part => slugify(part))
-        .map(part => part.replace(/-+/g, "-").replace(/^-|-$/g, ""))
-        .filter(Boolean);
+    if (window.location.hash.includes("recovery_token")) {
+      window.netlifyIdentity.open("recovery");
     }
 
-    function extractBrandFromDeviceSlug(deviceSlug) {
-  const words = deviceSlug.split("-").filter(Boolean);
-  if (!words.length) return "";
-
-  const first = words[0];
-  const second = words[1] || "";
-
-  // لو الكلمة الثانية فيها أرقام => هذه موديل وليست جزء من البراند
-  if (/\d/.test(second)) {
-    return first;
-  }
-
-  // ندعم البراندات المركبة مثل:
-  // m-horse / s-color
-  // بشرط أن أول جزء حرف واحد فقط والثاني حروف فقط
-  if (
-    first.length === 1 &&
-    second &&
-    /^[a-z]+$/i.test(second)
-  ) {
-    return `${first}-${second}`;
-  }
-
-  // في كل الحالات الأخرى البراند هو أول كلمة فقط
-  return first;
-}
-
-    function detectFilenameData(fileName) {
-      const parts = splitOfferPartsFromFilename(fileName);
-      const devicesCount = parts.length || 1;
-
-      const titles = parts.map(part => titleFromDeviceSlug(part));
-      const brands = parts.map(part => titleFromDeviceSlug(extractBrandFromDeviceSlug(part)));
-
-      return {
-        devicesCount,
-        title: titles.join(" + "),
-        brand: devicesCount === 1 ? (brands[0] || "") : brands.join(" / "),
-        storageBrandSlug: parts.length ? extractBrandFromDeviceSlug(parts[0]) : "",
-        storageBrand: parts.length ? titleFromDeviceSlug(extractBrandFromDeviceSlug(parts[0])) : ""
-      };
+    if (window.location.hash.includes("invite_token")) {
+      window.netlifyIdentity.open("signup");
     }
 
-function extractFinancialsFromText(text) {
-  const clean = String(text || "")
-    .replace(/\r/g, "")
-    .replace(/O/g, "0")
-    .replace(/o/g, "0")
-    .replace(/I/g, "1")
-    .replace(/l/g, "1")
-    .replace(/S(?=\s*MONTH)/gi, "5")
-    .trim();
+    window.netlifyIdentity.on("login", function () {
+      window.location.href = "/admin/";
+    });
+  }
+</script>
 
-  const lines = clean
-    .split("\n")
-    .map(line => line.trim())
-    .filter(Boolean);
+<script src="/js/cart.js"></script>
 
-  let downPayment = "";
-  let monthly = "";
-  let duration = "";
+<script>
+  let hotBrands = new Set();
+  let currentHotCategory = "all";
+  let hotOffersData = [];
 
-  function firstNumber(str) {
-    const match = String(str || "").match(/\d+/);
+  function normalizeBrandValue(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "Other";
+
+    return raw
+      .replace(/\s*\/\s*/g, " / ")
+      .replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  function extractNumber(value) {
+    const raw = String(value || "").trim();
+    const match = raw.match(/\d+(\.\d+)?/);
     return match ? match[0] : "";
   }
 
-  function hasMonthly(str) {
-    const s = String(str || "").toLowerCase();
-    return (
-      s.includes("monthly") ||
-      s.includes("month1y") ||
-      s.includes("monthiy") ||
-      s.includes("m0nthly")
-    );
+  function formatMonthly(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (/kd/i.test(raw)) return raw;
+    const number = extractNumber(raw);
+    return number ? `${number} KD` : raw;
   }
 
-  function hasDownPayment(str) {
-    const s = String(str || "").toLowerCase();
-    return (
-      s.includes("down") ||
-      s.includes("payment") ||
-      s.includes("paynent") ||
-      s.includes("payrnent")
-    );
+  function formatDuration(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    if (/month/i.test(raw)) return raw;
+    const number = extractNumber(raw);
+    return number ? `${number} Months` : raw;
   }
 
-  function hasZero(str) {
-    const s = String(str || "").toLowerCase();
-    return s.includes("zero") || s.includes("zer0");
+  function formatDownPayment(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "0 KD Down Payment";
+    if (/down payment/i.test(raw)) return raw;
+    if (/kd/i.test(raw)) return `${raw} Down Payment`;
+    const number = extractNumber(raw);
+    return number ? `${number} KD Down Payment` : "0 KD Down Payment";
   }
 
-  function hasDuration(str) {
-    const s = String(str || "").toLowerCase();
-    return (
-      s.includes("months") ||
-      s.includes("month") ||
-      s.includes("m0nths") ||
-      s.includes("to pay") ||
-      s.includes("topay") ||
-      s.includes("pay")
-    );
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (hasMonthly(line)) {
-      monthly = firstNumber(line);
-
-      if (i > 0) {
-        const prevLine = lines[i - 1];
-
-        if (hasZero(prevLine)) {
-          downPayment = "0";
-        } else {
-          const prevNumber = firstNumber(prevLine);
-          downPayment = prevNumber || "0";
-        }
-      } else {
-        downPayment = "0";
-      }
-
-      if (i < lines.length - 1) {
-        const nextLine = lines[i + 1];
-        const nextNumber = firstNumber(nextLine);
-        if (nextNumber) {
-          duration = nextNumber;
-        }
-      }
-
-      break;
-    }
-  }
-
-  if (!monthly) {
-    for (let i = 0; i < lines.length; i++) {
-      if (hasMonthly(lines[i])) {
-        monthly = firstNumber(lines[i]);
-        break;
-      }
-    }
-  }
-
-  if (!duration) {
-    for (let i = 0; i < lines.length; i++) {
-      if (hasDuration(lines[i])) {
-        const n = firstNumber(lines[i]);
-        if (n && n !== monthly) {
-          duration = n;
-          break;
-        }
-      }
-    }
-  }
-
-  if (!downPayment) {
-    for (let i = 0; i < lines.length; i++) {
-      if (hasDownPayment(lines[i])) {
-        if (hasZero(lines[i])) {
-          downPayment = "0";
-        } else {
-          const n = firstNumber(lines[i]);
-          downPayment = n || "0";
-        }
-        break;
-      }
-    }
-  }
-
-  return {
-    downPayment,
-    monthly,
-    duration,
-    rawText: clean
-  };
-}
-    
-    async function runOCRFromImage(file) {
-  const processedCanvas = await preprocessImageForOCR(file);
-
-  const croppedResult = await Tesseract.recognize(processedCanvas, "eng", {
-    logger: m => {
-      if (m.status === "recognizing text") {
-        const pct = Math.round((m.progress || 0) * 100);
-        setStatus("info", `Reading cropped area... ${pct}%`);
-      }
-    }
-  });
-
-  const fullResult = await Tesseract.recognize(file, "eng", {
-    logger: m => {
-      if (m.status === "recognizing text") {
-        const pct = Math.round((m.progress || 0) * 100);
-        setStatus("info", `Reading full image... ${pct}%`);
-      }
-    }
-  });
-
-  const croppedData = extractFinancialsFromText(croppedResult.data.text || "");
-  const fullData = extractFinancialsFromText(fullResult.data.text || "");
-
-  return {
-    downPayment: croppedData.downPayment || fullData.downPayment || "",
-    monthly: croppedData.monthly || fullData.monthly || "",
-    duration: croppedData.duration || fullData.duration || "",
-    rawText:
-      `--- CROPPED OCR ---\n${croppedData.rawText || ""}\n\n--- FULL OCR ---\n${fullData.rawText || ""}`
-  };
-}
-
-    async function smartAutoFill() {
-  clearStatus();
-
-  const fileInput = document.getElementById("productImage");
-  const file = fileInput.files[0];
-
-  if (!file) {
-    setStatus("err", "Please choose an image first.");
-    return;
-  }
-
-  previewImageFile(file);
-
-  const fromName = detectFilenameData(file.name);
-
-  if (!document.getElementById("title").value.trim()) {
-    document.getElementById("title").value = fromName.title;
-  }
-
-  if (!document.getElementById("brand").value.trim()) {
-    document.getElementById("brand").value = fromName.brand;
-  }
-
-  document.getElementById("devices_count").value = fromName.devicesCount || 1;
-
-  try {
-    const fromOCR = await runOCRFromImage(file);
-
-    if (fromOCR.downPayment) {
-      document.getElementById("down_payment").value = fromOCR.downPayment;
-    }
-
-    if (fromOCR.monthly) {
-      document.getElementById("monthly").value = fromOCR.monthly;
-    }
-
-    if (fromOCR.duration) {
-      document.getElementById("duration").value = fromOCR.duration;
-    }
-
-    setStatus(
-      "ok",
-      `Smart auto fill completed.
-
-Title: ${document.getElementById("title").value}
-Brand: ${document.getElementById("brand").value}
-Devices Count: ${document.getElementById("devices_count").value}
-Down Payment: ${document.getElementById("down_payment").value}
-Monthly: ${document.getElementById("monthly").value}
-Duration: ${document.getElementById("duration").value}
-
-OCR Text:
-${fromOCR.rawText || "No text found"}`
-    );
-  } catch (err) {
-    setStatus("err", `OCR failed.\n${err.message}`);
-  }
-
-  generatePreview();
-}
-    function getFormData() {
-      const category = document.getElementById("category").value;
-      const brand = document.getElementById("brand").value.trim();
-      const title = document.getElementById("title").value.trim();
-      const devices_count = parseInt(document.getElementById("devices_count").value || "1", 10);
-
-      const downPaymentNumber = document.getElementById("down_payment").value.trim() || "0";
-      const monthlyNumber = document.getElementById("monthly").value.trim();
-      const durationNumber = document.getElementById("duration").value.trim();
-
-      const down_payment = `${downPaymentNumber} KD`;
-      const monthly = monthlyNumber ? `${monthlyNumber} KD` : "";
-      const duration = durationNumber ? `${durationNumber} Months` : "";
-
-      const available = document.getElementById("available").checked;
-      const hot_offer = document.getElementById("hot_offer").checked;
-      const imageFile = document.getElementById("productImage").files[0] || null;
-
-      const nameData = imageFile ? detectFilenameData(imageFile.name) : {
-        storageBrandSlug: slugify(brand.split("/")[0].trim()),
-        storageBrand: brand.split("/")[0].trim()
-      };
-
-      const brandSlug = slugify(nameData.storageBrandSlug || brand.split("/")[0].trim());
-
-      // اسم الملف يكون من اسم الصورة، ومع العرض + يتحول إلى -
-      const titleSlug = imageFile
-        ? slugify(imageFile.name.replace(/\.[^.]+$/, "").replace(/\+/g, "-"))
-        : slugify(title);
-
-      return {
-        category,
-        brand,
-        title,
-        brandSlug,
-        storageBrand: nameData.storageBrand || "",
-        titleSlug,
-        devices_count: Number.isFinite(devices_count) && devices_count > 0 ? devices_count : 1,
-        down_payment,
-        monthly,
-        duration,
-        available,
-        hot_offer,
-        imageFile
-      };
-    }
-
-    function buildPaths(data) {
-      const ext = data.imageFile ? getImageExt(data.imageFile.name) : ".webp";
-
-      const imageNameSlug = data.imageFile
-        ? slugify(data.imageFile.name.replace(/\.[^.]+$/, "").replace(/\+/g, "-"))
-        : data.titleSlug;
-
-      const imagePath = `/images/${data.category}/${data.brandSlug}/${imageNameSlug}${ext}`;
-      const productPath = `/products/${data.category}/${data.brandSlug}/${data.titleSlug}.json`;
-      const indexPath = `/products/${data.category}/index.json`;
-
-      return { imagePath, productPath, indexPath, imageNameSlug, ext };
-    }
-
-    function buildProductJson(data, paths) {
-      return {
-        title: data.title,
-        category: data.category,
-        brand: data.brand,
-        devices_count: data.devices_count,
-        image: paths.imagePath,
-        down_payment: data.down_payment,
-        monthly: data.monthly,
-        duration: data.duration,
-        available: data.available,
-        hot_offer: data.hot_offer
-      };
-    }
-
-    function validateData(data) {
-      if (!data.brand) return "Brand is required.";
-      if (!data.title) return "Title is required.";
-      if (!data.monthly) return "Monthly is required.";
-      if (!data.duration) return "Duration is required.";
-      if (!data.imageFile) return "Please choose an image file.";
-      if (!data.brandSlug) return "Brand slug is empty.";
-      if (!data.titleSlug) return "Title slug is empty.";
-      return "";
-    }
-
-    function generatePreview() {
-      clearStatus();
-
-      const data = getFormData();
-      const error = validateData(data);
-      const paths = buildPaths(data);
-
-      document.getElementById("storageBrandPreview").textContent = data.storageBrand || "-";
-      document.getElementById("brandSlugPreview").textContent = data.brandSlug || "-";
-      document.getElementById("titleSlugPreview").textContent = data.titleSlug || "-";
-      document.getElementById("imagePathPreview").textContent = paths.imagePath;
-      document.getElementById("productPathPreview").textContent = paths.productPath;
-      document.getElementById("indexPathPreview").textContent = paths.indexPath;
-
-      if (data.imageFile) {
-        previewImageFile(data.imageFile);
-      }
-
-      if (error) {
-        document.getElementById("jsonPreview").value = "";
-        setStatus("err", error);
-        return null;
-      }
-
-      const productJson = buildProductJson(data, paths);
-      document.getElementById("jsonPreview").value = JSON.stringify(productJson, null, 2);
-      return { data, paths, productJson };
-    }
-
-    async function githubGetFile(owner, repo, path, token, branch) {
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`;
-      const res = await fetch(url, {
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: "application/vnd.github+json"
-        }
-      });
-
-      if (res.status === 404) return null;
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`GET ${path} failed: ${text}`);
-      }
-
-      return await res.json();
-    }
-
-    async function githubPutFile(owner, repo, path, token, branch, contentBase64, message, sha = null) {
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-      const body = {
-        message,
-        content: contentBase64,
-        branch
-      };
-      if (sha) body.sha = sha;
-
-      const res = await fetch(url, {
-        method: "PUT",
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`PUT ${path} failed: ${text}`);
-      }
-
-      return await res.json();
-    }
-
-    async function fileToBase64(file) {
-      const buffer = await file.arrayBuffer();
-      let binary = "";
-      const bytes = new Uint8Array(buffer);
-      const chunkSize = 0x8000;
-
-      for (let i = 0; i < bytes.length; i += chunkSize) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-      }
-
-      return btoa(binary);
-    }
-
-    async function updateIndexJson(owner, repo, token, branch, category, brandSlug, productSlug) {
-      const indexPath = `products/${category}/index.json`;
-      const relativePath = `${brandSlug}/${productSlug}.json`;
-
-      const existing = await githubGetFile(owner, repo, indexPath, token, branch);
-
-      let list = [];
-      let sha = null;
-
-      if (existing) {
-        sha = existing.sha;
-        try {
-          list = JSON.parse(b64DecodeUnicode(existing.content.replace(/\n/g, "")));
-          if (!Array.isArray(list)) list = [];
-        } catch {
-          list = [];
-        }
-      }
-
-      if (!list.includes(relativePath)) {
-        list.push(relativePath);
-      }
-
-      list.sort((a, b) => a.localeCompare(b));
-
-      const content = b64EncodeUnicode(JSON.stringify(list, null, 2) + "\n");
-
-      await githubPutFile(
-        owner,
-        repo,
-        indexPath,
-        token,
-        branch,
-        content,
-        `Update ${indexPath}`,
-        sha
-      );
-    }
-
-    async function saveAll() {
-      const token = document.getElementById("githubToken").value.trim();
-      const owner = document.getElementById("owner").value.trim();
-      const repo = document.getElementById("repo").value.trim();
-      const branch = document.getElementById("branch").value.trim();
-
-      if (!token) {
-        setStatus("err", "GitHub token is required.");
-        return;
-      }
-
-      if (!owner || !repo || !branch) {
-        setStatus("err", "Owner, repo, and branch are required.");
-        return;
-      }
-
-      const preview = generatePreview();
-      if (!preview) return;
-
-      const { data, paths, productJson } = preview;
-
-      try {
-        setStatus("info", "Uploading image...");
-        const imageContent = await fileToBase64(data.imageFile);
-        const imageRepoPath = paths.imagePath.replace(/^\//, "");
-        const existingImage = await githubGetFile(owner, repo, imageRepoPath, token, branch);
-
-        await githubPutFile(
-          owner,
-          repo,
-          imageRepoPath,
-          token,
-          branch,
-          imageContent,
-          `Upload ${imageRepoPath}`,
-          existingImage ? existingImage.sha : null
-        );
-
-        setStatus("info", "Saving product JSON...");
-        const productRepoPath = paths.productPath.replace(/^\//, "");
-        const productContent = b64EncodeUnicode(JSON.stringify(productJson, null, 2) + "\n");
-        const existingProduct = await githubGetFile(owner, repo, productRepoPath, token, branch);
-
-        await githubPutFile(
-          owner,
-          repo,
-          productRepoPath,
-          token,
-          branch,
-          productContent,
-          `Save ${productRepoPath}`,
-          existingProduct ? existingProduct.sha : null
-        );
-
-        setStatus("info", "Updating index.json...");
-        await updateIndexJson(owner, repo, token, branch, data.category, data.brandSlug, data.titleSlug);
-
-        setStatus(
-          "ok",
-          `Done successfully.
-
-Image: ${paths.imagePath}
-Product: ${paths.productPath}
-Index updated: ${paths.indexPath}`
-        );
-      } catch (err) {
-        setStatus("err", err.message || "Unknown error");
-      }
-    }
-
-    function resetForm() {
-      document.getElementById("brand").value = "";
-      document.getElementById("title").value = "";
-      document.getElementById("devices_count").value = "1";
-      document.getElementById("down_payment").value = "0";
-      document.getElementById("monthly").value = "";
-      document.getElementById("duration").value = "";
-      document.getElementById("available").checked = true;
-      document.getElementById("hot_offer").checked = false;
-      document.getElementById("productImage").value = "";
-      document.getElementById("jsonPreview").value = "";
-      document.getElementById("storageBrandPreview").textContent = "-";
-      document.getElementById("brandSlugPreview").textContent = "-";
-      document.getElementById("titleSlugPreview").textContent = "-";
-      document.getElementById("imagePathPreview").textContent = "-";
-      document.getElementById("productPathPreview").textContent = "-";
-      document.getElementById("indexPathPreview").textContent = "-";
-      previewImageFile(null);
-      clearStatus();
-    }
-
-    document.getElementById("productImage").addEventListener("change", () => {
-      const file = document.getElementById("productImage").files[0];
-      previewImageFile(file);
+  function populateHotBrandFilter() {
+    const select = document.getElementById("hotBrandFilter");
+    if (!select) return;
+
+    const currentValue = select.value || "all";
+    const brands = Array.from(hotBrands).sort((a, b) => a.localeCompare(b));
+
+    select.innerHTML = '<option value="all">All Brands</option>';
+
+    brands.forEach(brand => {
+      const option = document.createElement("option");
+      option.value = brand;
+      option.textContent = brand;
+      select.appendChild(option);
     });
-  </script>
+
+    if ([...select.options].some(option => option.value === currentValue)) {
+      select.value = currentValue;
+    } else {
+      select.value = "all";
+    }
+  }
+
+  function filterHot(category, buttonEl) {
+    currentHotCategory = category;
+
+    document.querySelectorAll("#hot-offers .filter-btn").forEach(btn => btn.classList.remove("active"));
+    if (buttonEl) buttonEl.classList.add("active");
+
+    applyHotFilters();
+  }
+
+  function applyHotBrandFilter() {
+    applyHotFilters();
+  }
+
+  function buildHotCard(product) {
+    const imagePath = (product.image || "/images/logo.png").trim();
+    const brandName = normalizeBrandValue(product.brand);
+
+    const card = document.createElement("div");
+    card.className = "product-card hot-card";
+    card.setAttribute("data-category", product.category || "");
+    card.setAttribute("data-brand", brandName);
+
+    card.innerHTML = `
+      <div class="product-image">
+        <img src="${imagePath}" alt="${product.title || "Product"}" loading="lazy">
+      </div>
+
+      <div class="product-body">
+        <div class="product-title">${product.title || ""}</div>
+
+        <div class="row">
+          <div>
+            <div class="price">${formatMonthly(product.monthly)}</div>
+            <div class="months">${formatDuration(product.duration)}</div>
+            <div class="months">${formatDownPayment(product.down_payment)}</div>
+          </div>
+          <button class="cart-add-btn">+ Add To Cart</button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector(".cart-add-btn").addEventListener("click", () => {
+      addToCart({
+        title: product.title || "Product",
+        price: `${formatMonthly(product.monthly)} Monthly`,
+        months: `${formatDuration(product.duration)} • ${formatDownPayment(product.down_payment)}`,
+        image: imagePath
+      });
+    });
+
+    return card;
+  }
+
+  function applyHotFilters() {
+    const cards = document.querySelectorAll(".hot-card");
+    const empty = document.getElementById("hot-offers-empty");
+
+    hotBrands = new Set();
+
+    cards.forEach(card => {
+      const cardCategory = card.getAttribute("data-category") || "";
+      const cardBrand = card.getAttribute("data-brand") || "";
+      const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
+
+      if (matchCategory) {
+        hotBrands.add(cardBrand);
+      }
+    });
+
+    populateHotBrandFilter();
+
+    const selectedBrand = document.getElementById("hotBrandFilter")?.value || "all";
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const cardCategory = card.getAttribute("data-category") || "";
+      const cardBrand = card.getAttribute("data-brand") || "";
+
+      const matchCategory = currentHotCategory === "all" || cardCategory === currentHotCategory;
+      const matchBrand = selectedBrand === "all" || cardBrand === selectedBrand;
+      const shouldShow = matchCategory && matchBrand;
+
+      card.style.display = shouldShow ? "block" : "none";
+      if (shouldShow) visibleCount++;
+    });
+
+    if (empty) {
+      if (visibleCount === 0) {
+        empty.style.display = "";
+        empty.textContent = "No hot offers available for this filter.";
+      } else {
+        empty.style.display = "none";
+      }
+    }
+  }
+
+  async function loadCategoryHotData(categoryName) {
+    try {
+      const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
+
+      const files = await res.json();
+      if (!Array.isArray(files)) throw new Error(`${categoryName} data.json must be an array`);
+
+      const productResults = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const r = await fetch(`/products/${categoryName}/${file}`, { cache: "no-store" });
+            if (!r.ok) return null;
+
+            const item = await r.json();
+            return { ...item, category: categoryName };
+          } catch (e) {
+            console.error(`Failed to load ${categoryName} hot file:`, file, e);
+            return null;
+          }
+        })
+      );
+
+      return productResults.filter(Boolean);
+    } catch (e) {
+      console.error(`Failed to load ${categoryName} hot data:`, e);
+      return [];
+    }
+  }
+
+  async function loadHotOffers() {
+    const grid = document.getElementById("hot-offers-grid");
+    const loading = document.getElementById("hot-loading-state");
+    const empty = document.getElementById("hot-offers-empty");
+
+    try {
+      const categories = ["phones", "tablets", "laptops", "accessories"];
+      const results = await Promise.all(categories.map(loadCategoryHotData));
+      hotOffersData = results
+        .flat()
+        .filter(item => item && item.available === true && item.hot_offer === true)
+        .sort((a, b) => {
+          const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
+          const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
+          if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
+
+          const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
+          const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
+          if (aPriority !== bPriority) return aPriority - bPriority;
+
+          return String(a.title || "").localeCompare(String(b.title || ""));
+        });
+
+      document.querySelectorAll(".hot-card").forEach(card => card.remove());
+      if (loading) loading.remove();
+
+      if (!hotOffersData.length) {
+        if (empty) {
+          empty.style.display = "";
+          empty.textContent = "No hot offers available yet.";
+        }
+        populateHotBrandFilter();
+        return;
+      }
+
+      hotOffersData.forEach(product => {
+        grid.appendChild(buildHotCard(product));
+      });
+
+      if (empty) empty.style.display = "none";
+      applyHotFilters();
+    } catch (e) {
+      console.error("Failed to load hot offers:", e);
+
+      if (loading) loading.remove();
+      if (empty) {
+        empty.style.display = "";
+        empty.textContent = "Failed to load hot offers.";
+      }
+    }
+  }
+
+  loadHotOffers();
+</script>
+
+<script>
+  const texts = [
+    "You Can Depend on Us",
+    "Best Deals in Kuwait",
+    "Easy Monthly Installments",
+    "Fast Delivery"
+  ];
+
+  let i = 0;
+  const el = document.getElementById("loopText");
+
+  setInterval(() => {
+    if (!el) return;
+    el.style.opacity = 0;
+
+    setTimeout(() => {
+      i = (i + 1) % texts.length;
+      el.textContent = texts[i];
+      el.style.opacity = 1;
+    }, 400);
+  }, 3000);
+</script>
 </body>
 </html>
