@@ -611,14 +611,6 @@ footer {
   transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.2s ease;
 }
 
-.page-home .floating-cart::before,
-.page-catalog .floating-cart::before,
-.page-all-products .floating-cart::before {
-  content: "🛒";
-  font-size: 20px;
-  line-height: 1;
-}
-
 .page-home .floating-cart:hover,
 .page-catalog .floating-cart:hover,
 .page-all-products .floating-cart:hover {
