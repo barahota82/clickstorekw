@@ -383,7 +383,7 @@
       </button>
 
       <button type="button" class="mobile-app-item" data-mobile-nav="cart" onclick="openCart()">
-        <span class="mobile-app-icon">🛒</span>
+        <span class="mobile-app-icon"></span>
         <span class="mobile-app-label">Cart</span>
         <span class="mobile-app-badge" id="cart-count-floating">0</span>
       </button>
