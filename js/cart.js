@@ -383,7 +383,7 @@
       </button>
 
       <button type="button" class="mobile-app-item" data-mobile-nav="cart" onclick="openCart()">
-        <span class="mobile-app-icon"></span>
+        <span class="mobile-app-icon">🛒</span>
         <span class="mobile-app-label">Cart</span>
         <span class="mobile-app-badge" id="cart-count-floating">0</span>
       </button>
@@ -661,7 +661,7 @@
     if (!list.length) {
       itemsWrap.innerHTML = `
         <div class="cart-empty-block">
-          <div class="cart-empty-icon">🛒</div>
+          <div class="cart-empty-icon"></div>
           <div class="cart-empty-title">${type === "cart" ? "Your cart is empty" : "No pending offers"}</div>
           <div class="cart-empty-text">${type === "cart" ? "Add offers to start your order." : "Saved pending offers will appear here."}</div>
         </div>
