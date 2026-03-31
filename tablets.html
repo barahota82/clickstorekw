@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tablets - Click Company</title>
+  <title>tablets - Click Company</title>
   <link rel="stylesheet" href="/css/style.css" />
   <style>
     .catalog-filter-wrap {
@@ -51,6 +51,53 @@
       color: #111827;
       min-height: 46px;
     }
+
+    .page-catalog .floating-cart,
+    .page-home .floating-cart,
+    .page-all-products .floating-cart {
+      position: fixed;
+      left: 18px;
+      bottom: 18px;
+      background: #2f6df1;
+      color: #fff;
+      border-radius: 999px;
+      height: 56px;
+      min-width: 56px;
+      padding: 0 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-weight: bold;
+      box-shadow: 0 10px 25px rgba(0,0,0,.3);
+      z-index: 1000;
+      border: 0;
+      cursor: pointer;
+      font-size: 22px;
+    }
+
+    .page-catalog .floating-cart span,
+    .page-home .floating-cart span,
+    .page-all-products .floating-cart span {
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    @media (max-width: 640px) {
+      .catalog-filter {
+        max-width: 100%;
+      }
+
+      .page-catalog .floating-cart,
+      .page-home .floating-cart,
+      .page-all-products .floating-cart {
+        left: 14px;
+        bottom: 14px;
+        height: 52px;
+        min-width: 52px;
+        padding: 0 18px;
+      }
+    }
   </style>
 </head>
 <body class="page-catalog">
@@ -89,8 +136,8 @@
 
   <section class="page-head">
     <div class="container">
-      <h2>Tablets</h2>
-      <p>Browse all tablet offers.</p>
+      <h2>tablets</h2>
+      <p>Browse all tablets offers.</p>
 
       <div class="catalog-filter-wrap">
         <label for="brandFilter" class="catalog-filter-label">Filter by Brand</label>
@@ -115,7 +162,7 @@
     </div>
   </footer>
 
-  <button class="floating-cart" onclick="openCart()"> <span id="count">0</span></button>
+  <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
 
   <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">WhatsApp</button>
 
@@ -145,51 +192,55 @@
   <script src="/js/cart.js"></script>
 
   <script>
+    let productsData = [];
     let renderedBrands = new Set();
 
-    function extractNumber(v) {
-      const m = String(v || "").match(/\d+(\.\d+)?/);
-      return m ? m[0] : "";
-    }
-
-    function formatMonthly(v) {
-      const raw = String(v || "").trim();
-      if (!raw) return "";
-      if (/kd/i.test(raw)) return raw;
-      const num = extractNumber(raw);
-      return num ? `${num} KD` : raw;
-    }
-
-    function formatDuration(v) {
-      const raw = String(v || "").trim();
-      if (!raw) return "";
-      if (/month/i.test(raw)) return raw;
-      const num = extractNumber(raw);
-      return num ? `${num} Months` : raw;
-    }
-
-    function formatDown(v) {
-      const raw = String(v || "").trim();
-      if (!raw) return "0 KD Down Payment";
-      if (/down payment/i.test(raw)) return raw;
-      if (/kd/i.test(raw)) return `${raw} Down Payment`;
-      const num = extractNumber(raw);
-      return num ? `${num} KD Down Payment` : "0 KD Down Payment";
-    }
-
-    function normalizeBrand(v) {
-      const raw = String(v || "").trim();
+    function normalizeBrandValue(value) {
+      const raw = String(value || "").trim();
       if (!raw) return "Other";
 
       return raw
         .replace(/\s*\/\s*/g, " / ")
-        .replace(/\b\w/g, c => c.toUpperCase());
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+    function extractNumber(value) {
+      const raw = String(value || "").trim();
+      const match = raw.match(/\d+(\.\d+)?/);
+      return match ? match[0] : "";
+    }
+
+    function formatMonthly(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (/kd/i.test(raw)) return raw;
+      const number = extractNumber(raw);
+      return number ? `${number} KD` : raw;
+    }
+
+    function formatDuration(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (/month/i.test(raw)) return raw;
+      const number = extractNumber(raw);
+      return number ? `${number} Months` : raw;
+    }
+
+    function formatDownPayment(value) {
+      const raw = String(value || "").trim();
+      if (!raw) return "0 KD Down Payment";
+      if (/down payment/i.test(raw)) return raw;
+      if (/kd/i.test(raw)) return `${raw} Down Payment`;
+      const number = extractNumber(raw);
+      return number ? `${number} KD Down Payment` : "0 KD Down Payment";
     }
 
     function populateBrandFilter() {
       const select = document.getElementById("brandFilter");
+      if (!select) return;
+
       const currentValue = select.value || "all";
-      const brands = [...renderedBrands].sort((a, b) => a.localeCompare(b));
+      const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
 
       select.innerHTML = '<option value="all">All Brands</option>';
 
@@ -207,27 +258,31 @@
       }
     }
 
-    function buildCard(p) {
-      const brand = normalizeBrand(p.brand);
-      const imagePath = (p.image || "/images/logo.png").trim();
+    function buildProductCard(product) {
+      const imagePath = (product.image || "/images/logo.png").trim();
+      const brandName = normalizeBrandValue(product.brand);
+
+      const monthlyText = formatMonthly(product.monthly);
+      const durationText = formatDuration(product.duration);
+      const downPaymentText = formatDownPayment(product.down_payment);
 
       const card = document.createElement("div");
       card.className = "product-card";
-      card.setAttribute("data-brand", brand);
+      card.setAttribute("data-brand", brandName);
 
       card.innerHTML = `
         <div class="product-image">
-          <img src="${imagePath}" alt="${p.title || "Product"}" loading="lazy">
+          <img src="${imagePath}" alt="${product.title || "Product"}" loading="lazy">
         </div>
 
         <div class="product-body">
-          <div class="product-title">${p.title || ""}</div>
+          <div class="product-title">${product.title || ""}</div>
 
           <div class="row">
             <div>
-              <div class="price">${formatMonthly(p.monthly)}</div>
-              <div class="months">${formatDuration(p.duration)}</div>
-              <div class="months">${formatDown(p.down_payment)}</div>
+              <div class="price">${monthlyText}</div>
+              <div class="months">${durationText}</div>
+              <div class="months">${downPaymentText}</div>
             </div>
             <button class="btn">+ Add To Cart</button>
           </div>
@@ -236,31 +291,83 @@
 
       card.querySelector(".btn").onclick = () => {
         addToCart({
-          title: p.title || "Product",
-          price: formatMonthly(p.monthly),
-          months: `${formatDuration(p.duration)} • ${formatDown(p.down_payment)}`,
+          title: product.title || "Product",
+          price: `${monthlyText} Monthly`,
+          months: `${durationText} • ${downPaymentText}`,
           image: imagePath
         });
       };
 
-      return { card, brand };
+      return { card, brandName };
     }
 
     function applyBrandFilter() {
-      const val = document.getElementById("brandFilter").value;
-      let visible = 0;
+      const selectedBrand = document.getElementById("brandFilter")?.value || "all";
+      const cards = document.querySelectorAll(".product-card[data-brand]");
+      const empty = document.getElementById("empty-state");
+      let visibleCount = 0;
 
-      document.querySelectorAll(".product-card").forEach(card => {
-        const show = val === "all" || card.dataset.brand === val;
-        card.style.display = show ? "" : "none";
-        if (show) visible++;
+      cards.forEach(card => {
+        const cardBrand = card.getAttribute("data-brand") || "";
+        const shouldShow = selectedBrand === "all" || cardBrand === selectedBrand;
+
+        card.style.display = shouldShow ? "" : "none";
+        if (shouldShow) visibleCount++;
       });
 
-      const empty = document.getElementById("empty-state");
-      empty.style.display = visible ? "none" : "";
-      if (!visible) {
-        empty.textContent = "No products available for this brand.";
+      if (empty) {
+        if (visibleCount === 0) {
+          empty.style.display = "";
+          empty.textContent = "No products available for this brand.";
+        } else {
+          empty.style.display = "none";
+        }
       }
+    }
+
+    function renderProducts(items) {
+      const grid = document.getElementById("grid");
+      const loading = document.getElementById("loading-state");
+      const empty = document.getElementById("empty-state");
+
+      document.querySelectorAll(".product-card").forEach(card => card.remove());
+      renderedBrands = new Set();
+
+      const visibleProducts = items
+        .filter(item => item && item.available === true)
+        .sort((a, b) => {
+          const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
+          const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
+          if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
+
+          const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
+          const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
+          if (aPriority !== bPriority) return aPriority - bPriority;
+
+          return String(a.title || "").localeCompare(String(b.title || ""));
+        });
+
+      if (loading) loading.remove();
+
+      if (!visibleProducts.length) {
+        if (empty) {
+          empty.style.display = "";
+          empty.textContent = "No products available yet.";
+        }
+        populateBrandFilter();
+        return;
+      }
+
+      visibleProducts.forEach(product => {
+        const { card, brandName } = buildProductCard(product);
+        grid.appendChild(card);
+        renderedBrands.add(brandName);
+      });
+
+      if (empty) empty.style.display = "none";
+
+      populateBrandFilter();
+      applyBrandFilter();
     }
 
     async function load() {
@@ -271,58 +378,32 @@
         const files = await res.json();
         if (!Array.isArray(files)) throw new Error("tablets data.json must be an array");
 
-        const results = await Promise.all(
-          files.map(async file => {
+        const productResults = await Promise.all(
+          files.map(async (file) => {
             try {
-              const response = await fetch(`/products/tablets/${file}`, { cache: "no-store" });
-              if (!response.ok) return null;
-              return await response.json();
-            } catch {
+              const r = await fetch(`/products/tablets/${file}`, { cache: "no-store" });
+              if (!r.ok) return null;
+              return await r.json();
+            } catch (e) {
+              console.error("Failed to load tablets file:", file, e);
               return null;
             }
           })
         );
 
-        const data = results.filter(Boolean).filter(product => product.available === true);
-
-        const loading = document.getElementById("loading-state");
-        if (loading) loading.remove();
-
-        if (!data.length) {
-          document.getElementById("empty-state").style.display = "";
-          return;
-        }
-
-        data
-          .sort((a, b) => {
-            const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
-            const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
-            if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
-
-            const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
-            const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
-            if (aPriority !== bPriority) return aPriority - bPriority;
-
-            return String(a.title || "").localeCompare(String(b.title || ""));
-          })
-          .forEach(product => {
-            const { card, brand } = buildCard(product);
-            document.getElementById("grid").appendChild(card);
-            renderedBrands.add(brand);
-          });
-
-        populateBrandFilter();
-        applyBrandFilter();
-
+        productsData = productResults.filter(Boolean);
+        renderProducts(productsData);
       } catch (e) {
-        console.error("Failed to load tablets:", e);
+        console.error("Failed to load tablets data:", e);
 
         const loading = document.getElementById("loading-state");
-        if (loading) loading.remove();
-
         const empty = document.getElementById("empty-state");
-        empty.style.display = "";
-        empty.textContent = "Failed to load products.";
+
+        if (loading) loading.remove();
+        if (empty) {
+          empty.style.display = "";
+          empty.textContent = "Failed to load products.";
+        }
       }
     }
 
@@ -342,7 +423,6 @@
 
     setInterval(() => {
       if (!el) return;
-
       el.style.opacity = 0;
 
       setTimeout(() => {
