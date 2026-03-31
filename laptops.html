@@ -52,35 +52,29 @@
       min-height: 46px;
     }
 
-    .page-catalog .floating-cart,
-    .page-home .floating-cart,
-    .page-all-products .floating-cart {
-      position: fixed;
-      left: 18px;
-      bottom: 18px;
-      background: #2f6df1;
-      color: #fff;
-      border-radius: 999px;
-      height: 56px;
-      min-width: 56px;
-      padding: 0 20px;
+    .desktop-only {
       display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-weight: bold;
-      box-shadow: 0 10px 25px rgba(0,0,0,.3);
-      z-index: 1000;
-      border: 0;
-      cursor: pointer;
-      font-size: 22px;
     }
 
-    .page-catalog .floating-cart span,
-    .page-home .floating-cart span,
-    .page-all-products .floating-cart span {
-      font-size: 17px;
-      line-height: 1;
+    .mobile-only {
+      display: none;
+    }
+
+    .registration-top-btn {
+      color: #fff;
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: 0.2s ease;
+      flex: 0 0 auto;
+      font-weight: 700;
+    }
+
+    .registration-top-btn:hover {
+      background: rgba(255,255,255,0.08);
     }
 
     @media (max-width: 640px) {
@@ -88,14 +82,12 @@
         max-width: 100%;
       }
 
-      .page-catalog .floating-cart,
-      .page-home .floating-cart,
-      .page-all-products .floating-cart {
-        left: 14px;
-        bottom: 14px;
-        height: 52px;
-        min-width: 52px;
-        padding: 0 18px;
+      .desktop-only {
+        display: none !important;
+      }
+
+      .mobile-only {
+        display: inline-flex !important;
       }
     }
   </style>
@@ -116,19 +108,20 @@
 
       <nav class="nav-links">
         <div class="nav-row main-row">
-          <a href="index.html">Home</a>
+          <a href="index.html" class="desktop-only">Home</a>
           <a href="phones.html">Phones</a>
           <a href="tablets.html">Tablets</a>
           <a href="laptops.html" class="active">Laptops</a>
           <a href="accessories.html">Accessories</a>
+          <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
+
+          <button class="registration-top-btn desktop-only" type="button" onclick="openAuthModal()">
+            Registration
+          </button>
 
           <button class="cart-btn" onclick="openCart()">
             Cart <span class="cart-badge" id="cart-count-top">0</span>
           </button>
-        </div>
-
-        <div class="nav-row hot-row">
-          <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
         </div>
       </nav>
     </div>
@@ -162,7 +155,9 @@
     </div>
   </footer>
 
-  <button class="floating-cart" onclick="openCart()">🛒 <span id="count">0</span></button>
+  <button class="floating-cart" onclick="openCart()">
+    <span id="count">0</span>
+  </button>
 
   <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">WhatsApp</button>
 
@@ -179,7 +174,7 @@
     </div>
 
     <div class="cart-footer">
-      <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
+      <button class="send-order-btn" type="button">Send Order via WhatsApp</button>
     </div>
   </aside>
 
@@ -241,6 +236,30 @@
       return number ? `${number} KD Down Payment` : "0 KD Down Payment";
     }
 
+    function normalizeDevicesCount(value, title) {
+      const raw = String(value || "").trim();
+      if (raw) return raw;
+
+      const cleanTitle = String(title || "").trim();
+      if (!cleanTitle) return "1";
+
+      const parts = cleanTitle.split(/\s*\+\s*|\s*\/\s*/).filter(Boolean);
+      return String(parts.length || 1);
+    }
+
+    function calculateTotalPrice(product, monthlyText, durationText, downPaymentText) {
+      if (product.total_price) {
+        return formatMonthly(product.total_price);
+      }
+
+      const monthly = parseFloat(extractNumber(monthlyText)) || 0;
+      const months = parseFloat(extractNumber(durationText)) || 0;
+      const down = parseFloat(extractNumber(downPaymentText)) || 0;
+      const total = (monthly * months) + down;
+
+      return total ? `${total} KD` : "";
+    }
+
     function populateBrandFilter() {
       const select = document.getElementById("brandFilter");
       if (!select) return;
@@ -271,6 +290,9 @@
       const monthlyText = formatMonthly(product.monthly);
       const durationText = formatDuration(product.duration);
       const downPaymentText = formatDownPayment(product.down_payment);
+      const titleText = formatComboTitle(product.title || "");
+      const totalPriceText = calculateTotalPrice(product, monthlyText, durationText, downPaymentText);
+      const devicesCountText = normalizeDevicesCount(product.devices_count, titleText);
 
       const card = document.createElement("div");
       card.className = "product-card";
@@ -278,11 +300,11 @@
 
       card.innerHTML = `
         <div class="product-image">
-          <img src="${imagePath}" alt="${product.title || "Product"}" loading="lazy">
+          <img src="${imagePath}" alt="${titleText || "Product"}" loading="lazy">
         </div>
 
         <div class="product-body">
-          <div class="product-title">${formatComboTitle(product.title || "")}</div>
+          <div class="product-title">${titleText}</div>
 
           <div class="row">
             <div>
@@ -297,10 +319,15 @@
 
       card.querySelector(".btn").onclick = () => {
         addToCart({
-          title: formatComboTitle(product.title || "Product"),
-          price: `${monthlyText} Monthly`,
+          title: titleText || "Product",
+          image: imagePath,
+          price: monthlyText,
           months: `${durationText} • ${downPaymentText}`,
-          image: imagePath
+          monthly: monthlyText,
+          duration: durationText,
+          down_payment: downPaymentText,
+          total_price: totalPriceText,
+          devices_count: devicesCountText
         });
       };
 
