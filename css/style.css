@@ -26,19 +26,15 @@
   --cart-panel-border: rgba(15, 23, 42, 0.08);
   --cart-panel-shadow: -18px 0 60px rgba(2, 8, 23, 0.28);
   --cart-soft: #eef4ff;
-  --cart-soft-2: #f7faff;
   --cart-title: #0f172a;
   --cart-muted: #64748b;
   --cart-line: #e2e8f0;
-  --cart-success: #16a34a;
-  --cart-danger: #dc2626;
   --floating-cart-start: #2563eb;
   --floating-cart-end: #1d4ed8;
   --floating-wa-start: #22c55e;
   --floating-wa-end: #16a34a;
 }
 
-/* ===== BASE ===== */
 html {
   scroll-behavior: smooth;
 }
@@ -209,7 +205,7 @@ header.scrolled {
   padding: 0 6px;
 }
 
-/* ===== HOME PAGE ===== */
+/* ===== HOME ===== */
 .page-home .hero {
   padding: 60px 0 30px;
 }
@@ -359,7 +355,7 @@ header.scrolled {
   margin-bottom: 6px;
 }
 
-/* ===== CATALOG + ALL PRODUCTS HEAD ===== */
+/* ===== PAGE HEAD ===== */
 .page-catalog .page-head,
 .page-all-products .page-head {
   padding: 24px 0 12px;
@@ -377,7 +373,7 @@ header.scrolled {
   font-size: 15px;
 }
 
-/* ===== ALL PRODUCTS FILTER ===== */
+/* ===== FILTER ===== */
 .page-all-products .filter-bar {
   display: flex;
   gap: 8px;
@@ -405,7 +401,7 @@ header.scrolled {
   border-color: var(--primary);
 }
 
-/* ===== PRODUCTS COMMON ===== */
+/* ===== PRODUCTS ===== */
 .products-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -470,7 +466,7 @@ header.scrolled {
   font-size: 14px;
 }
 
-/* ===== HOME PRODUCT BUTTON ===== */
+/* ===== BUTTONS ===== */
 .page-home .cart-add-btn {
   display: inline-flex;
   align-items: center;
@@ -491,7 +487,6 @@ header.scrolled {
   background: var(--accent-dark);
 }
 
-/* ===== CATALOG + ALL PRODUCTS BUTTON ===== */
 .page-catalog .btn,
 .page-all-products .btn {
   background: var(--accent);
@@ -511,7 +506,7 @@ header.scrolled {
   background: var(--accent-dark);
 }
 
-/* ===== EMPTY ===== */
+/* ===== STATES ===== */
 .empty-state,
 .loading-state {
   border: 1px dashed rgba(255,255,255,0.18);
@@ -537,7 +532,7 @@ footer {
   flex-wrap: wrap;
 }
 
-/* ===== FLOATING WHATSAPP - DESKTOP ONLY ===== */
+/* ===== FLOATING WHATSAPP (DESKTOP) ===== */
 .floating-whatsapp {
   position: fixed;
   right: 18px;
@@ -556,9 +551,7 @@ footer {
   font-size: 15px;
   letter-spacing: 0.2px;
   border: 1px solid rgba(255,255,255,0.18);
-  box-shadow:
-    0 16px 35px rgba(22, 163, 74, 0.35),
-    0 6px 18px rgba(0,0,0,0.2);
+  box-shadow: 0 16px 35px rgba(22, 163, 74, 0.35), 0 6px 18px rgba(0,0,0,0.2);
   z-index: 1300;
   cursor: pointer;
   user-select: none;
@@ -573,16 +566,9 @@ footer {
 
 .floating-whatsapp:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 18px 40px rgba(22, 163, 74, 0.4),
-    0 8px 22px rgba(0,0,0,0.24);
 }
 
-.floating-whatsapp:active {
-  transform: scale(0.96);
-}
-
-/* ===== FLOATING CART - MOBILE ONLY ===== */
+/* ===== FLOATING CART (DESKTOP STYLE) ===== */
 .page-home .floating-cart,
 .page-catalog .floating-cart,
 .page-all-products .floating-cart {
@@ -592,8 +578,8 @@ footer {
   z-index: 1301;
   height: 62px;
   min-width: 62px;
-  padding: 0 22px;
-  display: none;
+  padding: 0 24px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
@@ -601,33 +587,33 @@ footer {
   border-radius: 999px;
   background: linear-gradient(135deg, var(--floating-cart-start), var(--floating-cart-end));
   color: #fff;
-  box-shadow:
-    0 16px 35px rgba(29, 78, 216, 0.35),
-    0 6px 18px rgba(0,0,0,0.2);
+  box-shadow: 0 16px 35px rgba(29, 78, 216, 0.35), 0 6px 18px rgba(0,0,0,0.2);
   font-weight: 800;
-  font-size: 18px;
+  font-size: 15px;
   cursor: pointer;
   user-select: none;
   transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.2s ease;
 }
 
-.page-home .floating-cart:hover,
-.page-catalog .floating-cart:hover,
-.page-all-products .floating-cart:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 18px 40px rgba(29, 78, 216, 0.4),
-    0 8px 22px rgba(0,0,0,0.24);
+.floating-cart-icon {
+  font-size: 18px;
+  line-height: 1;
 }
 
-.page-home .floating-cart span,
-.page-catalog .floating-cart span,
-.page-all-products .floating-cart span {
-  font-size: 16px;
+.floating-cart-label {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.page-home .floating-cart span#count,
+.page-catalog .floating-cart span#count,
+.page-all-products .floating-cart span#count {
+  font-size: 14px;
   line-height: 1;
   background: rgba(255,255,255,0.16);
-  min-width: 28px;
-  height: 28px;
+  min-width: 26px;
+  height: 26px;
   padding: 0 8px;
   border-radius: 999px;
   display: inline-flex;
@@ -636,7 +622,7 @@ footer {
   backdrop-filter: blur(8px);
 }
 
-/* ===== CART PANEL OVERLAY ===== */
+/* ===== CART OVERLAY ===== */
 .cart-panel-overlay {
   position: fixed;
   inset: 0;
@@ -794,7 +780,7 @@ footer {
   font-size: 14px;
 }
 
-/* ===== SELECTABLE LIST ===== */
+/* ===== SELECT LIST ===== */
 .cart-list-tools {
   display: flex;
   justify-content: space-between;
@@ -985,10 +971,6 @@ footer {
   transform: translateY(-1px);
 }
 
-.cart-action-btn:active {
-  transform: scale(0.98);
-}
-
 .cart-action-btn-primary {
   color: #fff;
   background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -1100,7 +1082,8 @@ footer {
   color: #dc2626;
 }
 
-.order-cancelled-btn {
+.order-cancelled-btn,
+.order-disabled-btn {
   background: #f8fafc;
   color: #94a3b8;
   cursor: not-allowed;
@@ -1211,10 +1194,6 @@ footer {
   cursor: pointer;
   margin-top: 10px;
   padding: 0 14px;
-}
-
-.auth-phone-box-global {
-  margin-top: 12px;
 }
 
 .auth-phone-box-global input {
@@ -1452,6 +1431,14 @@ footer {
   }
 }
 
+/* ===== IMAGE OPEN: HIDE HEADER/BARS ===== */
+body.image-open header,
+body.image-open .floating-cart,
+body.image-open .floating-whatsapp,
+body.image-open .mobile-app-bar-global {
+  display: none !important;
+}
+
 /* ===== DESKTOP ===== */
 @media (min-width: 900px) {
   .nav {
@@ -1496,7 +1483,7 @@ footer {
   .page-home .floating-cart,
   .page-catalog .floating-cart,
   .page-all-products .floating-cart {
-    display: none;
+    display: inline-flex;
   }
 
   .mobile-app-bar-global {
@@ -1593,10 +1580,7 @@ footer {
     font-size: 16px;
   }
 
-  .floating-whatsapp {
-    display: none !important;
-  }
-
+  .floating-whatsapp,
   .page-home .floating-cart,
   .page-catalog .floating-cart,
   .page-all-products .floating-cart {
@@ -1605,7 +1589,6 @@ footer {
 
   .cart-panel {
     top: 0;
-    bottom: auto;
     right: -100%;
     width: 100%;
     max-width: 100%;
@@ -1709,5 +1692,13 @@ footer {
     max-width: calc(100vw - 28px);
     text-align: center;
     white-space: normal;
+  }
+
+  /* ===== MOBILE ONLY: HIDE UI WHEN CART OPEN ===== */
+  body.cart-open header,
+  body.cart-open .floating-cart,
+  body.cart-open .floating-whatsapp,
+  body.cart-open .mobile-app-bar-global {
+    display: none !important;
   }
 }
