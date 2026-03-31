@@ -55,209 +55,303 @@
 </head>
 <body class="page-catalog">
 
-<header>
-  <div class="container nav">
-    <div class="brand">
-      <div class="brand-static">
-        <img src="/images/logo.png" class="logo">
-        <div class="brand-text">
-          <h1>CLICK COMPANY</h1>
-          <span id="loopText">You Can Depend on Us</span>
+  <header>
+    <div class="container nav">
+      <div class="brand">
+        <div class="brand-static">
+          <img src="/images/logo.png" alt="Click Company Logo" class="logo">
+          <div class="brand-text">
+            <h1>CLICK COMPANY</h1>
+            <span id="loopText">You Can Depend on Us</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <nav class="nav-links">
-      <div class="nav-row main-row">
-        <a href="index.html">Home</a>
-        <a href="phones.html">Phones</a>
-        <a href="tablets.html" class="active">Tablets</a>
-        <a href="laptops.html">Laptops</a>
-        <a href="accessories.html">Accessories</a>
+      <nav class="nav-links">
+        <div class="nav-row main-row">
+          <a href="index.html">Home</a>
+          <a href="phones.html">Phones</a>
+          <a href="tablets.html" class="active">Tablets</a>
+          <a href="laptops.html">Laptops</a>
+          <a href="accessories.html">Accessories</a>
 
-        <button class="cart-btn" onclick="openCart()">
-          Cart <span class="cart-badge" id="cart-count-top">0</span>
-        </button>
-      </div>
-
-      <div class="nav-row hot-row">
-        <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
-      </div>
-    </nav>
-  </div>
-</header>
-
-<section class="page-head">
-  <div class="container">
-    <h2>Tablets</h2>
-    <p>Browse all tablet offers.</p>
-
-    <div class="catalog-filter-wrap">
-      <label class="catalog-filter-label">Filter by Brand</label>
-      <select id="brandFilter" class="catalog-filter" onchange="applyBrandFilter()">
-        <option value="all">All Brands</option>
-      </select>
-    </div>
-  </div>
-</section>
-
-<section class="container">
-  <div class="products-grid" id="grid">
-    <div class="loading-state" id="loading-state">Loading products...</div>
-    <div class="empty-state" id="empty-state" style="display:none;">No products available yet.</div>
-  </div>
-</section>
-
-<footer>
-  <div class="container footer-box">
-    <div>©️ 2017–<span id="year"></span> Click Company</div>
-    <div>You Can Depend on Us</div>
-  </div>
-</footer>
-
-<script src="/js/cart.js"></script>
-
-<script>
-let renderedBrands = new Set();
-
-/* ================= FORMAT FIX ================= */
-
-function extractNumber(v){
-  const m = String(v||"").match(/\d+/);
-  return m ? m[0] : "";
-}
-
-function formatMonthly(v){
-  if(!v) return "";
-  if(/kd/i.test(v)) return v;
-  return extractNumber(v) + " KD";
-}
-
-function formatDuration(v){
-  if(!v) return "";
-  if(/month/i.test(v)) return v;
-  return extractNumber(v) + " Months";
-}
-
-function formatDown(v){
-  if(!v) return "0 KD Down Payment";
-  if(/down/i.test(v)) return v;
-  return extractNumber(v) + " KD Down Payment";
-}
-
-/* ================= BRAND ================= */
-
-function normalizeBrand(v){
-  if(!v) return "Other";
-  return v.replace(/\b\w/g,c=>c.toUpperCase());
-}
-
-function populateBrandFilter(){
-  const select=document.getElementById("brandFilter");
-  const brands=[...renderedBrands].sort();
-
-  select.innerHTML='<option value="all">All Brands</option>';
-
-  brands.forEach(b=>{
-    const o=document.createElement("option");
-    o.value=b;
-    o.textContent=b;
-    select.appendChild(o);
-  });
-}
-
-/* ================= CARD ================= */
-
-function buildCard(p){
-  const brand=normalizeBrand(p.brand);
-
-  const card=document.createElement("div");
-  card.className="product-card";
-  card.setAttribute("data-brand",brand);
-
-  card.innerHTML=`
-    <div class="product-image">
-      <img src="${p.image || '/images/logo.png'}">
-    </div>
-
-    <div class="product-body">
-      <div class="product-title">${p.title || ""}</div>
-
-      <div class="row">
-        <div>
-          <div class="price">${formatMonthly(p.monthly)}</div>
-          <div class="months">${formatDuration(p.duration)}</div>
-          <div class="months">${formatDown(p.down_payment)}</div>
+          <button class="cart-btn" onclick="openCart()">
+            Cart <span class="cart-badge" id="cart-count-top">0</span>
+          </button>
         </div>
-        <button class="btn">+ Add To Cart</button>
+
+        <div class="nav-row hot-row">
+          <a href="index.html#hot-offers" class="hot-link">Hot Offers</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-head">
+    <div class="container">
+      <h2>Tablets</h2>
+      <p>Browse all tablet offers.</p>
+
+      <div class="catalog-filter-wrap">
+        <label for="brandFilter" class="catalog-filter-label">Filter by Brand</label>
+        <select id="brandFilter" class="catalog-filter" onchange="applyBrandFilter()">
+          <option value="all">All Brands</option>
+        </select>
       </div>
     </div>
-  `;
+  </section>
 
-  card.querySelector(".btn").onclick=()=>{
-    addToCart({
-      title:p.title,
-      price:formatMonthly(p.monthly),
-      months:formatDuration(p.duration)+" • "+formatDown(p.down_payment),
-      image:p.image
+  <section class="container">
+    <div class="products-grid" id="grid">
+      <div class="loading-state" id="loading-state">Loading products...</div>
+      <div class="empty-state" id="empty-state" style="display:none;">No products available yet.</div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container footer-box">
+      <div>©️ 2017–<span id="year"></span> Click Company. All rights reserved.</div>
+      <div>You Can Depend on Us</div>
+    </div>
+  </footer>
+
+  <button class="floating-cart" onclick="openCart()"> <span id="count">0</span></button>
+
+  <button id="whatsappBtn" class="floating-whatsapp" onclick="openWhatsAppDirect()">WhatsApp</button>
+
+  <div class="cart-panel-overlay" id="cartOverlay" onclick="closeCart()"></div>
+
+  <aside class="cart-panel" id="cartPanel">
+    <div class="cart-header">
+      <h3>Your Cart</h3>
+      <button class="cart-close" onclick="closeCart()">×</button>
+    </div>
+
+    <div class="cart-items" id="cartItems">
+      <div class="cart-empty-text">Your cart is empty.</div>
+    </div>
+
+    <div class="cart-footer">
+      <button class="send-order-btn" onclick="sendOrderWhatsApp()">Send Order via WhatsApp</button>
+    </div>
+  </aside>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("year").textContent = new Date().getFullYear();
     });
-  };
+  </script>
 
-  return {card,brand};
-}
+  <script src="/js/cart.js"></script>
 
-/* ================= FILTER ================= */
+  <script>
+    let renderedBrands = new Set();
 
-function applyBrandFilter(){
-  const val=document.getElementById("brandFilter").value;
-  let visible=0;
-
-  document.querySelectorAll(".product-card").forEach(c=>{
-    const show = val==="all" || c.dataset.brand===val;
-    c.style.display=show?"":"none";
-    if(show) visible++;
-  });
-
-  const empty=document.getElementById("empty-state");
-  empty.style.display = visible? "none":"block";
-}
-
-/* ================= LOAD ================= */
-
-async function load(){
-  try{
-    const res=await fetch("/products/tablets/data.json",{cache:"no-store"});
-    const files=await res.json();
-
-    const results=await Promise.all(
-      files.map(f=>fetch(`/products/tablets/${f}`).then(r=>r.json()).catch(()=>null))
-    );
-
-    const data=results.filter(Boolean).filter(p=>p.available);
-
-    document.getElementById("loading-state").remove();
-
-    if(!data.length){
-      document.getElementById("empty-state").style.display="block";
-      return;
+    function extractNumber(v) {
+      const m = String(v || "").match(/\d+(\.\d+)?/);
+      return m ? m[0] : "";
     }
 
-    data.forEach(p=>{
-      const {card,brand}=buildCard(p);
-      document.getElementById("grid").appendChild(card);
-      renderedBrands.add(brand);
-    });
+    function formatMonthly(v) {
+      const raw = String(v || "").trim();
+      if (!raw) return "";
+      if (/kd/i.test(raw)) return raw;
+      const num = extractNumber(raw);
+      return num ? `${num} KD` : raw;
+    }
 
-    populateBrandFilter();
-    applyBrandFilter();
+    function formatDuration(v) {
+      const raw = String(v || "").trim();
+      if (!raw) return "";
+      if (/month/i.test(raw)) return raw;
+      const num = extractNumber(raw);
+      return num ? `${num} Months` : raw;
+    }
 
-  }catch(e){
-    console.error(e);
-  }
-}
+    function formatDown(v) {
+      const raw = String(v || "").trim();
+      if (!raw) return "0 KD Down Payment";
+      if (/down payment/i.test(raw)) return raw;
+      if (/kd/i.test(raw)) return `${raw} Down Payment`;
+      const num = extractNumber(raw);
+      return num ? `${num} KD Down Payment` : "0 KD Down Payment";
+    }
 
-load();
-</script>
+    function normalizeBrand(v) {
+      const raw = String(v || "").trim();
+      if (!raw) return "Other";
+
+      return raw
+        .replace(/\s*\/\s*/g, " / ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function populateBrandFilter() {
+      const select = document.getElementById("brandFilter");
+      const currentValue = select.value || "all";
+      const brands = [...renderedBrands].sort((a, b) => a.localeCompare(b));
+
+      select.innerHTML = '<option value="all">All Brands</option>';
+
+      brands.forEach(brand => {
+        const option = document.createElement("option");
+        option.value = brand;
+        option.textContent = brand;
+        select.appendChild(option);
+      });
+
+      if ([...select.options].some(option => option.value === currentValue)) {
+        select.value = currentValue;
+      } else {
+        select.value = "all";
+      }
+    }
+
+    function buildCard(p) {
+      const brand = normalizeBrand(p.brand);
+      const imagePath = (p.image || "/images/logo.png").trim();
+
+      const card = document.createElement("div");
+      card.className = "product-card";
+      card.setAttribute("data-brand", brand);
+
+      card.innerHTML = `
+        <div class="product-image">
+          <img src="${imagePath}" alt="${p.title || "Product"}" loading="lazy">
+        </div>
+
+        <div class="product-body">
+          <div class="product-title">${p.title || ""}</div>
+
+          <div class="row">
+            <div>
+              <div class="price">${formatMonthly(p.monthly)}</div>
+              <div class="months">${formatDuration(p.duration)}</div>
+              <div class="months">${formatDown(p.down_payment)}</div>
+            </div>
+            <button class="btn">+ Add To Cart</button>
+          </div>
+        </div>
+      `;
+
+      card.querySelector(".btn").onclick = () => {
+        addToCart({
+          title: p.title || "Product",
+          price: formatMonthly(p.monthly),
+          months: `${formatDuration(p.duration)} • ${formatDown(p.down_payment)}`,
+          image: imagePath
+        });
+      };
+
+      return { card, brand };
+    }
+
+    function applyBrandFilter() {
+      const val = document.getElementById("brandFilter").value;
+      let visible = 0;
+
+      document.querySelectorAll(".product-card").forEach(card => {
+        const show = val === "all" || card.dataset.brand === val;
+        card.style.display = show ? "" : "none";
+        if (show) visible++;
+      });
+
+      const empty = document.getElementById("empty-state");
+      empty.style.display = visible ? "none" : "";
+      if (!visible) {
+        empty.textContent = "No products available for this brand.";
+      }
+    }
+
+    async function load() {
+      try {
+        const res = await fetch("/products/tablets/data.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load tablets data.json");
+
+        const files = await res.json();
+        if (!Array.isArray(files)) throw new Error("tablets data.json must be an array");
+
+        const results = await Promise.all(
+          files.map(async file => {
+            try {
+              const response = await fetch(`/products/tablets/${file}`, { cache: "no-store" });
+              if (!response.ok) return null;
+              return await response.json();
+            } catch {
+              return null;
+            }
+          })
+        );
+
+        const data = results.filter(Boolean).filter(product => product.available === true);
+
+        const loading = document.getElementById("loading-state");
+        if (loading) loading.remove();
+
+        if (!data.length) {
+          document.getElementById("empty-state").style.display = "";
+          return;
+        }
+
+        data
+          .sort((a, b) => {
+            const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
+            const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
+            if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
+
+            const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
+            const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
+            if (aPriority !== bPriority) return aPriority - bPriority;
+
+            return String(a.title || "").localeCompare(String(b.title || ""));
+          })
+          .forEach(product => {
+            const { card, brand } = buildCard(product);
+            document.getElementById("grid").appendChild(card);
+            renderedBrands.add(brand);
+          });
+
+        populateBrandFilter();
+        applyBrandFilter();
+
+      } catch (e) {
+        console.error("Failed to load tablets:", e);
+
+        const loading = document.getElementById("loading-state");
+        if (loading) loading.remove();
+
+        const empty = document.getElementById("empty-state");
+        empty.style.display = "";
+        empty.textContent = "Failed to load products.";
+      }
+    }
+
+    load();
+  </script>
+
+  <script>
+    const texts = [
+      "You Can Depend on Us",
+      "Best Deals in Kuwait",
+      "Easy Monthly Installments",
+      "Fast Delivery"
+    ];
+
+    let i = 0;
+    const el = document.getElementById("loopText");
+
+    setInterval(() => {
+      if (!el) return;
+
+      el.style.opacity = 0;
+
+      setTimeout(() => {
+        i = (i + 1) % texts.length;
+        el.textContent = texts[i];
+        el.style.opacity = 1;
+      }, 400);
+    }, 3000);
+  </script>
 
 </body>
 </html>
