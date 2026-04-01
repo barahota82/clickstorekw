@@ -949,7 +949,7 @@
       ].join("\n");
     }).join("\n\n");
 
-    return `${getGreeting()}
+    return `${greeting}
 
 #ORDER
 Order Reference: ${order.id}
