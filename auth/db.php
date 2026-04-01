@@ -14,7 +14,7 @@ function db(): mysqli
     $conn = new mysqli(
         'localhost',
         'click_user',
-        'YOUR_DB_PASSWORD_HERE',
+        'Admin@Hem@3282',
         'click_db'
     );
 
