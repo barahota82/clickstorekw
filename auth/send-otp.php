@@ -30,11 +30,11 @@ $expires = date('Y-m-d H:i:s', time() + 600);
 
 $pdo = db();
 
-try {
-    $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
+$stmt = $pdo->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
+$stmt->execute([$email]);
+$user = $stmt->fetch();
 
+try {
     if ($user) {
         $stmt = $pdo->prepare("
             UPDATE customers SET
@@ -111,7 +111,7 @@ try {
     ]);
 } catch (Throwable $e) {
     json_response(false, [
-        'message' => 'OTP send failed',
+        'message' => 'Failed to send verification code',
         'error' => $e->getMessage()
     ], 500);
 }
