@@ -40,7 +40,8 @@ if ($user) {
         otp_code=?,
         otp_expires_at=?,
         is_verified=0,
-        email_verified_at=NULL
+        email_verified_at=NULL,
+        updated_at=NOW()
         WHERE id=?
     ");
     $stmt->execute([$fullName, $phone, $otp, $expires, $user['id']]);
@@ -55,13 +56,19 @@ if ($user) {
     $customerId = $pdo->lastInsertId();
 }
 
-// send mail
-smtp_send_mail(
-    $email,
-    $fullName,
-    'Your verification code',
-    "Code: $otp"
-);
+// send mail (FIXED)
+try {
+    smtp_send_mail(
+        $email,
+        $fullName,
+        'Your verification code',
+        "Code: $otp"
+    );
+} catch (Throwable $e) {
+    json_response(false, [
+        'message' => 'MAIL ERROR: ' . $e->getMessage()
+    ], 500);
+}
 
 // session
 $_SESSION['pending_customer_id'] = $customerId;
