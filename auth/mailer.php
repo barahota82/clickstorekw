@@ -1,6 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// ✅ تحميل بيانات الإيميل من ملف خارجي آمن
+$config = require __DIR__ . '/../.env.php';
+
+$smtpUser = $config['SMTP_USER'];
+$smtpPass = $config['SMTP_PASS'];
+
 function smtp_send_mail(
     string $toEmail,
     string $toName,
@@ -8,12 +14,13 @@ function smtp_send_mail(
     string $bodyText
 ): bool {
 
+    global $smtpUser, $smtpPass;
+
+    // ✅ استخدام السيرفر الداخلي
     $smtpHost = 'localhost';
     $smtpPort = 25;
-    $smtpUser = 'info@clickstorekw.com';
-    $smtpPass = 'ClickStore@2026#KW';
 
-    $fromEmail = 'info@clickstorekw.com';
+    $fromEmail = $smtpUser;
     $fromName  = 'Click Store KW';
 
     $socket = stream_socket_client(
@@ -33,7 +40,7 @@ function smtp_send_mail(
 
     smtp_command($socket, 'EHLO localhost', [250]);
 
-    // ✅ الحل هنا: AUTH بدون TLS
+    // ✅ تسجيل الدخول (Auth)
     smtp_command($socket, 'AUTH LOGIN', [334]);
     smtp_command($socket, base64_encode($smtpUser), [334]);
     smtp_command($socket, base64_encode($smtpPass), [235]);
