@@ -1,7 +1,3 @@
-/* =========================================
-   CLICK COMPANY - FINAL CART SYSTEM
-========================================= */
-
 (function () {
   "use strict";
 
@@ -20,6 +16,7 @@
 
   let whatsappSettings = { ...DEFAULT_WHATSAPP };
   let activeTab = "cart";
+  let customerSession = { logged_in: false, customer: null };
 
   let cart = safeParse(localStorage.getItem(STORAGE_KEYS.cart), []);
   let pendingCart = safeParse(localStorage.getItem(STORAGE_KEYS.pending), []);
@@ -27,6 +24,7 @@
 
   document.addEventListener("DOMContentLoaded", async function () {
     await loadWhatsAppSettings();
+    await syncCustomerSession();
 
     cart = cart.map(normalizeItem);
     pendingCart = pendingCart.map(normalizeItem);
@@ -38,14 +36,12 @@
     bindHeaderScrollEffect();
 
     saveAll();
+    await syncOrdersFromServer();
     updateAllBadges();
     updateAuthLabel();
     renderCartSystem();
   });
 
-  /* =========================
-     BASIC HELPERS
-  ========================= */
   function safeParse(value, fallback) {
     try {
       const parsed = JSON.parse(value);
@@ -66,8 +62,12 @@
   function normalizeOrder(order) {
     return {
       id: String(order.id || buildOrderId()).trim(),
+      db_id: order.db_id ? Number(order.db_id) : null,
       date: String(order.date || new Date().toLocaleString()).trim(),
       status: String(order.status || "Pending Delivery").trim(),
+      server_order: !!order.server_order,
+      has_promotional_gift: !!order.has_promotional_gift,
+      gift_label: String(order.gift_label || "").trim(),
       items: Array.isArray(order.items) ? order.items.map(normalizeItem) : []
     };
   }
@@ -79,10 +79,8 @@
       image: String(item.image || "/images/logo.png").trim(),
       quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
       checked: typeof item.checked === "boolean" ? item.checked : true,
-
       price: String(item.price || "").trim(),
       months: String(item.months || "").trim(),
-
       monthly: String(item.monthly || "").trim(),
       down_payment: String(item.down_payment || "").trim(),
       duration: String(item.duration || "").trim(),
@@ -231,9 +229,32 @@
     updateAuthLabel();
   }
 
-  /* =========================
-     WHATSAPP SETTINGS
-  ========================= */
+  async function fetchCustomerSession() {
+    try {
+      const res = await fetch("/auth/status.php", { cache: "no-store" });
+      const data = await res.json();
+      return data;
+    } catch {
+      return { logged_in: false, customer: null };
+    }
+  }
+
+  async function syncCustomerSession() {
+    customerSession = await fetchCustomerSession();
+
+    if (customerSession.logged_in && customerSession.customer) {
+      setUserData({
+        name: customerSession.customer.email || "Customer",
+        email: customerSession.customer.email || "",
+        full_name: customerSession.customer.full_name || "",
+        id: customerSession.customer.id || null,
+        method: "email_otp"
+      });
+    } else {
+      clearUserData();
+    }
+  }
+
   async function loadWhatsAppSettings() {
     try {
       const res = await fetch("/settings/whatsapp.md", { cache: "no-store" });
@@ -276,9 +297,6 @@
     }
   }
 
-  /* =========================
-     GLOBAL SYSTEMS
-  ========================= */
   function ensureGlobalSystems() {
     ensureCartTabs();
     ensureImageViewer();
@@ -346,21 +364,7 @@
       <div class="auth-box-global">
         <button type="button" class="auth-close-global" aria-label="Close" onclick="closeAuthModal()">×</button>
         <h3>Welcome 👋</h3>
-        <p class="auth-subtitle-global">Choose how you want to register.</p>
-
-        <button type="button" class="auth-option-global" onclick="authWithGmail()">
-          Continue with Gmail
-        </button>
-
-        <button type="button" class="auth-option-global" onclick="showPhoneRegister()">
-          Continue with Phone Number
-        </button>
-
-        <div class="auth-phone-box-global" id="authPhoneBoxGlobal" style="display:none;">
-          <input type="text" id="authPhoneName" placeholder="Your name">
-          <input type="text" id="authPhoneNumber" placeholder="Phone number">
-          <button type="button" class="auth-submit-global" onclick="submitPhoneRegister()">Continue</button>
-        </div>
+        <p class="auth-subtitle-global">Register with your email and WhatsApp number.</p>
 
         <div class="auth-user-box-global" id="authUserBoxGlobal" style="display:none;">
           <div class="auth-user-box-title">You are signed in</div>
@@ -458,6 +462,12 @@
         closeAuthModal();
       }
     });
+
+    document.addEventListener("customer-auth-updated", async function () {
+      await syncCustomerSession();
+      await syncOrdersFromServer();
+      renderCartSystem();
+    });
   }
 
   function bindHeaderScrollEffect() {
@@ -476,52 +486,31 @@
     onScroll();
   }
 
-  /* =========================
-     AUTH
-  ========================= */
   function updateAuthLabel() {
     const user = getUserData();
     const label = document.getElementById("mobileAuthLabel");
     const authUserName = document.getElementById("authUserBoxName");
     const authUserBox = document.getElementById("authUserBoxGlobal");
-    const phoneBox = document.getElementById("authPhoneBoxGlobal");
 
     if (label) {
-      label.textContent = user && user.name ? user.name : "Registration";
+      label.textContent = user && user.email ? user.email : "Registration";
     }
 
     if (authUserName) {
-      authUserName.textContent = user && user.name ? user.name : "";
+      authUserName.textContent = user && user.email ? user.email : "";
     }
 
-    if (authUserBox && phoneBox) {
-      if (user && user.name) {
-        authUserBox.style.display = "";
-        phoneBox.style.display = "none";
-      } else {
-        authUserBox.style.display = "none";
-      }
+    if (authUserBox) {
+      authUserBox.style.display = user && user.email ? "" : "none";
     }
   }
 
   window.openAuthModal = function () {
     const modal = document.getElementById("authModalGlobal");
-    const user = getUserData();
-    const userBox = document.getElementById("authUserBoxGlobal");
-    const phoneBox = document.getElementById("authPhoneBoxGlobal");
-
     if (!modal) return;
 
     modal.classList.add("active");
-
-    if (user && user.name) {
-      if (userBox) userBox.style.display = "";
-      if (phoneBox) phoneBox.style.display = "none";
-      updateAuthLabel();
-    } else {
-      if (userBox) userBox.style.display = "none";
-      if (phoneBox) phoneBox.style.display = "none";
-    }
+    document.dispatchEvent(new CustomEvent("customer-auth-opened"));
   };
 
   window.closeAuthModal = function () {
@@ -529,64 +518,6 @@
     if (modal) modal.classList.remove("active");
   };
 
-  window.showPhoneRegister = function () {
-    const box = document.getElementById("authPhoneBoxGlobal");
-    const userBox = document.getElementById("authUserBoxGlobal");
-    if (userBox) userBox.style.display = "none";
-    if (box) box.style.display = "block";
-  };
-
-  window.authWithGmail = function () {
-    const name = prompt("Enter your name");
-    if (!name || !name.trim()) return;
-
-    const email = prompt("Enter your Gmail");
-    if (!email || !email.trim()) return;
-
-    setUserData({
-      method: "gmail",
-      name: name.trim(),
-      email: email.trim()
-    });
-
-    showToast("Registration completed");
-    closeAuthModal();
-  };
-
-  window.submitPhoneRegister = function () {
-    const nameInput = document.getElementById("authPhoneName");
-    const phoneInput = document.getElementById("authPhoneNumber");
-
-    const name = nameInput ? nameInput.value.trim() : "";
-    const phone = phoneInput ? phoneInput.value.trim() : "";
-
-    if (!name || !phone) {
-      showToast("Please enter name and phone number");
-      return;
-    }
-
-    setUserData({
-      method: "phone",
-      name,
-      phone
-    });
-
-    if (nameInput) nameInput.value = "";
-    if (phoneInput) phoneInput.value = "";
-
-    showToast("Registration completed");
-    closeAuthModal();
-  };
-
-  window.logoutUser = function () {
-    clearUserData();
-    showToast("Signed out");
-    closeAuthModal();
-  };
-
-  /* =========================
-     IMAGE VIEWER
-  ========================= */
   window.openImageViewer = function (src) {
     const viewer = document.getElementById("globalImageViewer");
     const img = viewer ? viewer.querySelector(".global-image-viewer-img") : null;
@@ -603,9 +534,6 @@
     document.body.classList.remove("image-open");
   };
 
-  /* =========================
-     MOBILE BAR ACTIONS
-  ========================= */
   window.goHomePage = function () {
     window.location.href = "index.html";
   };
@@ -615,9 +543,6 @@
     openWhatsApp(message);
   };
 
-  /* =========================
-     COUNTS / OPEN / CLOSE CART
-  ========================= */
   function updateAllBadges() {
     const count = cart.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
     const ids = ["cart-count-top", "count", "cart-count-floating"];
@@ -656,9 +581,6 @@
     document.body.classList.remove("cart-open");
   };
 
-  /* =========================
-     TABS
-  ========================= */
   window.switchCartTab = function (tab) {
     activeTab = tab;
 
@@ -669,9 +591,6 @@
     renderCartSystem();
   };
 
-  /* =========================
-     ADD TO CART
-  ========================= */
   window.addToCart = function (item) {
     const normalized = normalizeItem(item);
 
@@ -696,9 +615,6 @@
     showToast("Added to cart");
   };
 
-  /* =========================
-     RENDER
-  ========================= */
   function renderCartSystem() {
     const itemsWrap = document.getElementById("cartItems");
     const footer = document.getElementById("cartFooterDynamic");
@@ -826,6 +742,9 @@
     const itemNames = (order.items || []).map(item => `<div class="order-offer-name">• ${escapeHTML(item.title)}</div>`).join("");
     const statusClass = getStatusClass(order.status);
     const isCancelled = String(order.status).toLowerCase() === "cancelled";
+    const giftHtml = order.has_promotional_gift && order.gift_label
+      ? `<div class="order-offer-name">🎁 ${escapeHTML(order.gift_label)}</div>`
+      : "";
 
     return `
       <div class="order-card-item">
@@ -835,6 +754,7 @@
         </div>
 
         <div class="order-offers-list">
+          ${giftHtml}
           ${itemNames}
         </div>
 
@@ -866,9 +786,6 @@
     return s;
   }
 
-  /* =========================
-     CHECKBOX / SELECT
-  ========================= */
   window.toggleItemSelection = function (type, index) {
     const list = type === "cart" ? cart : pendingCart;
     if (!list[index]) return;
@@ -887,9 +804,6 @@
     renderCartSystem();
   };
 
-  /* =========================
-     QUANTITY
-  ========================= */
   window.increaseItemQty = function (type, index) {
     const list = type === "cart" ? cart : pendingCart;
     if (!list[index]) return;
@@ -928,9 +842,6 @@
     renderCartSystem();
   };
 
-  /* =========================
-     EMPTY
-  ========================= */
   window.confirmEmptySection = function (type) {
     openConfirmModal({
       title: type === "cart" ? "Empty Cart" : "Empty Pending Cart",
@@ -949,9 +860,6 @@
     });
   };
 
-  /* =========================
-     PENDING
-  ========================= */
   function mergeIntoPending(item) {
     const existing = pendingCart.find(x =>
       x.title === item.title &&
@@ -987,47 +895,43 @@
     showToast("Selected offers moved to pending");
   };
 
-  /* =========================
-     SEND ORDER
-  ========================= */
-  window.sendSelectedOrder = function (type) {
-    const source = type === "cart" ? cart : pendingCart;
-    const selected = source.filter(item => item.checked);
-
-    if (!selected.length) {
-      showToast("Please select offers first");
+  async function syncOrdersFromServer() {
+    const user = getUserData();
+    if (!user || !user.email) {
+      const guestOnly = orders.filter(order => !order.server_order);
+      orders = guestOnly.map(normalizeOrder);
+      saveAll();
       return;
     }
 
-    const orderId = buildOrderId();
-    const orderDate = new Date().toLocaleString();
+    try {
+      const res = await fetch("/orders/list.php", { cache: "no-store" });
+      const data = await res.json();
 
-    const order = {
-      id: orderId,
-      date: orderDate,
-      status: "Pending Delivery",
-      items: selected.map(item => ({
-        ...item,
-        checked: false
-      }))
-    };
+      if (!data.ok || !Array.isArray(data.orders)) {
+        return;
+      }
 
-    orders.unshift(order);
+      const guestOnly = orders.filter(order => !order.server_order).map(normalizeOrder);
+      const serverOrders = data.orders.map(normalizeOrder);
 
-    if (type === "cart") {
-      cart = cart.filter(item => !item.checked);
-    } else {
-      pendingCart = pendingCart.filter(item => !item.checked);
+      const merged = [...serverOrders];
+      guestOnly.forEach(guestOrder => {
+        if (!merged.find(order => order.id === guestOrder.id)) {
+          merged.push(guestOrder);
+        }
+      });
+
+      orders = merged;
+      saveAll();
+    } catch (e) {
+      console.error("Order sync error:", e);
     }
+  }
 
-    saveAll();
-    renderCartSystem();
+  window.syncOrdersFromServer = syncOrdersFromServer;
 
-    const message = buildOrderWhatsappMessage(order);
-    openWhatsApp(message);
-  };
-
-  function buildOrderWhatsappMessage(order) {
+  function buildGuestOrderMessage(order) {
     const greeting = getGreeting();
 
     const lines = (order.items || []).map((item, idx) => {
@@ -1056,9 +960,101 @@ ${lines}
 Please confirm this order and proceed with processing.`;
   }
 
-  /* =========================
-     MY ORDERS ACTIONS
-  ========================= */
+  window.sendSelectedOrder = async function (type) {
+    const source = type === "cart" ? cart : pendingCart;
+    const selected = source.filter(item => item.checked);
+
+    if (!selected.length) {
+      showToast("Please select offers first");
+      return;
+    }
+
+    const user = getUserData();
+    const orderId = buildOrderId();
+    const orderDate = new Date().toLocaleString();
+
+    if (user && user.email) {
+      try {
+        const payload = {
+          order_number: orderId,
+          items: selected.map(item => ({
+            title: item.title,
+            image: item.image,
+            quantity: item.quantity,
+            monthly: item.monthly,
+            down_payment: item.down_payment,
+            duration: item.duration,
+            total_price: item.total_price,
+            devices_count: item.devices_count
+          }))
+        };
+
+        const res = await fetch("/orders/create.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          showToast(data.message || "Failed to create order");
+          return;
+        }
+
+        const serverOrder = normalizeOrder(data.order);
+
+        orders = [serverOrder, ...orders.filter(order => order.id !== serverOrder.id)];
+
+        if (type === "cart") {
+          cart = cart.filter(item => !item.checked);
+        } else {
+          pendingCart = pendingCart.filter(item => !item.checked);
+        }
+
+        saveAll();
+        renderCartSystem();
+
+        openWhatsApp(data.whatsapp_message || buildGuestOrderMessage(serverOrder));
+        return;
+      } catch (e) {
+        console.error(e);
+        showToast("Failed to send order");
+        return;
+      }
+    }
+
+    const guestOrder = normalizeOrder({
+      id: orderId,
+      date: orderDate,
+      status: "Pending Delivery",
+      server_order: false,
+      has_promotional_gift: false,
+      gift_label: "",
+      items: selected.map(item => ({
+        ...item,
+        checked: false
+      }))
+    });
+
+    orders.unshift(guestOrder);
+
+    if (type === "cart") {
+      cart = cart.filter(item => !item.checked);
+    } else {
+      pendingCart = pendingCart.filter(item => !item.checked);
+    }
+
+    saveAll();
+    renderCartSystem();
+
+    const message = buildGuestOrderMessage(guestOrder);
+    openWhatsApp(message);
+  };
+
   window.trackOrder = function (index) {
     const order = orders[index];
     if (!order) return;
@@ -1091,10 +1087,39 @@ Please update me with the current status of this order.`;
       text: "Are you sure you want to cancel this order?",
       confirmText: "Cancel Order",
       danger: true,
-      onConfirm: function () {
-        order.status = "Cancelled";
-        saveAll();
-        renderCartSystem();
+      onConfirm: async function () {
+        if (order.server_order) {
+          try {
+            const res = await fetch("/orders/cancel.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              credentials: "same-origin",
+              body: JSON.stringify({
+                order_number: order.id
+              })
+            });
+
+            const data = await res.json();
+            if (!data.ok) {
+              showToast(data.message || "Failed to cancel order");
+              return;
+            }
+
+            order.status = "Cancelled";
+            saveAll();
+            renderCartSystem();
+          } catch (e) {
+            console.error(e);
+            showToast("Failed to cancel order");
+            return;
+          }
+        } else {
+          order.status = "Cancelled";
+          saveAll();
+          renderCartSystem();
+        }
 
         const greeting = getGreeting();
         const offers = (order.items || []).map(item => `- ${item.title}`).join("\n");
@@ -1116,9 +1141,6 @@ Please confirm the cancellation.`;
     });
   };
 
-  /* =========================
-     CONFIRM MODAL
-  ========================= */
   function openConfirmModal(config) {
     ensureConfirmModal();
 
@@ -1157,9 +1179,6 @@ Please confirm the cancellation.`;
     modal.classList.add("active");
   }
 
-  /* =========================
-     TOAST
-  ========================= */
   function showToast(message) {
     const toast = document.getElementById("globalToast");
     if (!toast) return;
@@ -1174,4 +1193,6 @@ Please confirm the cancellation.`;
       toast.classList.remove("show");
     }, 2200);
   }
+
+  window.showToast = showToast;
 })();
