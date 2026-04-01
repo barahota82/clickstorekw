@@ -153,11 +153,16 @@
     `;
 
     const subtitle = authBox.querySelector(".auth-subtitle-global");
-    if (subtitle) {
-      subtitle.insertAdjacentElement("afterend", wrapper);
-    } else {
-      authBox.appendChild(wrapper);
-    }
+
+if (subtitle) {
+  // 🔥 نخفي الجملة القديمة
+  subtitle.style.display = "none";
+
+  // نحط الفورم مكانها
+  subtitle.insertAdjacentElement("afterend", wrapper);
+} else {
+  authBox.appendChild(wrapper);
+}
 
     const sendBtn = document.getElementById("sendOtpBtn");
     const verifyBtn = document.getElementById("verifyOtpBtn");
