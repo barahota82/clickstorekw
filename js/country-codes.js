@@ -1,5 +1,5 @@
 window.COUNTRY_CODES = [
-  { code: "+93", flag: "🇦🇫" },
+  { code: "+93", country: "Afghanistan", flag: "🇦🇫" },
   { code: "+355", country: "Albania", flag: "🇦🇱" },
   { code: "+213", country: "Algeria", flag: "🇩🇿" },
   { code: "+1-684", country: "American Samoa", flag: "🇦🇸" },
