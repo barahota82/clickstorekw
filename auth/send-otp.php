@@ -40,8 +40,7 @@ if ($user) {
         otp_code=?,
         otp_expires_at=?,
         is_verified=0,
-        email_verified_at=NULL,
-        updated_at=NOW()
+        email_verified_at=NULL
         WHERE id=?
     ");
     $stmt->execute([$fullName, $phone, $otp, $expires, $user['id']]);
@@ -56,7 +55,7 @@ if ($user) {
     $customerId = $pdo->lastInsertId();
 }
 
-// send mail (FIXED)
+// ✅ أهم تعديل هنا
 try {
     smtp_send_mail(
         $email,
