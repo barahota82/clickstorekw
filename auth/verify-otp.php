@@ -3,69 +3,64 @@ declare(strict_types=1);
 
 session_start();
 
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../config.php';
 
-require_post();
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    json_response(false, [
+        'message' => 'Invalid request method.'
+    ], 405);
+}
 
-$email = strtolower(clean_string($_POST['email'] ?? ''));
-$otp   = clean_string($_POST['otp'] ?? '');
+$email = strtolower(trim($_POST['email'] ?? ''));
+$otp   = trim($_POST['otp'] ?? '');
 
 if ($email === '' || $otp === '') {
-    json_response([
-        'ok' => false,
+    json_response(false, [
         'message' => 'Email and code are required.'
     ], 422);
 }
 
-$conn = db();
+$pdo = db();
 
-$stmt = $conn->prepare("
+$stmt = $pdo->prepare("
     SELECT id, full_name, phone, email, otp_code, otp_expires_at
     FROM customers
     WHERE email = ?
     LIMIT 1
 ");
-$stmt->bind_param('s', $email);
-$stmt->execute();
-$result = $stmt->get_result();
-$customer = $result->fetch_assoc();
-$stmt->close();
+$stmt->execute([$email]);
+$customer = $stmt->fetch();
 
 if (!$customer) {
-    json_response([
-        'ok' => false,
+    json_response(false, [
         'message' => 'Customer not found.'
     ], 404);
 }
 
 if ((string)$customer['otp_code'] !== $otp) {
-    json_response([
-        'ok' => false,
+    json_response(false, [
         'message' => 'Invalid verification code.'
     ], 422);
 }
 
 if (empty($customer['otp_expires_at']) || strtotime((string)$customer['otp_expires_at']) < time()) {
-    json_response([
-        'ok' => false,
+    json_response(false, [
         'message' => 'Verification code expired.'
     ], 422);
 }
 
 $customerId = (int)$customer['id'];
 
-$stmt = $conn->prepare("
+$stmt = $pdo->prepare("
     UPDATE customers
     SET is_verified = 1,
-        email_verified_at = CURRENT_TIMESTAMP,
+        email_verified_at = NOW(),
         otp_code = NULL,
         otp_expires_at = NULL,
-        updated_at = CURRENT_TIMESTAMP
+        updated_at = NOW()
     WHERE id = ?
 ");
-$stmt->bind_param('i', $customerId);
-$stmt->execute();
-$stmt->close();
+$stmt->execute([$customerId]);
 
 $_SESSION['customer_auth'] = [
     'id' => $customerId,
@@ -75,8 +70,7 @@ $_SESSION['customer_auth'] = [
     'is_verified' => 1
 ];
 
-json_response([
-    'ok' => true,
+json_response(true, [
     'message' => 'Verification completed successfully.',
     'customer' => $_SESSION['customer_auth']
 ]);
