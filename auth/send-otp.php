@@ -11,23 +11,21 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $fullName = trim($_POST['full_name'] ?? '');
-$phone    = trim($_POST['phone'] ?? '');
 $email    = strtolower(trim($_POST['email'] ?? ''));
+$country  = trim($_POST['country_code'] ?? '');
+$number   = trim($_POST['whatsapp'] ?? '');
 
-if ($fullName === '' || $phone === '' || $email === '') {
+if ($fullName === '' || $email === '' || $country === '' || $number === '') {
     json_response(false, ['message' => 'Fill all fields'], 422);
 }
 
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    json_response(false, ['message' => 'Invalid email'], 422);
-}
+$whatsappFull = $country . $number;
 
 $otp = random_int(100000, 999999);
 $expires = date('Y-m-d H:i:s', time() + 600);
 
 $pdo = db();
 
-// check existing
 $stmt = $pdo->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
 $stmt->execute([$email]);
 $user = $stmt->fetch();
@@ -36,42 +34,43 @@ if ($user) {
     $stmt = $pdo->prepare("
         UPDATE customers SET
         full_name=?,
-        phone=?,
+        whatsapp_country_code=?,
+        whatsapp_number=?,
+        whatsapp_full=?,
         otp_code=?,
         otp_expires_at=?,
-        is_verified=0,
-        email_verified_at=NULL
+        is_verified=0
         WHERE id=?
     ");
-    $stmt->execute([$fullName, $phone, $otp, $expires, $user['id']]);
-    $customerId = $user['id'];
+
+    $stmt->execute([
+        $fullName,
+        $country,
+        $number,
+        $whatsappFull,
+        $otp,
+        $expires,
+        $user['id']
+    ]);
+
 } else {
     $stmt = $pdo->prepare("
         INSERT INTO customers
-        (full_name, phone, whatsapp, email, otp_code, otp_expires_at, is_verified, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, 0, NOW(), NOW())
+        (full_name, email, whatsapp_country_code, whatsapp_number, whatsapp_full, otp_code, otp_expires_at, is_verified, installment_approved, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, NOW())
     ");
-    $stmt->execute([$fullName, $phone, $phone, $email, $otp, $expires]);
-    $customerId = $pdo->lastInsertId();
-}
 
-// ✅ أهم تعديل هنا
-try {
-    smtp_send_mail(
-        $email,
+    $stmt->execute([
         $fullName,
-        'Your verification code',
-        "Code: $otp"
-    );
-} catch (Throwable $e) {
-    json_response(false, [
-        'message' => 'MAIL ERROR: ' . $e->getMessage()
-    ], 500);
+        $email,
+        $country,
+        $number,
+        $whatsappFull,
+        $otp,
+        $expires
+    ]);
 }
 
-// session
-$_SESSION['pending_customer_id'] = $customerId;
+smtp_send_mail($email, $fullName, 'Verification Code', "Code: $otp");
 
-json_response(true, [
-    'message' => 'Code sent successfully'
-]);
+json_response(true, ['message' => 'Code sent successfully']);
