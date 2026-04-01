@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 declare(strict_types=1);
 
 session_start();
@@ -8,38 +6,44 @@ session_start();
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/mailer.php';
 
-require_post();
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    json_response(false, [
+        'message' => 'Invalid request method.'
+    ], 405);
+}
 
 $fullName = trim($_POST['full_name'] ?? '');
 $phone    = trim($_POST['phone'] ?? '');
 $email    = strtolower(trim($_POST['email'] ?? ''));
 
 if ($fullName === '' || $phone === '' || $email === '') {
-    json_response(false, ['message' => 'Please fill in all fields.'], 422);
+    json_response(false, [
+        'message' => 'Please fill in all fields.'
+    ], 422);
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    json_response(false, ['message' => 'Invalid email address.'], 422);
+    json_response(false, [
+        'message' => 'Invalid email address.'
+    ], 422);
 }
 
-$otp = random_int(100000, 999999);
+$otp = (string) random_int(100000, 999999);
 $expiresAt = date('Y-m-d H:i:s', time() + 600);
 
 $pdo = db();
 
-/* ===== CHECK EXISTING USER ===== */
 $stmt = $pdo->prepare("
-    SELECT id 
-    FROM customers 
-    WHERE email = ? 
+    SELECT id
+    FROM customers
+    WHERE email = ?
     LIMIT 1
 ");
 $stmt->execute([$email]);
 $existing = $stmt->fetch();
 
-/* ===== UPDATE OR INSERT ===== */
 if ($existing) {
-    $customerId = (int)$existing['id'];
+    $customerId = (int) $existing['id'];
 
     $stmt = $pdo->prepare("
         UPDATE customers
@@ -52,7 +56,6 @@ if ($existing) {
             updated_at = NOW()
         WHERE id = ?
     ");
-
     $stmt->execute([
         $fullName,
         $phone,
@@ -66,7 +69,6 @@ if ($existing) {
         (full_name, phone, whatsapp, email, otp_code, otp_expires_at, is_verified, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, 0, NOW(), NOW())
     ");
-
     $stmt->execute([
         $fullName,
         $phone,
@@ -76,27 +78,17 @@ if ($existing) {
         $expiresAt
     ]);
 
-    $customerId = (int)$pdo->lastInsertId();
+    $customerId = (int) $pdo->lastInsertId();
 }
 
-/* ===== SEND EMAIL ===== */
 $subject = 'Your verification code - Click Store KW';
 $body = "Hello {$fullName},\n\nYour verification code is: {$otp}\n\nThis code expires in 10 minutes.\n\nClick Store KW";
 
-try {
-    smtp_send_mail($email, $fullName, $subject, $body);
-} catch (Throwable $e) {
-    json_response(false, [
-        'message' => 'Email sending failed',
-        'error' => $e->getMessage()
-    ], 500);
-}
+smtp_send_mail($email, $fullName, $subject, $body);
 
-/* ===== SESSION ===== */
 $_SESSION['pending_customer_id'] = $customerId;
 $_SESSION['pending_customer_email'] = $email;
 
-/* ===== RESPONSE ===== */
 json_response(true, [
     'message' => 'Verification code sent successfully.'
 ]);
