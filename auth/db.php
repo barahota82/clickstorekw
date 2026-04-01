@@ -13,7 +13,7 @@ function db(): mysqli
 
     $conn = new mysqli(
         'localhost',
-        'click_user',
+        'clickst1_click_user',
         'Admin@Hem@3282',
         'click_db'
     );
