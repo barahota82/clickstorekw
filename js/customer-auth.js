@@ -3,24 +3,41 @@
 
   async function postForm(url, data) {
     const body = new URLSearchParams(data);
+
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
       },
-      body
+      body,
+      cache: "no-store"
     });
 
-    const json = await res.json();
+    const raw = await res.text();
+
+    let json;
+    try {
+      json = JSON.parse(raw);
+    } catch (e) {
+      throw new Error(raw || "Unexpected server response.");
+    }
+
     if (!res.ok) {
       throw new Error(json.message || "Request failed");
     }
+
     return json;
   }
 
   async function getStatus() {
     const res = await fetch("/auth/status.php", { cache: "no-store" });
-    return await res.json();
+    const raw = await res.text();
+
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      throw new Error(raw || "Invalid status response.");
+    }
   }
 
   function setLabel(name) {
@@ -47,27 +64,88 @@
         setLabel("");
       }
     } catch (e) {
-      console.error(e);
+      console.error("Status error:", e);
+    }
+  }
+
+  function hideOldAuthChoices() {
+    const authBox = document.querySelector(".auth-box-global");
+    if (!authBox) return;
+
+    const optionButtons = authBox.querySelectorAll(".auth-option-global");
+
+    if (optionButtons[0]) {
+      optionButtons[0].textContent = "Register with Email";
+      optionButtons[0].style.display = "none";
+    }
+
+    if (optionButtons[1]) {
+      optionButtons[1].style.display = "none";
+    }
+
+    const phoneBox = document.getElementById("authPhoneBoxGlobal");
+    if (phoneBox) {
+      phoneBox.style.display = "none";
     }
   }
 
   function ensureRealAuthUI() {
     const authBox = document.querySelector(".auth-box-global");
-    if (!authBox || document.getElementById("realCustomerAuthBox")) return;
+    if (!authBox) return;
+
+    hideOldAuthChoices();
+
+    if (document.getElementById("realCustomerAuthBox")) return;
 
     const wrapper = document.createElement("div");
     wrapper.id = "realCustomerAuthBox";
-    wrapper.style.display = "none";
+    wrapper.style.display = "block";
     wrapper.innerHTML = `
       <div style="margin-top:12px;">
-        <input type="text" id="realAuthName" placeholder="Full name" style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;">
-        <input type="text" id="realAuthPhone" placeholder="Phone number" style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;">
-        <input type="email" id="realAuthEmail" placeholder="Email address" style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;">
-        <button type="button" id="sendOtpBtn" style="width:100%;min-height:48px;border-radius:14px;border:0;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:800;cursor:pointer;margin-top:10px;">Send Verification Code</button>
+        <input
+          type="text"
+          id="realAuthName"
+          placeholder="Full name"
+          style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;"
+        >
+
+        <input
+          type="text"
+          id="realAuthPhone"
+          placeholder="Phone number"
+          style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;"
+        >
+
+        <input
+          type="email"
+          id="realAuthEmail"
+          placeholder="Email address"
+          style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;"
+        >
+
+        <button
+          type="button"
+          id="sendOtpBtn"
+          style="width:100%;min-height:48px;border-radius:14px;border:0;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:800;cursor:pointer;margin-top:10px;"
+        >
+          Send Verification Code
+        </button>
 
         <div id="otpSection" style="display:none;">
-          <input type="text" id="realAuthOtp" placeholder="Enter OTP code" style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;">
-          <button type="button" id="verifyOtpBtn" style="width:100%;min-height:48px;border-radius:14px;border:0;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;cursor:pointer;margin-top:10px;">Verify Code</button>
+          <input
+            type="text"
+            id="realAuthOtp"
+            placeholder="Enter OTP code"
+            style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;"
+          >
+
+          <button
+            type="button"
+            id="verifyOtpBtn"
+            style="width:100%;min-height:48px;border-radius:14px;border:0;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;cursor:pointer;margin-top:10px;"
+          >
+            Verify Code
+          </button>
         </div>
 
         <div id="realAuthMsg" style="margin-top:10px;font-size:14px;color:#475569;"></div>
@@ -84,49 +162,77 @@
     const sendBtn = document.getElementById("sendOtpBtn");
     const verifyBtn = document.getElementById("verifyOtpBtn");
 
-    sendBtn.addEventListener("click", async function () {
-      const full_name = document.getElementById("realAuthName").value.trim();
-      const phone = document.getElementById("realAuthPhone").value.trim();
-      const email = document.getElementById("realAuthEmail").value.trim();
-      const msg = document.getElementById("realAuthMsg");
-      const otpSection = document.getElementById("otpSection");
+    if (sendBtn) {
+      sendBtn.addEventListener("click", async function () {
+        const full_name = document.getElementById("realAuthName")?.value.trim() || "";
+        const phone = document.getElementById("realAuthPhone")?.value.trim() || "";
+        const email = document.getElementById("realAuthEmail")?.value.trim() || "";
+        const msg = document.getElementById("realAuthMsg");
+        const otpSection = document.getElementById("otpSection");
 
-      msg.textContent = "Sending verification code...";
-
-      try {
-        const data = await postForm("/auth/send-otp.php", { full_name, phone, email });
-        msg.textContent = data.message;
-        otpSection.style.display = "block";
-      } catch (e) {
-        msg.textContent = e.message;
-      }
-    });
-
-    verifyBtn.addEventListener("click", async function () {
-      const email = document.getElementById("realAuthEmail").value.trim();
-      const otp = document.getElementById("realAuthOtp").value.trim();
-      const msg = document.getElementById("realAuthMsg");
-
-      msg.textContent = "Verifying code...";
-
-      try {
-        const data = await postForm("/auth/verify-otp.php", { email, otp });
-        msg.textContent = data.message;
-        setLabel(data.customer.full_name || "Customer");
-
-        if (typeof window.showToast === "function") {
-          window.showToast("Registration completed");
+        if (msg) {
+          msg.style.color = "#475569";
+          msg.textContent = "Sending verification code...";
         }
 
-        setTimeout(function () {
-          if (typeof window.closeAuthModal === "function") {
-            window.closeAuthModal();
+        try {
+          const data = await postForm("/auth/send-otp.php", { full_name, phone, email });
+
+          if (msg) {
+            msg.style.color = "#16a34a";
+            msg.textContent = data.message || "Verification code sent.";
           }
-        }, 700);
-      } catch (e) {
-        msg.textContent = e.message;
-      }
-    });
+
+          if (otpSection) {
+            otpSection.style.display = "block";
+          }
+        } catch (e) {
+          if (msg) {
+            msg.style.color = "#dc2626";
+            msg.textContent = e.message || "Failed to send verification code.";
+          }
+        }
+      });
+    }
+
+    if (verifyBtn) {
+      verifyBtn.addEventListener("click", async function () {
+        const email = document.getElementById("realAuthEmail")?.value.trim() || "";
+        const otp = document.getElementById("realAuthOtp")?.value.trim() || "";
+        const msg = document.getElementById("realAuthMsg");
+
+        if (msg) {
+          msg.style.color = "#475569";
+          msg.textContent = "Verifying code...";
+        }
+
+        try {
+          const data = await postForm("/auth/verify-otp.php", { email, otp });
+
+          if (msg) {
+            msg.style.color = "#16a34a";
+            msg.textContent = data.message || "Verification completed successfully.";
+          }
+
+          setLabel((data.customer && data.customer.full_name) || "Customer");
+
+          if (typeof window.showToast === "function") {
+            window.showToast("Registration completed");
+          }
+
+          setTimeout(function () {
+            if (typeof window.closeAuthModal === "function") {
+              window.closeAuthModal();
+            }
+          }, 700);
+        } catch (e) {
+          if (msg) {
+            msg.style.color = "#dc2626";
+            msg.textContent = e.message || "Verification failed.";
+          }
+        }
+      });
+    }
   }
 
   function openRealAuthForm() {
@@ -155,11 +261,21 @@
 
   window.logoutUser = async function () {
     try {
-      await fetch("/auth/logout.php", { cache: "no-store" });
+      const res = await fetch("/auth/logout.php", { cache: "no-store" });
+      const raw = await res.text();
+
+      try {
+        JSON.parse(raw);
+      } catch (e) {
+        console.error("Logout response:", raw);
+      }
+
       setLabel("");
+
       if (typeof window.showToast === "function") {
         window.showToast("Signed out");
       }
+
       if (typeof window.closeAuthModal === "function") {
         window.closeAuthModal();
       }
