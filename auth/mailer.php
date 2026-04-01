@@ -7,15 +7,17 @@ function smtp_send_mail(
     string $subject,
     string $bodyText
 ): bool {
+
     $smtpHost = 'mail.clickstorekw.com';
-    $smtpPort = 587;
+    $smtpPort = 465;
     $smtpUser = 'info@clickstorekw.com';
     $smtpPass = 'ClickStore@2026#KW';
+
     $fromEmail = 'info@clickstorekw.com';
     $fromName  = 'Click Store KW';
 
     $socket = stream_socket_client(
-        "tcp://{$smtpHost}:{$smtpPort}",
+        "ssl://{$smtpHost}:{$smtpPort}",
         $errno,
         $errstr,
         30
@@ -30,13 +32,7 @@ function smtp_send_mail(
     smtp_expect($socket, [220]);
 
     smtp_command($socket, 'EHLO clickstorekw.com', [250]);
-    smtp_command($socket, 'STARTTLS', [220]);
 
-    if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-        throw new RuntimeException('Failed to enable TLS encryption.');
-    }
-
-    smtp_command($socket, 'EHLO clickstorekw.com', [250]);
     smtp_command($socket, 'AUTH LOGIN', [334]);
     smtp_command($socket, base64_encode($smtpUser), [334]);
     smtp_command($socket, base64_encode($smtpPass), [235]);
