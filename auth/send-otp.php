@@ -15,7 +15,7 @@ $email    = strtolower(clean_string($_POST['email'] ?? ''));
 if ($fullName === '' || $phone === '' || $email === '') {
     json_response([
         'ok' => false,
-        'message' => 'Name, phone, and email are required.'
+        'message' => 'Please fill in all fields.'
     ], 422);
 }
 
@@ -26,72 +26,63 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     ], 422);
 }
 
-if (!preg_match('/^[0-9+\-\s]{6,20}$/', $phone)) {
-    json_response([
-        'ok' => false,
-        'message' => 'Invalid phone number.'
-    ], 422);
-}
-
-$conn = db();
-
-$stmt = $conn->prepare("SELECT id, full_name, phone, email, is_verified FROM customers WHERE email = ? LIMIT 1");
-$stmt->bind_param('s', $email);
-$stmt->execute();
-$result = $stmt->get_result();
-$customer = $result->fetch_assoc();
-$stmt->close();
-
 $otp = generate_otp(6);
 $expiresAt = date('Y-m-d H:i:s', time() + 10 * 60);
 
-if ($customer) {
-    $customerId = (int)$customer['id'];
+$conn = db();
+
+$stmt = $conn->prepare("
+    SELECT id
+    FROM customers
+    WHERE email = ?
+    LIMIT 1
+");
+$stmt->bind_param('s', $email);
+$stmt->execute();
+$result = $stmt->get_result();
+$existing = $result->fetch_assoc();
+$stmt->close();
+
+if ($existing) {
+    $customerId = (int) $existing['id'];
 
     $stmt = $conn->prepare("
         UPDATE customers
-        SET full_name = ?, phone = ?, otp_code = ?, otp_expires_at = ?, is_verified = 0, email_verified_at = NULL, updated_at = CURRENT_TIMESTAMP
+        SET full_name = ?,
+            phone = ?,
+            otp_code = ?,
+            otp_expires_at = ?,
+            is_verified = 0,
+            email_verified_at = NULL,
+            updated_at = NOW()
         WHERE id = ?
     ");
     $stmt->bind_param('ssssi', $fullName, $phone, $otp, $expiresAt, $customerId);
     $stmt->execute();
     $stmt->close();
 } else {
+    $whatsapp = $phone;
+
     $stmt = $conn->prepare("
-        INSERT INTO customers (full_name, phone, email, otp_code, otp_expires_at, is_verified, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        INSERT INTO customers
+        (full_name, phone, whatsapp, email, otp_code, otp_expires_at, is_verified, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 0, NOW(), NOW())
     ");
-    $stmt->bind_param('sssss', $fullName, $phone, $email, $otp, $expiresAt);
+    $stmt->bind_param('ssssss', $fullName, $phone, $whatsapp, $email, $otp, $expiresAt);
     $stmt->execute();
     $customerId = $stmt->insert_id;
     $stmt->close();
 }
 
-$subject = 'Your Click Store KW verification code';
-$body = "Hello {$fullName},
+$subject = 'Your verification code - Click Store KW';
+$body = "Hello {$fullName},\n\nYour verification code is: {$otp}\n\nThis code expires in 10 minutes.\n\nClick Store KW";
 
-Your verification code is: {$otp}
+smtp_send_mail($email, $fullName, $subject, $body);
 
-This code will expire in 10 minutes.
+$_SESSION['pending_customer_id'] = $customerId;
+$_SESSION['pending_customer_email'] = $email;
 
-If you did not request this code, please ignore this message.
-
-Click Store KW";
-
-try {
-    smtp_send_mail($email, $fullName, $subject, $body);
-
-    $_SESSION['pending_customer_email'] = $email;
-
-    json_response([
-        'ok' => true,
-        'message' => 'Verification code sent successfully.',
-        'email' => $email
-    ]);
-} catch (Throwable $e) {
-    json_response([
-        'ok' => false,
-        'message' => 'Failed to send verification email.',
-        'error' => $e->getMessage()
-    ], 500);
-}
+json_response([
+    'ok' => true,
+    'message' => 'Verification code sent successfully.'
+]);
