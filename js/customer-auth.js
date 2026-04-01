@@ -1,6 +1,111 @@
 (function () {
   "use strict";
 
+  const USER_STORAGE_KEY = "click_company_user_v2";
+
+  function injectAuthStyles() {
+    if (document.getElementById("customer-auth-injected-style")) return;
+
+    const style = document.createElement("style");
+    style.id = "customer-auth-injected-style";
+    style.textContent = `
+      #realCustomerAuthBox,
+      #realCustomerAuthBox * {
+        box-sizing: border-box !important;
+      }
+
+      #realCustomerAuthBox {
+        width: 100% !important;
+        display: block !important;
+        margin-top: 12px !important;
+      }
+
+      #realCustomerAuthBox .auth-real-input,
+      #realCustomerAuthBox .auth-real-select,
+      #realCustomerAuthBox .auth-real-button {
+        width: 100% !important;
+        min-width: 0 !important;
+        font-family: inherit !important;
+        border-radius: 14px !important;
+        border: 1px solid #e5e7eb !important;
+        outline: none !important;
+        box-shadow: none !important;
+        box-sizing: border-box !important;
+      }
+
+      #realCustomerAuthBox .auth-real-input,
+      #realCustomerAuthBox .auth-real-select {
+        height: 52px !important;
+        padding: 0 14px !important;
+        font-size: 16px !important;
+        color: #111827 !important;
+        background: #fff !important;
+      }
+
+      #realCustomerAuthBox .auth-real-row {
+        display: flex !important;
+        gap: 8px !important;
+        align-items: stretch !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+      }
+
+      #realCustomerAuthBox .auth-real-select-wrap {
+        flex: 0 0 42% !important;
+        min-width: 0 !important;
+      }
+
+      #realCustomerAuthBox .auth-real-number-wrap {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+      }
+
+      #realCustomerAuthBox .auth-real-button {
+        min-height: 50px !important;
+        border: 0 !important;
+        color: #fff !important;
+        font-size: 16px !important;
+        font-weight: 800 !important;
+        cursor: pointer !important;
+      }
+
+      #realCustomerAuthBox .auth-real-send {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+      }
+
+      #realCustomerAuthBox .auth-real-verify {
+        background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+      }
+
+      #realCustomerAuthBox .auth-real-msg {
+        margin-top: 10px !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+      }
+
+      @media (max-width: 640px) {
+        #realCustomerAuthBox .auth-real-row {
+          flex-direction: row !important;
+        }
+
+        #realCustomerAuthBox .auth-real-select-wrap {
+          flex-basis: 44% !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function setLocalUser(user) {
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    document.dispatchEvent(new CustomEvent("customer-auth-updated", { detail: user }));
+  }
+
+  function clearLocalUser() {
+    localStorage.removeItem(USER_STORAGE_KEY);
+    document.dispatchEvent(new CustomEvent("customer-auth-updated", { detail: null }));
+  }
+
   async function postForm(url, data) {
     const body = new URLSearchParams(data);
 
@@ -22,7 +127,7 @@
       throw new Error(raw || "Unexpected server response.");
     }
 
-    if (!res.ok) {
+    if (!res.ok || !json.ok) {
       throw new Error(json.message || "Request failed");
     }
 
@@ -44,7 +149,6 @@
     const mobileLabel = document.getElementById("mobileAuthLabel");
     const authBoxName = document.getElementById("authUserBoxName");
     const userBox = document.getElementById("authUserBoxGlobal");
-    const phoneBox = document.getElementById("authPhoneBoxGlobal");
     const customBox = document.getElementById("realCustomerAuthBox");
 
     const finalValue = value || "Registration";
@@ -52,23 +156,8 @@
     if (mobileLabel) mobileLabel.textContent = finalValue;
     if (authBoxName) authBoxName.textContent = value || "";
 
-    if (userBox && value) userBox.style.display = "";
-    if (phoneBox) phoneBox.style.display = "none";
-    if (customBox && value) customBox.style.display = "none";
-  }
-
-  async function refreshCustomerStatus() {
-    try {
-      const data = await getStatus();
-
-      if (data.logged_in && data.customer) {
-        setLabel(data.customer.email || "Customer");
-      } else {
-        setLabel("");
-      }
-    } catch (e) {
-      console.error("Status error:", e);
-    }
+    if (userBox) userBox.style.display = value ? "" : "none";
+    if (customBox) customBox.style.display = value ? "none" : "";
   }
 
   function hideOldAuthChoices() {
@@ -77,48 +166,16 @@
 
     const subtitle = authBox.querySelector(".auth-subtitle-global");
     if (subtitle) {
-      subtitle.style.display = "none";
+      subtitle.textContent = "Register with your email and WhatsApp number.";
+      subtitle.style.display = "block";
     }
 
-    const optionButtons = authBox.querySelectorAll(".auth-option-global");
-    optionButtons.forEach(function (btn) {
-      btn.style.display = "none";
+    authBox.querySelectorAll(".auth-option-global").forEach(el => {
+      el.style.display = "none";
     });
 
     const phoneBox = document.getElementById("authPhoneBoxGlobal");
-    if (phoneBox) {
-      phoneBox.style.display = "none";
-    }
-
-    const userBox = document.getElementById("authUserBoxGlobal");
-    if (userBox) {
-      userBox.style.display = "none";
-    }
-
-    const allButtons = authBox.querySelectorAll("button");
-    allButtons.forEach(function (btn) {
-      const text = (btn.textContent || "").trim().toLowerCase();
-
-      if (
-        text.includes("continue with gmail") ||
-        text.includes("continue with phone number")
-      ) {
-        btn.style.display = "none";
-      }
-    });
-
-    const allDivs = authBox.querySelectorAll("div");
-    allDivs.forEach(function (el) {
-      const text = (el.textContent || "").trim().toLowerCase();
-
-      if (
-        text === "continue with gmail" ||
-        text === "continue with phone number" ||
-        text.includes("choose how you want to register")
-      ) {
-        el.style.display = "none";
-      }
-    });
+    if (phoneBox) phoneBox.style.display = "none";
   }
 
   function buildCountryOptions(select) {
@@ -141,7 +198,49 @@
     });
   }
 
+  function getCurrentLocalUser() {
+    try {
+      return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || "null");
+    } catch {
+      return null;
+    }
+  }
+
+  async function refreshCustomerStatus() {
+    try {
+      const data = await getStatus();
+
+      if (data.logged_in && data.customer) {
+        const user = {
+          name: data.customer.email || "Customer",
+          email: data.customer.email || "",
+          full_name: data.customer.full_name || "",
+          id: data.customer.id || null,
+          method: "email_otp"
+        };
+
+        setLocalUser(user);
+        setLabel(user.email || "Customer");
+
+        if (typeof window.syncOrdersFromServer === "function") {
+          await window.syncOrdersFromServer();
+        }
+      } else {
+        clearLocalUser();
+        setLabel("");
+
+        if (typeof window.syncOrdersFromServer === "function") {
+          await window.syncOrdersFromServer();
+        }
+      }
+    } catch (e) {
+      console.error("Status error:", e);
+    }
+  }
+
   function ensureRealAuthUI() {
+    injectAuthStyles();
+
     const authBox = document.querySelector(".auth-box-global");
     if (!authBox) return;
 
@@ -152,70 +251,77 @@
     if (!wrapper) {
       wrapper = document.createElement("div");
       wrapper.id = "realCustomerAuthBox";
-      wrapper.style.display = "block";
       wrapper.innerHTML = `
-        <div style="margin-top:12px;">
-          <input
-            type="text"
-            id="realAuthName"
-            placeholder="Full name"
-            style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;"
-          >
+        <input
+          type="text"
+          id="realAuthName"
+          class="auth-real-input"
+          placeholder="Full name"
+        >
 
-          <div style="display:flex;gap:8px;margin-top:10px;">
+        <div class="auth-real-row">
+          <div class="auth-real-select-wrap">
             <select
               id="realAuthCountryCode"
-              style="width:38%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 10px;background:#fff;"
+              class="auth-real-select"
             ></select>
+          </div>
 
+          <div class="auth-real-number-wrap">
             <input
               type="text"
               id="realAuthWhatsappNumber"
+              class="auth-real-input"
               placeholder="WhatsApp number"
-              style="width:62%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;"
             >
           </div>
+        </div>
 
+        <input
+          type="email"
+          id="realAuthEmail"
+          class="auth-real-input"
+          placeholder="Email address"
+          style="margin-top:10px;"
+        >
+
+        <button
+          type="button"
+          id="sendOtpBtn"
+          class="auth-real-button auth-real-send"
+          style="margin-top:10px;"
+        >
+          Send Verification Code
+        </button>
+
+        <div id="otpSection" style="display:none;">
           <input
-            type="email"
-            id="realAuthEmail"
-            placeholder="Email address"
-            style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;"
+            type="text"
+            id="realAuthOtp"
+            class="auth-real-input"
+            placeholder="Enter OTP code"
+            style="margin-top:10px;"
           >
 
           <button
             type="button"
-            id="sendOtpBtn"
-            style="width:100%;min-height:48px;border-radius:14px;border:0;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:800;cursor:pointer;margin-top:10px;"
+            id="verifyOtpBtn"
+            class="auth-real-button auth-real-verify"
+            style="margin-top:10px;"
           >
-            Send Verification Code
+            Verify Code
           </button>
-
-          <div id="otpSection" style="display:none;">
-            <input
-              type="text"
-              id="realAuthOtp"
-              placeholder="Enter OTP code"
-              style="width:100%;height:46px;border-radius:12px;border:1px solid #e5e7eb;padding:0 12px;margin-top:10px;"
-            >
-
-            <button
-              type="button"
-              id="verifyOtpBtn"
-              style="width:100%;min-height:48px;border-radius:14px;border:0;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;cursor:pointer;margin-top:10px;"
-            >
-              Verify Code
-            </button>
-          </div>
-
-          <div id="realAuthMsg" style="margin-top:10px;font-size:14px;color:#475569;"></div>
         </div>
-      `;
 
+        <div id="realAuthMsg" class="auth-real-msg"></div>
+      `;
       authBox.appendChild(wrapper);
     }
 
     buildCountryOptions(document.getElementById("realAuthCountryCode"));
+
+    const user = getCurrentLocalUser();
+    setLabel(user && user.email ? user.email : "");
 
     const sendBtn = document.getElementById("sendOtpBtn");
     const verifyBtn = document.getElementById("verifyOtpBtn");
@@ -230,6 +336,14 @@
         const email = document.getElementById("realAuthEmail")?.value.trim() || "";
         const msg = document.getElementById("realAuthMsg");
         const otpSection = document.getElementById("otpSection");
+
+        if (!full_name || !country_code || !whatsapp_number || !email) {
+          if (msg) {
+            msg.style.color = "#dc2626";
+            msg.textContent = "Fill all fields first.";
+          }
+          return;
+        }
 
         if (msg) {
           msg.style.color = "#475569";
@@ -269,6 +383,14 @@
         const otp = document.getElementById("realAuthOtp")?.value.trim() || "";
         const msg = document.getElementById("realAuthMsg");
 
+        if (!email || !otp) {
+          if (msg) {
+            msg.style.color = "#dc2626";
+            msg.textContent = "Enter email and OTP code.";
+          }
+          return;
+        }
+
         if (msg) {
           msg.style.color = "#475569";
           msg.textContent = "Verifying code...";
@@ -282,11 +404,24 @@
             msg.textContent = data.message || "Verification completed successfully.";
           }
 
-          await refreshCustomerStatus();
-          setLabel((data.customer && data.customer.email) || "Customer");
+          if (data.customer) {
+            setLocalUser({
+              name: data.customer.email || "Customer",
+              email: data.customer.email || "",
+              full_name: data.customer.full_name || "",
+              id: data.customer.id || null,
+              method: "email_otp"
+            });
+
+            setLabel(data.customer.email || "Customer");
+          }
 
           if (typeof window.showToast === "function") {
             window.showToast("Registration completed");
+          }
+
+          if (typeof window.syncOrdersFromServer === "function") {
+            await window.syncOrdersFromServer();
           }
 
           setTimeout(function () {
@@ -307,10 +442,15 @@
   window.logoutUser = async function () {
     try {
       await fetch("/auth/logout.php", { cache: "no-store" });
+      clearLocalUser();
       setLabel("");
 
       if (typeof window.showToast === "function") {
         window.showToast("Signed out");
+      }
+
+      if (typeof window.syncOrdersFromServer === "function") {
+        await window.syncOrdersFromServer();
       }
 
       if (typeof window.closeAuthModal === "function") {
@@ -325,12 +465,13 @@
     const timer = setInterval(function () {
       const modal = document.getElementById("authModalGlobal");
       if (modal) {
-        hideOldAuthChoices();
         ensureRealAuthUI();
         clearInterval(timer);
       }
-    }, 300);
+    }, 250);
 
     refreshCustomerStatus();
   });
+
+  document.addEventListener("customer-auth-opened", ensureRealAuthUI);
 })();
