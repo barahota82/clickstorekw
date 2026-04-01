@@ -8,16 +8,18 @@ function smtp_send_mail(
     string $bodyText
 ): bool {
 
-    $smtpHost = 'mail.clickstorekw.com';
-    $smtpPort = 465;
+    // ✅ استخدام السيرفر الداخلي (MailEnable في Plesk)
+    $smtpHost = 'localhost';
+    $smtpPort = 25;
     $smtpUser = 'info@clickstorekw.com';
     $smtpPass = 'ClickStore@2026#KW';
 
     $fromEmail = 'info@clickstorekw.com';
     $fromName  = 'Click Store KW';
 
+    // ✅ اتصال عادي بدون SSL أو TLS
     $socket = stream_socket_client(
-        "ssl://{$smtpHost}:{$smtpPort}",
+        "tcp://{$smtpHost}:{$smtpPort}",
         $errno,
         $errstr,
         30
@@ -31,11 +33,10 @@ function smtp_send_mail(
 
     smtp_expect($socket, [220]);
 
-    smtp_command($socket, 'EHLO clickstorekw.com', [250]);
+    smtp_command($socket, 'EHLO localhost', [250]);
 
-    smtp_command($socket, 'AUTH LOGIN', [334]);
-    smtp_command($socket, base64_encode($smtpUser), [334]);
-    smtp_command($socket, base64_encode($smtpPass), [235]);
+    // ⚠️ MailEnable غالبًا لا يحتاج AUTH داخلي
+    // لذلك لن نستخدم AUTH هنا
 
     smtp_command($socket, 'MAIL FROM:<' . $fromEmail . '>', [250]);
     smtp_command($socket, 'RCPT TO:<' . $toEmail . '>', [250, 251]);
