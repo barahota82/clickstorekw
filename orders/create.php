@@ -1,0 +1,301 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../config.php';
+
+require_post();
+require_customer_auth_json();
+
+$data = get_request_json();
+$items = $data['items'] ?? [];
+$orderNumber = trim((string)($data['order_number'] ?? ''));
+
+if (!is_array($items) || count($items) === 0) {
+    json_response(false, ['message' => 'No items selected'], 422);
+}
+
+$customerId = current_customer_id();
+$pdo = db();
+
+$customerStmt = $pdo->prepare("SELECT * FROM customers WHERE id = ? LIMIT 1");
+$customerStmt->execute([$customerId]);
+$customer = $customerStmt->fetch();
+
+if (!$customer) {
+    json_response(false, ['message' => 'Customer not found'], 404);
+}
+
+if ($orderNumber === '') {
+    $orderNumber = generate_order_number();
+}
+
+$countStmt = $pdo->prepare("
+    SELECT COUNT(*) AS total_orders
+    FROM orders
+    WHERE customer_id = ?
+      AND status IN ('pending', 'sent', 'completed')
+");
+$countStmt->execute([$customerId]);
+$countRow = $countStmt->fetch();
+
+$isFirstOrder = ((int)($countRow['total_orders'] ?? 0) === 0) ? 1 : 0;
+
+$giftEnabled = get_setting_bool('first_order_gift_enabled', true);
+$giftLabel = trim((string)get_setting('first_order_gift_label', 'هدية إضافية لأول طلب'));
+$hasGift = ($giftEnabled && $isFirstOrder === 1) ? 1 : 0;
+
+$subtotal = 0.000;
+$normalizedItems = [];
+
+foreach ($items as $item) {
+    if (!is_array($item)) {
+        continue;
+    }
+
+    $title = trim((string)($item['title'] ?? 'Offer'));
+    $qty = max(1, (int)($item['quantity'] ?? 1));
+    $monthly = parse_money_to_decimal($item['monthly'] ?? '');
+    $downPayment = parse_money_to_decimal($item['down_payment'] ?? '');
+    $duration = max(1, (int)parse_money_to_decimal($item['duration'] ?? '1'));
+    $lineTotal = parse_money_to_decimal($item['total_price'] ?? 0);
+
+    if ($lineTotal <= 0) {
+        $lineTotal = (($monthly * $duration) + $downPayment) * $qty;
+    }
+
+    $subtotal += $lineTotal;
+
+    $normalizedItems[] = [
+        'product_id' => null,
+        'product_title' => $title,
+        'product_sku' => null,
+        'product_image' => trim((string)($item['image'] ?? '')),
+        'qty' => $qty,
+        'unit_price' => $qty > 0 ? round($lineTotal / $qty, 3) : 0.000,
+        'line_total' => round($lineTotal, 3),
+        'down_payment' => round($downPayment, 3),
+        'monthly_amount' => round($monthly, 3),
+        'duration_months' => $duration,
+        'devices_count' => max(1, (int)($item['devices_count'] ?? 1)),
+        'frontend_item' => [
+            'title' => $title,
+            'image' => trim((string)($item['image'] ?? '')),
+            'quantity' => $qty,
+            'monthly' => $item['monthly'] ?? '',
+            'down_payment' => $item['down_payment'] ?? '',
+            'duration' => $item['duration'] ?? '',
+            'total_price' => $item['total_price'] ?? '',
+            'devices_count' => $item['devices_count'] ?? 1,
+            'checked' => false
+        ]
+    ];
+}
+
+if (count($normalizedItems) === 0) {
+    json_response(false, ['message' => 'No valid items found'], 422);
+}
+
+$totalAmount = round($subtotal, 3);
+
+try {
+    $pdo->beginTransaction();
+
+    $orderStmt = $pdo->prepare("
+        INSERT INTO orders
+        (
+            customer_id,
+            customer_name_snapshot,
+            customer_email_snapshot,
+            customer_whatsapp_snapshot,
+            order_number,
+            status,
+            subtotal_amount,
+            discount_amount,
+            delivery_amount,
+            total_amount,
+            currency_code,
+            source_channel,
+            is_first_order,
+            has_promotional_gift,
+            gift_label,
+            notes,
+            created_at,
+            updated_at
+        )
+        VALUES
+        (
+            :customer_id,
+            :customer_name_snapshot,
+            :customer_email_snapshot,
+            :customer_whatsapp_snapshot,
+            :order_number,
+            'pending',
+            :subtotal_amount,
+            0.000,
+            0.000,
+            :total_amount,
+            'KWD',
+            'website',
+            :is_first_order,
+            :has_promotional_gift,
+            :gift_label,
+            NULL,
+            NOW(),
+            NOW()
+        )
+    ");
+
+    $orderStmt->execute([
+        'customer_id' => $customerId,
+        'customer_name_snapshot' => (string)$customer['full_name'],
+        'customer_email_snapshot' => (string)$customer['email'],
+        'customer_whatsapp_snapshot' => (string)($customer['whatsapp_full'] ?? ''),
+        'order_number' => $orderNumber,
+        'subtotal_amount' => $subtotal,
+        'total_amount' => $totalAmount,
+        'is_first_order' => $isFirstOrder,
+        'has_promotional_gift' => $hasGift,
+        'gift_label' => $hasGift ? $giftLabel : null,
+    ]);
+
+    $orderId = (int)$pdo->lastInsertId();
+
+    $itemStmt = $pdo->prepare("
+        INSERT INTO order_items
+        (
+            order_id,
+            product_id,
+            product_title,
+            product_sku,
+            product_image,
+            qty,
+            unit_price,
+            line_total,
+            down_payment,
+            monthly_amount,
+            duration_months,
+            devices_count,
+            created_at
+        )
+        VALUES
+        (
+            :order_id,
+            :product_id,
+            :product_title,
+            :product_sku,
+            :product_image,
+            :qty,
+            :unit_price,
+            :line_total,
+            :down_payment,
+            :monthly_amount,
+            :duration_months,
+            :devices_count,
+            NOW()
+        )
+    ");
+
+    foreach ($normalizedItems as $item) {
+        $itemStmt->execute([
+            'order_id' => $orderId,
+            'product_id' => $item['product_id'],
+            'product_title' => $item['product_title'],
+            'product_sku' => $item['product_sku'],
+            'product_image' => $item['product_image'],
+            'qty' => $item['qty'],
+            'unit_price' => $item['unit_price'],
+            'line_total' => $item['line_total'],
+            'down_payment' => $item['down_payment'],
+            'monthly_amount' => $item['monthly_amount'],
+            'duration_months' => $item['duration_months'],
+            'devices_count' => $item['devices_count'],
+        ]);
+    }
+
+    $logStmt = $pdo->prepare("
+        INSERT INTO order_status_logs
+        (
+            order_id,
+            old_status,
+            new_status,
+            changed_by,
+            notes,
+            created_at
+        )
+        VALUES
+        (
+            :order_id,
+            NULL,
+            'pending',
+            NULL,
+            'Order created from website',
+            NOW()
+        )
+    ");
+    $logStmt->execute(['order_id' => $orderId]);
+
+    $pdo->commit();
+
+    $frontendOrder = [
+        'id' => $orderNumber,
+        'db_id' => $orderId,
+        'date' => date('Y-m-d h:i A'),
+        'status' => 'Pending Delivery',
+        'server_order' => true,
+        'has_promotional_gift' => (bool)$hasGift,
+        'gift_label' => $hasGift ? $giftLabel : '',
+        'items' => array_map(fn($row) => $row['frontend_item'], $normalizedItems),
+    ];
+
+    $giftText = $hasGift ? "\n🎁 Gift: {$giftLabel}" : '';
+
+    $whatsLines = [];
+    foreach ($frontendOrder['items'] as $idx => $item) {
+        $imageUrl = trim((string)$item['image']);
+        if ($imageUrl !== '' && !preg_match('#^https?://#i', $imageUrl)) {
+            $imageUrl = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $imageUrl;
+        }
+
+        $whatsLines[] = implode("\n", [
+            "🔹 Offer " . ($idx + 1),
+            "Offer Name: " . $item['title'],
+            "Devices in Offer: " . ($item['devices_count'] ?: 1),
+            "Quantity: " . $item['quantity'],
+            "Down Payment: " . ($item['down_payment'] ?: '0 KD Down Payment'),
+            "Monthly Installment: " . ($item['monthly'] ?: ''),
+            "Months: " . ($item['duration'] ?: ''),
+            "Total Price: " . ($item['total_price'] ?: ''),
+            "Image: " . $imageUrl
+        ]);
+    }
+
+    $whatsappMessage = implode("\n\n", [
+        "Welcome to Click Company 👋",
+        "",
+        "#ORDER",
+        "Order Reference: {$orderNumber}",
+        "Customer Name: " . (string)$customer['full_name'],
+        "Customer Email: " . (string)$customer['email'],
+        "Customer WhatsApp: " . (string)($customer['whatsapp_full'] ?? ''),
+        "Order Date: " . date('Y-m-d h:i A'),
+        $giftText,
+        implode("\n\n", $whatsLines),
+        "",
+        "Please confirm this order and proceed with processing."
+    ]);
+
+    json_response(true, [
+        'message' => 'Order created successfully',
+        'order' => $frontendOrder,
+        'whatsapp_message' => $whatsappMessage
+    ]);
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    json_response(false, [
+        'message' => 'Failed to create order',
+        'error' => $e->getMessage()
+    ], 500);
+}
