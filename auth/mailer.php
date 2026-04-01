@@ -8,15 +8,14 @@ function smtp_send_mail(
     string $bodyText
 ): bool {
     $smtpHost = 'mail.clickstorekw.com';
-    $smtpPort = 465;
+    $smtpPort = 587;
     $smtpUser = 'info@clickstorekw.com';
     $smtpPass = 'ClickStore@2026#KW';
     $fromEmail = 'info@clickstorekw.com';
     $fromName  = 'Click Store KW';
 
-    $socket = @fsockopen(
-        'ssl://' . $smtpHost,
-        $smtpPort,
+    $socket = stream_socket_client(
+        "tcp://{$smtpHost}:{$smtpPort}",
         $errno,
         $errstr,
         30
@@ -29,6 +28,13 @@ function smtp_send_mail(
     stream_set_timeout($socket, 30);
 
     smtp_expect($socket, [220]);
+
+    smtp_command($socket, 'EHLO clickstorekw.com', [250]);
+    smtp_command($socket, 'STARTTLS', [220]);
+
+    if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+        throw new RuntimeException('Failed to enable TLS encryption.');
+    }
 
     smtp_command($socket, 'EHLO clickstorekw.com', [250]);
     smtp_command($socket, 'AUTH LOGIN', [334]);
@@ -68,8 +74,10 @@ function smtp_command($socket, string $command, array $expectedCodes): void
 function smtp_expect($socket, array $expectedCodes): void
 {
     $response = '';
+
     while (($line = fgets($socket, 515)) !== false) {
         $response .= $line;
+
         if (preg_match('/^\d{3}\s/', $line)) {
             break;
         }
