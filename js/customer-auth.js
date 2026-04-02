@@ -2,7 +2,6 @@
   "use strict";
 
   const USER_STORAGE_KEY = "click_company_user_v2";
-  const VERIFY_TOKEN_STORAGE_KEY = "click_company_verify_token_v1";
 
   function injectAuthStyles() {
     if (document.getElementById("customer-auth-injected-style")) return;
@@ -111,14 +110,13 @@
     const body = new URLSearchParams(data);
 
     const res = await fetch(url, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-  },
-  body,
-  cache: "no-store",
-  credentials: "same-origin"
-});
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+      },
+      body,
+      cache: "no-store"
+    });
 
     const raw = await res.text();
 
@@ -137,10 +135,7 @@
   }
 
   async function getStatus() {
-    const res = await fetch("/auth/status.php", {
-  cache: "no-store",
-  credentials: "same-origin"
-});
+    const res = await fetch("/auth/status.php", { cache: "no-store" });
     const raw = await res.text();
 
     try {
@@ -357,25 +352,20 @@
 
         try {
           const data = await postForm("/auth/send-otp.php", {
-  full_name,
-  email,
-  country_code,
-  whatsapp: whatsapp_number
-});
+            full_name,
+            email,
+            country_code,
+            whatsapp: whatsapp_number
+          });
 
-if (data.verification_token) {
-  localStorage.setItem(VERIFY_TOKEN_STORAGE_KEY, data.verification_token);
-}
+          if (msg) {
+            msg.style.color = "#16a34a";
+            msg.textContent = data.message || "Verification code sent.";
+          }
 
-if (msg) {
-  msg.style.color = "#16a34a";
-  msg.textContent = data.message || "Verification code sent.";
-}
-
-if (otpSection) {
-  otpSection.style.display = "block";
-}
-          
+          if (otpSection) {
+            otpSection.style.display = "block";
+          }
         } catch (e) {
           if (msg) {
             msg.style.color = "#dc2626";
@@ -407,13 +397,7 @@ if (otpSection) {
         }
 
         try {
-          const verification_token = localStorage.getItem(VERIFY_TOKEN_STORAGE_KEY) || "";
-
-          const data = await postForm("/auth/verify-otp.php", {
-           email,
-           otp,
-           verification_token
-        });
+          const data = await postForm("/auth/verify-otp.php", { email, otp });
 
           if (msg) {
             msg.style.color = "#16a34a";
@@ -421,18 +405,16 @@ if (otpSection) {
           }
 
           if (data.customer) {
-          localStorage.removeItem(VERIFY_TOKEN_STORAGE_KEY);
+            setLocalUser({
+              name: data.customer.email || "Customer",
+              email: data.customer.email || "",
+              full_name: data.customer.full_name || "",
+              id: data.customer.id || null,
+              method: "email_otp"
+            });
 
-       setLocalUser({
-        name: data.customer.email || "Customer",
-        email: data.customer.email || "",
-        full_name: data.customer.full_name || "",
-        id: data.customer.id || null,
-        method: "email_otp"
-     });
-
-  setLabel(data.customer.email || "Customer");
-}
+            setLabel(data.customer.email || "Customer");
+          }
 
           if (typeof window.showToast === "function") {
             window.showToast("Registration completed");
@@ -458,11 +440,10 @@ if (otpSection) {
   }
 
   window.logoutUser = async function () {
-  try {
-    await fetch("/auth/logout.php", { cache: "no-store" });
-    clearLocalUser();
-    localStorage.removeItem(VERIFY_TOKEN_STORAGE_KEY);
-    setLabel("");
+    try {
+      await fetch("/auth/logout.php", { cache: "no-store" });
+      clearLocalUser();
+      setLabel("");
 
       if (typeof window.showToast === "function") {
         window.showToast("Signed out");
