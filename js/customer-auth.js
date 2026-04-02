@@ -2,6 +2,7 @@
   "use strict";
 
   const USER_STORAGE_KEY = "click_company_user_v2";
+  const VERIFY_TOKEN_STORAGE_KEY = "click_company_verify_token_v1";
 
   function injectAuthStyles() {
     if (document.getElementById("customer-auth-injected-style")) return;
@@ -356,20 +357,25 @@
 
         try {
           const data = await postForm("/auth/send-otp.php", {
-            full_name,
-            email,
-            country_code,
-            whatsapp: whatsapp_number
-          });
+  full_name,
+  email,
+  country_code,
+  whatsapp: whatsapp_number
+});
 
-          if (msg) {
-            msg.style.color = "#16a34a";
-            msg.textContent = data.message || "Verification code sent.";
-          }
+if (data.verification_token) {
+  localStorage.setItem(VERIFY_TOKEN_STORAGE_KEY, data.verification_token);
+}
 
-          if (otpSection) {
-            otpSection.style.display = "block";
-          }
+if (msg) {
+  msg.style.color = "#16a34a";
+  msg.textContent = data.message || "Verification code sent.";
+}
+
+if (otpSection) {
+  otpSection.style.display = "block";
+}
+          
         } catch (e) {
           if (msg) {
             msg.style.color = "#dc2626";
@@ -401,7 +407,13 @@
         }
 
         try {
-          const data = await postForm("/auth/verify-otp.php", { email, otp });
+          const verification_token = localStorage.getItem(VERIFY_TOKEN_STORAGE_KEY) || "";
+
+          const data = await postForm("/auth/verify-otp.php", {
+           email,
+           otp,
+           verification_token
+        });
 
           if (msg) {
             msg.style.color = "#16a34a";
@@ -409,16 +421,18 @@
           }
 
           if (data.customer) {
-            setLocalUser({
-              name: data.customer.email || "Customer",
-              email: data.customer.email || "",
-              full_name: data.customer.full_name || "",
-              id: data.customer.id || null,
-              method: "email_otp"
-            });
+          localStorage.removeItem(VERIFY_TOKEN_STORAGE_KEY);
 
-            setLabel(data.customer.email || "Customer");
-          }
+       setLocalUser({
+        name: data.customer.email || "Customer",
+        email: data.customer.email || "",
+        full_name: data.customer.full_name || "",
+        id: data.customer.id || null,
+        method: "email_otp"
+     });
+
+  setLabel(data.customer.email || "Customer");
+}
 
           if (typeof window.showToast === "function") {
             window.showToast("Registration completed");
@@ -444,13 +458,11 @@
   }
 
   window.logoutUser = async function () {
-    try {
-      await fetch("/auth/logout.php", {
-  cache: "no-store",
-  credentials: "same-origin"
-});
-      clearLocalUser();
-      setLabel("");
+  try {
+    await fetch("/auth/logout.php", { cache: "no-store" });
+    clearLocalUser();
+    localStorage.removeItem(VERIFY_TOKEN_STORAGE_KEY);
+    setLabel("");
 
       if (typeof window.showToast === "function") {
         window.showToast("Signed out");
