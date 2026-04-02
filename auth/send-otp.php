@@ -28,83 +28,35 @@ $whatsappFull = $country . $numberDigits;
 $otp = (string) random_int(100000, 999999);
 $expires = date('Y-m-d H:i:s', time() + 600);
 
-$pdo = db();
-
-$stmt = $pdo->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
-$stmt->execute([$email]);
-$user = $stmt->fetch();
-
 try {
-    if ($user) {
-        $stmt = $pdo->prepare("
-            UPDATE customers SET
-                full_name = ?,
-                phone = ?,
-                whatsapp_country_code = ?,
-                whatsapp_number = ?,
-                whatsapp_full = ?,
-                whatsapp = ?,
-                otp_code = ?,
-                otp_expires_at = ?,
-                is_verified = 0,
-                email_verified_at = NULL,
-                updated_at = NOW()
-            WHERE id = ?
-        ");
+    $pdo = db();
 
-        $stmt->execute([
-            $fullName,
-            $numberDigits,
-            $country,
-            $numberDigits,
-            $whatsappFull,
-            $numberDigits,
-            $otp,
-            $expires,
-            (int)$user['id']
-        ]);
+    $stmt = $pdo->prepare("
+        SELECT id, is_verified
+        FROM customers
+        WHERE email = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$email]);
+    $existingCustomer = $stmt->fetch();
 
-        $customerId = (int)$user['id'];
-    } else {
-        $stmt = $pdo->prepare("
-            INSERT INTO customers
-            (
-                full_name,
-                phone,
-                whatsapp_country_code,
-                whatsapp_number,
-                whatsapp_full,
-                whatsapp,
-                email,
-                otp_code,
-                otp_expires_at,
-                is_verified,
-                installment_approved,
-                created_at,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NOW(), NOW())
-        ");
-
-        $stmt->execute([
-            $fullName,
-            $numberDigits,
-            $country,
-            $numberDigits,
-            $whatsappFull,
-            $numberDigits,
-            $email,
-            $otp,
-            $expires
-        ]);
-
-        $customerId = (int)$pdo->lastInsertId();
+    if ($existingCustomer && (int)$existingCustomer['is_verified'] === 1) {
+        json_response(false, ['message' => 'This email is already registered and verified'], 422);
     }
 
     smtp_send_mail($email, $fullName, 'Verification Code', "Code: {$otp}");
 
-    $_SESSION['pending_customer_id'] = $customerId;
-    $_SESSION['pending_customer_email'] = $email;
+    $_SESSION['pending_customer_auth'] = [
+        'full_name' => $fullName,
+        'email' => $email,
+        'phone' => $numberDigits,
+        'whatsapp_country_code' => $country,
+        'whatsapp_number' => $numberDigits,
+        'whatsapp_full' => $whatsappFull,
+        'whatsapp' => $numberDigits,
+        'otp_code' => $otp,
+        'otp_expires_at' => $expires
+    ];
 
     json_response(true, [
         'message' => 'Code sent successfully'
