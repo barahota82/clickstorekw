@@ -16,54 +16,87 @@ if ($fullName === '' || $email === '' || $country === '' || $number === '') {
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    json_response(false, ['message' => 'Invalid email address'], 422);
+    json_response(false, ['message' => 'Invalid email'], 422);
 }
 
 $numberDigits = preg_replace('/\D+/', '', $number);
-if ($numberDigits === '') {
-    json_response(false, ['message' => 'Invalid WhatsApp number'], 422);
-}
-
 $whatsappFull = $country . $numberDigits;
+
 $otp = (string) random_int(100000, 999999);
 $expires = date('Y-m-d H:i:s', time() + 600);
 
+$pdo = db();
+
+$stmt = $pdo->prepare("SELECT id FROM customers WHERE email = ? LIMIT 1");
+$stmt->execute([$email]);
+$user = $stmt->fetch();
+
 try {
-    $pdo = db();
 
-    $stmt = $pdo->prepare("
-        SELECT id, is_verified
-        FROM customers
-        WHERE email = ?
-        LIMIT 1
-    ");
-    $stmt->execute([$email]);
-    $existingCustomer = $stmt->fetch();
+    if ($user) {
+        // تحديث بدون phone و whatsapp
+        $stmt = $pdo->prepare("
+            UPDATE customers SET
+                full_name = ?,
+                whatsapp_country_code = ?,
+                whatsapp_number = ?,
+                whatsapp_full = ?,
+                otp_code = ?,
+                otp_expires_at = ?,
+                is_verified = 0,
+                email_verified_at = NULL,
+                updated_at = NOW()
+            WHERE id = ?
+        ");
 
-    if ($existingCustomer && (int)$existingCustomer['is_verified'] === 1) {
-        json_response(false, ['message' => 'This email is already registered and verified'], 422);
+        $stmt->execute([
+            $fullName,
+            $country,
+            $numberDigits,
+            $whatsappFull,
+            $otp,
+            $expires,
+            (int)$user['id']
+        ]);
+
+    } else {
+        // إدخال جديد
+        $stmt = $pdo->prepare("
+            INSERT INTO customers
+            (
+                full_name,
+                whatsapp_country_code,
+                whatsapp_number,
+                whatsapp_full,
+                email,
+                otp_code,
+                otp_expires_at,
+                is_verified,
+                installment_approved,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, NOW(), NOW())
+        ");
+
+        $stmt->execute([
+            $fullName,
+            $country,
+            $numberDigits,
+            $whatsappFull,
+            $email,
+            $otp,
+            $expires
+        ]);
     }
 
     smtp_send_mail($email, $fullName, 'Verification Code', "Code: {$otp}");
 
-    $_SESSION['pending_customer_auth'] = [
-        'full_name' => $fullName,
-        'email' => $email,
-        'phone' => $numberDigits,
-        'whatsapp_country_code' => $country,
-        'whatsapp_number' => $numberDigits,
-        'whatsapp_full' => $whatsappFull,
-        'whatsapp' => $numberDigits,
-        'otp_code' => $otp,
-        'otp_expires_at' => $expires
-    ];
+    json_response(true, ['message' => 'Code sent']);
 
-    json_response(true, [
-        'message' => 'Code sent successfully'
-    ]);
 } catch (Throwable $e) {
     json_response(false, [
-        'message' => 'Failed to send verification code',
+        'message' => 'Server error',
         'error' => $e->getMessage()
     ], 500);
 }
