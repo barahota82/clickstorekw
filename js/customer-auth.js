@@ -3,88 +3,9 @@
 
   const USER_STORAGE_KEY = "click_company_user_v2";
 
-  function injectAuthStyles() {
-    if (document.getElementById("customer-auth-injected-style")) return;
-
-    const style = document.createElement("style");
-    style.id = "customer-auth-injected-style";
-    style.textContent = `
-      #realCustomerAuthBox,
-      #realCustomerAuthBox * {
-        box-sizing: border-box !important;
-      }
-
-      #realCustomerAuthBox {
-        width: 100% !important;
-        display: block !important;
-        margin-top: 12px !important;
-      }
-
-      #realCustomerAuthBox .auth-real-input,
-      #realCustomerAuthBox .auth-real-select,
-      #realCustomerAuthBox .auth-real-button {
-        width: 100% !important;
-        min-width: 0 !important;
-        font-family: inherit !important;
-        border-radius: 14px !important;
-        border: 1px solid #e5e7eb !important;
-        outline: none !important;
-        box-shadow: none !important;
-        box-sizing: border-box !important;
-      }
-
-      #realCustomerAuthBox .auth-real-input,
-      #realCustomerAuthBox .auth-real-select {
-        height: 52px !important;
-        padding: 0 14px !important;
-        font-size: 16px !important;
-        color: #111827 !important;
-        background: #fff !important;
-      }
-
-      #realCustomerAuthBox .auth-real-row {
-        display: flex !important;
-        gap: 8px !important;
-        align-items: stretch !important;
-        width: 100% !important;
-        margin-top: 10px !important;
-      }
-
-      #realCustomerAuthBox .auth-real-select-wrap {
-        flex: 0 0 42% !important;
-        min-width: 0 !important;
-      }
-
-      #realCustomerAuthBox .auth-real-number-wrap {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-      }
-
-      #realCustomerAuthBox .auth-real-button {
-        min-height: 50px !important;
-        border: 0 !important;
-        color: #fff !important;
-        font-size: 16px !important;
-        font-weight: 800 !important;
-        cursor: pointer !important;
-      }
-
-      #realCustomerAuthBox .auth-real-send {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-      }
-
-      #realCustomerAuthBox .auth-real-verify {
-        background: linear-gradient(135deg, #22c55e, #16a34a) !important;
-      }
-
-      #realCustomerAuthBox .auth-real-msg {
-        margin-top: 10px !important;
-        font-size: 14px !important;
-        line-height: 1.6 !important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
+  let currentMode = "signin";
+  let verifyMode = "";
+  let verifyEmail = "";
 
   function setLocalUser(user) {
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
@@ -143,19 +64,24 @@
     }
   }
 
-  function setLabel(value) {
+  function setTopAuthLabel(value) {
     const mobileLabel = document.getElementById("mobileAuthLabel");
-    const authBoxName = document.getElementById("authUserBoxName");
+    const authUserName = document.getElementById("authUserBoxName");
     const userBox = document.getElementById("authUserBoxGlobal");
-    const customBox = document.getElementById("realCustomerAuthBox");
 
     const finalValue = value || "Registration";
 
-    if (mobileLabel) mobileLabel.textContent = finalValue;
-    if (authBoxName) authBoxName.textContent = value || "";
+    if (mobileLabel) {
+      mobileLabel.textContent = finalValue;
+    }
 
-    if (userBox) userBox.style.display = value ? "" : "none";
-    if (customBox) customBox.style.display = value ? "none" : "";
+    if (authUserName) {
+      authUserName.textContent = value || "";
+    }
+
+    if (userBox) {
+      userBox.style.display = value ? "" : "none";
+    }
   }
 
   function hideOldAuthChoices() {
@@ -164,16 +90,17 @@
 
     const subtitle = authBox.querySelector(".auth-subtitle-global");
     if (subtitle) {
-      subtitle.textContent = "Sign in or register with your email, full name, and WhatsApp number.";
-      subtitle.style.display = "block";
+      subtitle.style.display = "none";
     }
 
-    authBox.querySelectorAll(".auth-option-global").forEach(el => {
+    authBox.querySelectorAll(".auth-option-global").forEach(function (el) {
       el.style.display = "none";
     });
 
     const phoneBox = document.getElementById("authPhoneBoxGlobal");
-    if (phoneBox) phoneBox.style.display = "none";
+    if (phoneBox) {
+      phoneBox.style.display = "none";
+    }
   }
 
   function buildCountryOptions(select) {
@@ -196,6 +123,112 @@
     });
   }
 
+  function setMessage(text, type) {
+    const msg = document.getElementById("customerAuthMessage");
+    if (!msg) return;
+
+    msg.className = "customer-auth-message show";
+    if (type) {
+      msg.classList.add(type);
+    }
+    msg.textContent = text || "";
+  }
+
+  function clearMessage() {
+    const msg = document.getElementById("customerAuthMessage");
+    if (!msg) return;
+
+    msg.className = "customer-auth-message";
+    msg.textContent = "";
+  }
+
+  function switchAuthTab(mode) {
+    currentMode = mode === "signup" ? "signup" : "signin";
+
+    const signinBtn = document.getElementById("authTabSignin");
+    const signupBtn = document.getElementById("authTabSignup");
+    const signinView = document.getElementById("authSigninView");
+    const signupView = document.getElementById("authSignupView");
+    const verifyView = document.getElementById("authVerifyView");
+    const loggedView = document.getElementById("authLoggedView");
+
+    if (signinBtn) signinBtn.classList.toggle("active", currentMode === "signin");
+    if (signupBtn) signupBtn.classList.toggle("active", currentMode === "signup");
+
+    if (signinView) signinView.style.display = currentMode === "signin" ? "" : "none";
+    if (signupView) signupView.style.display = currentMode === "signup" ? "" : "none";
+    if (verifyView) verifyView.style.display = "none";
+    if (loggedView) loggedView.style.display = "none";
+
+    clearMessage();
+  }
+
+  function showVerifyView(mode, email) {
+    verifyMode = mode;
+    verifyEmail = email || "";
+
+    const signinView = document.getElementById("authSigninView");
+    const signupView = document.getElementById("authSignupView");
+    const verifyView = document.getElementById("authVerifyView");
+    const loggedView = document.getElementById("authLoggedView");
+    const verifyEmailText = document.getElementById("verifyEmailText");
+    const verifyEmailInput = document.getElementById("authVerifyEmail");
+    const verifyOtpInput = document.getElementById("authVerifyOtp");
+
+    if (signinView) signinView.style.display = "none";
+    if (signupView) signupView.style.display = "none";
+    if (loggedView) loggedView.style.display = "none";
+    if (verifyView) verifyView.style.display = "";
+
+    if (verifyEmailText) {
+      verifyEmailText.textContent = verifyEmail;
+    }
+
+    if (verifyEmailInput) {
+      verifyEmailInput.value = verifyEmail;
+    }
+
+    if (verifyOtpInput) {
+      verifyOtpInput.value = "";
+      verifyOtpInput.focus();
+    }
+  }
+
+  function showLoggedView(user) {
+    const signinView = document.getElementById("authSigninView");
+    const signupView = document.getElementById("authSignupView");
+    const verifyView = document.getElementById("authVerifyView");
+    const loggedView = document.getElementById("authLoggedView");
+
+    const fullNameEl = document.getElementById("loggedCustomerName");
+    const emailEl = document.getElementById("loggedCustomerEmail");
+
+    if (signinView) signinView.style.display = "none";
+    if (signupView) signupView.style.display = "none";
+    if (verifyView) verifyView.style.display = "none";
+    if (loggedView) loggedView.style.display = "";
+
+    if (fullNameEl) {
+      fullNameEl.textContent = user?.full_name || "-";
+    }
+
+    if (emailEl) {
+      emailEl.textContent = user?.email || "-";
+    }
+
+    clearMessage();
+  }
+
+  function backToTabs() {
+    const user = getCurrentLocalUser();
+    if (user && user.email) {
+      showLoggedView(user);
+      return;
+    }
+
+    switchAuthTab(currentMode);
+  }
+
   async function refreshCustomerStatus() {
     try {
       const data = await getStatus();
@@ -210,14 +243,16 @@
         };
 
         setLocalUser(user);
-        setLabel(user.email || "Customer");
+        setTopAuthLabel(user.email || "Customer");
+        showLoggedView(user);
 
         if (typeof window.syncOrdersFromServer === "function") {
           await window.syncOrdersFromServer();
         }
       } else {
         clearLocalUser();
-        setLabel("");
+        setTopAuthLabel("");
+        switchAuthTab("signin");
 
         if (typeof window.syncOrdersFromServer === "function") {
           await window.syncOrdersFromServer();
@@ -228,9 +263,110 @@
     }
   }
 
-  function ensureRealAuthUI() {
-    injectAuthStyles();
+  async function sendSigninCode() {
+    const email = document.getElementById("authSigninEmail")?.value.trim() || "";
 
+    if (!email) {
+      setMessage("Enter your email first.", "error");
+      return;
+    }
+
+    setMessage("Sending verification code...", "info");
+
+    try {
+      const data = await postForm("/auth/send-otp.php", {
+        mode: "signin",
+        email
+      });
+
+      showVerifyView("signin", email);
+      setMessage(data.message || "Verification code sent to your email.", "success");
+    } catch (e) {
+      setMessage(e.message || "Failed to send verification code.", "error");
+    }
+  }
+
+  async function sendSignupCode() {
+    const full_name = document.getElementById("authSignupName")?.value.trim() || "";
+    const country_code = document.getElementById("authSignupCountryCode")?.value.trim() || "";
+    const whatsapp = document.getElementById("authSignupWhatsapp")?.value.trim() || "";
+    const email = document.getElementById("authSignupEmail")?.value.trim() || "";
+
+    if (!full_name || !country_code || !whatsapp || !email) {
+      setMessage("Full name, WhatsApp number and email are required.", "error");
+      return;
+    }
+
+    setMessage("Sending verification code...", "info");
+
+    try {
+      const data = await postForm("/auth/send-otp.php", {
+        mode: "signup",
+        full_name,
+        country_code,
+        whatsapp,
+        email
+      });
+
+      showVerifyView("signup", email);
+      setMessage(data.message || "Verification code sent to your email.", "success");
+    } catch (e) {
+      setMessage(e.message || "Failed to send verification code.", "error");
+    }
+  }
+
+  async function verifyCode() {
+    const email = document.getElementById("authVerifyEmail")?.value.trim() || "";
+    const otp = document.getElementById("authVerifyOtp")?.value.trim() || "";
+
+    if (!email || !otp) {
+      setMessage("Enter email and verification code.", "error");
+      return;
+    }
+
+    setMessage("Verifying code...", "info");
+
+    try {
+      const data = await postForm("/auth/verify-otp.php", {
+        email,
+        otp
+      });
+
+      if (data.customer) {
+        const user = {
+          name: data.customer.email || "Customer",
+          email: data.customer.email || "",
+          full_name: data.customer.full_name || "",
+          id: data.customer.id || null,
+          method: verifyMode || "email_otp"
+        };
+
+        setLocalUser(user);
+        setTopAuthLabel(user.email || "Customer");
+        showLoggedView(user);
+      }
+
+      setMessage(data.message || "Verification completed successfully.", "success");
+
+      if (typeof window.showToast === "function") {
+        window.showToast(verifyMode === "signin" ? "Signed in successfully" : "Registration completed");
+      }
+
+      if (typeof window.syncOrdersFromServer === "function") {
+        await window.syncOrdersFromServer();
+      }
+
+      setTimeout(function () {
+        if (typeof window.closeAuthModal === "function") {
+          window.closeAuthModal();
+        }
+      }, 700);
+    } catch (e) {
+      setMessage(e.message || "Verification failed.", "error");
+    }
+  }
+
+  function ensureRealAuthUI() {
     const authBox = document.querySelector(".auth-box-global");
     if (!authBox) return;
 
@@ -241,207 +377,202 @@
     if (!wrapper) {
       wrapper = document.createElement("div");
       wrapper.id = "realCustomerAuthBox";
+      wrapper.className = "customer-auth-shell";
       wrapper.innerHTML = `
-        <input
-          type="text"
-          id="realAuthName"
-          class="auth-real-input"
-          placeholder="Full name"
-          autocomplete="name"
-        >
-
-        <div class="auth-real-row">
-          <div class="auth-real-select-wrap">
-            <select
-              id="realAuthCountryCode"
-              class="auth-real-select"
-            ></select>
-          </div>
-
-          <div class="auth-real-number-wrap">
-            <input
-              type="text"
-              id="realAuthWhatsappNumber"
-              class="auth-real-input"
-              placeholder="WhatsApp number"
-              inputmode="tel"
-              autocomplete="tel"
-            >
-          </div>
+        <div class="customer-auth-tabs">
+          <button type="button" id="authTabSignin" class="customer-auth-tab active">Sign In</button>
+          <button type="button" id="authTabSignup" class="customer-auth-tab">Sign Up</button>
         </div>
 
-        <input
-          type="email"
-          id="realAuthEmail"
-          class="auth-real-input"
-          placeholder="Email address"
-          autocomplete="email"
-          inputmode="email"
-          autocapitalize="off"
-          spellcheck="false"
-          style="margin-top:10px;"
-        >
+        <div id="authSigninView" class="customer-auth-view">
+          <div class="customer-auth-headline">Welcome back</div>
+          <div class="customer-auth-note">
+            Enter your email, then check your inbox for the verification code.
+          </div>
 
-        <button
-          type="button"
-          id="sendOtpBtn"
-          class="auth-real-button auth-real-send"
-          style="margin-top:10px;"
-        >
-          Send Verification Code
-        </button>
+          <div class="customer-auth-field">
+            <label for="authSigninEmail">Email</label>
+            <input
+              type="email"
+              id="authSigninEmail"
+              class="customer-auth-input"
+              placeholder="Email address"
+              autocomplete="email"
+              inputmode="email"
+            >
+          </div>
 
-        <div id="otpSection" style="display:none;">
-          <input
-            type="text"
-            id="realAuthOtp"
-            class="auth-real-input"
-            placeholder="Enter verification code"
-            inputmode="numeric"
-            autocomplete="one-time-code"
-            style="margin-top:10px;"
-          >
-
-          <button
-            type="button"
-            id="verifyOtpBtn"
-            class="auth-real-button auth-real-verify"
-            style="margin-top:10px;"
-          >
-            Verify & Sign In
+          <button type="button" id="sendSigninOtpBtn" class="customer-auth-btn customer-auth-btn-primary">
+            Send Verification Code
           </button>
         </div>
 
-        <div id="realAuthMsg" class="auth-real-msg"></div>
+        <div id="authSignupView" class="customer-auth-view" style="display:none;">
+          <div class="customer-auth-headline">Create your account</div>
+          <div class="customer-auth-note">
+            Full name and WhatsApp number are required during registration.
+          </div>
+
+          <div class="customer-auth-field">
+            <label for="authSignupName">Full name</label>
+            <input
+              type="text"
+              id="authSignupName"
+              class="customer-auth-input"
+              placeholder="Full name"
+              autocomplete="name"
+            >
+          </div>
+
+          <div class="customer-auth-row">
+            <div class="customer-auth-field customer-auth-country">
+              <label for="authSignupCountryCode">Country code</label>
+              <select id="authSignupCountryCode" class="customer-auth-select"></select>
+            </div>
+
+            <div class="customer-auth-field customer-auth-phone">
+              <label for="authSignupWhatsapp">WhatsApp number</label>
+              <input
+                type="text"
+                id="authSignupWhatsapp"
+                class="customer-auth-input"
+                placeholder="WhatsApp number"
+                inputmode="tel"
+                autocomplete="tel"
+              >
+            </div>
+          </div>
+
+          <div class="customer-auth-field">
+            <label for="authSignupEmail">Email</label>
+            <input
+              type="email"
+              id="authSignupEmail"
+              class="customer-auth-input"
+              placeholder="Email address"
+              autocomplete="email"
+              inputmode="email"
+            >
+          </div>
+
+          <button type="button" id="sendSignupOtpBtn" class="customer-auth-btn customer-auth-btn-primary">
+            Send Verification Code
+          </button>
+        </div>
+
+        <div id="authVerifyView" class="customer-auth-view" style="display:none;">
+          <div class="customer-auth-headline">Verify code</div>
+          <div class="customer-auth-note">
+            We sent a verification code to:
+            <strong id="verifyEmailText"></strong>
+          </div>
+
+          <input type="hidden" id="authVerifyEmail">
+
+          <div class="customer-auth-field">
+            <label for="authVerifyOtp">Verification code</label>
+            <input
+              type="text"
+              id="authVerifyOtp"
+              class="customer-auth-input"
+              placeholder="Enter verification code"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+            >
+          </div>
+
+          <div class="customer-auth-verify-actions">
+            <button type="button" id="verifyOtpBtn" class="customer-auth-btn customer-auth-btn-success">
+              Verify Code
+            </button>
+
+            <button type="button" id="backAuthBtn" class="customer-auth-btn customer-auth-btn-secondary">
+              Back
+            </button>
+          </div>
+        </div>
+
+        <div id="authLoggedView" class="customer-auth-view" style="display:none;">
+          <div class="customer-auth-headline">Signed in successfully</div>
+
+          <div class="customer-auth-user-card">
+            <div class="customer-auth-user-line">
+              <span class="customer-auth-user-label">Full name</span>
+              <strong id="loggedCustomerName">-</strong>
+            </div>
+
+            <div class="customer-auth-user-line">
+              <span class="customer-auth-user-label">Email</span>
+              <strong id="loggedCustomerEmail">-</strong>
+            </div>
+          </div>
+
+          <button type="button" id="logoutUserBtn" class="customer-auth-btn customer-auth-btn-danger">
+            Sign Out
+          </button>
+        </div>
+
+        <div id="customerAuthMessage" class="customer-auth-message"></div>
       `;
       authBox.appendChild(wrapper);
     }
 
-    buildCountryOptions(document.getElementById("realAuthCountryCode"));
+    buildCountryOptions(document.getElementById("authSignupCountryCode"));
 
-    const savedUser = getCurrentLocalUser();
-    const savedEmail = savedUser && savedUser.email ? savedUser.email : "";
-    const emailInput = document.getElementById("realAuthEmail");
+    const signinBtn = document.getElementById("authTabSignin");
+    const signupBtn = document.getElementById("authTabSignup");
+    const sendSigninOtpBtn = document.getElementById("sendSigninOtpBtn");
+    const sendSignupOtpBtn = document.getElementById("sendSignupOtpBtn");
+    const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+    const backAuthBtn = document.getElementById("backAuthBtn");
+    const logoutUserBtn = document.getElementById("logoutUserBtn");
 
-    if (emailInput && !emailInput.value && savedEmail) {
-      emailInput.value = savedEmail;
-    }
-
-    setLabel(savedEmail);
-
-    const sendBtn = document.getElementById("sendOtpBtn");
-    const verifyBtn = document.getElementById("verifyOtpBtn");
-
-    if (sendBtn && !sendBtn.dataset.bound) {
-      sendBtn.dataset.bound = "1";
-
-      sendBtn.addEventListener("click", async function () {
-        const full_name = document.getElementById("realAuthName")?.value.trim() || "";
-        const country_code = document.getElementById("realAuthCountryCode")?.value.trim() || "";
-        const whatsapp_number = document.getElementById("realAuthWhatsappNumber")?.value.trim() || "";
-        const email = document.getElementById("realAuthEmail")?.value.trim() || "";
-        const msg = document.getElementById("realAuthMsg");
-        const otpSection = document.getElementById("otpSection");
-
-        if (!full_name || !country_code || !whatsapp_number || !email) {
-          if (msg) {
-            msg.style.color = "#dc2626";
-            msg.textContent = "Full name, WhatsApp number, country code, and email are required.";
-          }
-          return;
-        }
-
-        if (msg) {
-          msg.style.color = "#475569";
-          msg.textContent = "Sending verification code to your email...";
-        }
-
-        try {
-          const data = await postForm("/auth/send-otp.php", {
-            full_name,
-            email,
-            country_code,
-            whatsapp: whatsapp_number
-          });
-
-          if (msg) {
-            msg.style.color = "#16a34a";
-            msg.textContent = data.message || "Verification code sent to your email.";
-          }
-
-          if (otpSection) {
-            otpSection.style.display = "block";
-          }
-        } catch (e) {
-          if (msg) {
-            msg.style.color = "#dc2626";
-            msg.textContent = e.message || "Failed to send verification code.";
-          }
-        }
+    if (signinBtn && !signinBtn.dataset.bound) {
+      signinBtn.dataset.bound = "1";
+      signinBtn.addEventListener("click", function () {
+        switchAuthTab("signin");
       });
     }
 
-    if (verifyBtn && !verifyBtn.dataset.bound) {
-      verifyBtn.dataset.bound = "1";
-
-      verifyBtn.addEventListener("click", async function () {
-        const email = document.getElementById("realAuthEmail")?.value.trim() || "";
-        const otp = document.getElementById("realAuthOtp")?.value.trim() || "";
-        const msg = document.getElementById("realAuthMsg");
-
-        if (!email || !otp) {
-          if (msg) {
-            msg.style.color = "#dc2626";
-            msg.textContent = "Enter email and verification code.";
-          }
-          return;
-        }
-
-        if (msg) {
-          msg.style.color = "#475569";
-          msg.textContent = "Verifying code...";
-        }
-
-        try {
-          const data = await postForm("/auth/verify-otp.php", { email, otp });
-
-          if (msg) {
-            msg.style.color = "#16a34a";
-            msg.textContent = data.message || "Signed in successfully.";
-          }
-
-          if (data.customer) {
-            setLocalUser({
-              name: data.customer.email || "Customer",
-              email: data.customer.email || "",
-              full_name: data.customer.full_name || "",
-              id: data.customer.id || null,
-              method: "email_otp"
-            });
-
-            setLabel(data.customer.email || "Customer");
-          }
-
-          if (typeof window.showToast === "function") {
-            window.showToast("Signed in successfully");
-          }
-
-          if (typeof window.syncOrdersFromServer === "function") {
-            await window.syncOrdersFromServer();
-          }
-
-          setTimeout(function () {
-            if (typeof window.closeAuthModal === "function") {
-              window.closeAuthModal();
-            }
-          }, 700);
-        } catch (e) {
-          if (msg) {
-            msg.style.color = "#dc2626";
-            msg.textContent = e.message || "Verification failed.";
-          }
-        }
+    if (signupBtn && !signupBtn.dataset.bound) {
+      signupBtn.dataset.bound = "1";
+      signupBtn.addEventListener("click", function () {
+        switchAuthTab("signup");
       });
+    }
+
+    if (sendSigninOtpBtn && !sendSigninOtpBtn.dataset.bound) {
+      sendSigninOtpBtn.dataset.bound = "1";
+      sendSigninOtpBtn.addEventListener("click", sendSigninCode);
+    }
+
+    if (sendSignupOtpBtn && !sendSignupOtpBtn.dataset.bound) {
+      sendSignupOtpBtn.dataset.bound = "1";
+      sendSignupOtpBtn.addEventListener("click", sendSignupCode);
+    }
+
+    if (verifyOtpBtn && !verifyOtpBtn.dataset.bound) {
+      verifyOtpBtn.dataset.bound = "1";
+      verifyOtpBtn.addEventListener("click", verifyCode);
+    }
+
+    if (backAuthBtn && !backAuthBtn.dataset.bound) {
+      backAuthBtn.dataset.bound = "1";
+      backAuthBtn.addEventListener("click", backToTabs);
+    }
+
+    if (logoutUserBtn && !logoutUserBtn.dataset.bound) {
+      logoutUserBtn.dataset.bound = "1";
+      logoutUserBtn.addEventListener("click", window.logoutUser);
+    }
+
+    const user = getCurrentLocalUser();
+    setTopAuthLabel(user && user.email ? user.email : "");
+
+    if (user && user.email) {
+      showLoggedView(user);
+    } else {
+      switchAuthTab(currentMode);
     }
   }
 
@@ -449,7 +580,8 @@
     try {
       await fetch("/auth/logout.php", { cache: "no-store" });
       clearLocalUser();
-      setLabel("");
+      setTopAuthLabel("");
+      switchAuthTab("signin");
 
       if (typeof window.showToast === "function") {
         window.showToast("Signed out");
@@ -465,6 +597,11 @@
     } catch (e) {
       console.error(e);
     }
+  };
+
+  window.initAuthModal = function () {
+    ensureRealAuthUI();
+    refreshCustomerStatus();
   };
 
   document.addEventListener("DOMContentLoaded", function () {
