@@ -37,7 +37,10 @@ function json_response(bool $ok, array $data = [], int $statusCode = 200): void
 {
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(array_merge(['ok' => $ok], $data), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    echo json_encode(
+        array_merge(['ok' => $ok], $data),
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+    );
     exit;
 }
 
@@ -56,7 +59,7 @@ function require_post(): void
 function get_request_json(): array
 {
     $raw = file_get_contents('php://input');
-    if (!$raw) {
+    if ($raw === false || $raw === '') {
         return [];
     }
 
@@ -90,7 +93,12 @@ function get_setting(string $key, ?string $default = null): ?string
     }
 
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = :setting_key LIMIT 1");
+    $stmt = $pdo->prepare("
+        SELECT setting_value
+        FROM settings
+        WHERE setting_key = :setting_key
+        LIMIT 1
+    ");
     $stmt->execute(['setting_key' => $key]);
     $row = $stmt->fetch();
 
@@ -113,7 +121,9 @@ function get_setting_bool(string $key, bool $default = false): bool
 
 function current_customer_id(): int
 {
-    return isset($_SESSION['customer_auth']['id']) ? (int)$_SESSION['customer_auth']['id'] : 0;
+    return isset($_SESSION['customer_auth']['id'])
+        ? (int)$_SESSION['customer_auth']['id']
+        : 0;
 }
 
 function require_customer_auth_json(): void
