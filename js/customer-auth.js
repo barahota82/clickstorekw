@@ -65,43 +65,14 @@
   }
 
   function setTopAuthLabel(value) {
-    const mobileLabel = document.getElementById("mobileAuthLabel");
-    const authUserName = document.getElementById("authUserBoxName");
-    const userBox = document.getElementById("authUserBoxGlobal");
+  const desktopLabel = document.getElementById("desktopAuthLabel");
+  const mobileLabel = document.getElementById("mobileAuthLabel");
 
-    const finalValue = value || "Registration";
+  const finalValue = value || "Registration";
 
-    if (mobileLabel) {
-      mobileLabel.textContent = finalValue;
-    }
-
-    if (authUserName) {
-      authUserName.textContent = value || "";
-    }
-
-    if (userBox) {
-      userBox.style.display = value ? "" : "none";
-    }
-  }
-
-  function hideOldAuthChoices() {
-    const authBox = document.querySelector(".auth-box-global");
-    if (!authBox) return;
-
-    const subtitle = authBox.querySelector(".auth-subtitle-global");
-    if (subtitle) {
-      subtitle.style.display = "none";
-    }
-
-    authBox.querySelectorAll(".auth-option-global").forEach(function (el) {
-      el.style.display = "none";
-    });
-
-    const phoneBox = document.getElementById("authPhoneBoxGlobal");
-    if (phoneBox) {
-      phoneBox.style.display = "none";
-    }
-  }
+  if (desktopLabel) desktopLabel.textContent = finalValue;
+  if (mobileLabel) mobileLabel.textContent = finalValue;
+}
 
   function buildCountryOptions(select) {
     if (!select || !window.COUNTRY_CODES || !Array.isArray(window.COUNTRY_CODES)) {
@@ -369,8 +340,6 @@
   function ensureRealAuthUI() {
     const authBox = document.querySelector(".auth-box-global");
     if (!authBox) return;
-
-    hideOldAuthChoices();
 
     let wrapper = document.getElementById("realCustomerAuthBox");
 
