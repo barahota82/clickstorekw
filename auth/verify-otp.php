@@ -13,74 +13,132 @@ try {
         json_response(false, ['message' => 'Email and code are required'], 422);
     }
 
+    $pending = $_SESSION['pending_customer_auth'] ?? null;
+
+    if (!is_array($pending)) {
+        json_response(false, ['message' => 'No pending verification request found'], 422);
+    }
+
+    $pendingEmail = strtolower(trim((string)($pending['email'] ?? '')));
+    if ($pendingEmail === '' || $pendingEmail !== $email) {
+        json_response(false, ['message' => 'Email does not match pending verification'], 422);
+    }
+
+    $sessionOtp = trim((string)($pending['otp_code'] ?? ''));
+    if ($sessionOtp === '' || $sessionOtp !== $otp) {
+        json_response(false, ['message' => 'Invalid code'], 422);
+    }
+
+    $expiresAt = (string)($pending['otp_expires_at'] ?? '');
+    if ($expiresAt !== '') {
+        $expiresTs = strtotime($expiresAt);
+        if ($expiresTs !== false && $expiresTs < time()) {
+            unset($_SESSION['pending_customer_auth']);
+            json_response(false, ['message' => 'Code expired'], 422);
+        }
+    }
+
+    $fullName = trim((string)($pending['full_name'] ?? ''));
+    $phone = trim((string)($pending['phone'] ?? ''));
+    $whatsappCountryCode = trim((string)($pending['whatsapp_country_code'] ?? ''));
+    $whatsappNumber = trim((string)($pending['whatsapp_number'] ?? ''));
+    $whatsappFull = trim((string)($pending['whatsapp_full'] ?? ''));
+    $whatsapp = trim((string)($pending['whatsapp'] ?? ''));
+
+    if (
+        $fullName === '' ||
+        $phone === '' ||
+        $whatsappCountryCode === '' ||
+        $whatsappNumber === '' ||
+        $whatsappFull === ''
+    ) {
+        json_response(false, ['message' => 'Pending registration data is incomplete'], 422);
+    }
+
     $pdo = db();
 
     $stmt = $pdo->prepare("
-        SELECT
-            id,
-            email,
-            full_name,
-            whatsapp_full,
-            otp_code,
-            otp_expires_at,
-            is_verified
+        SELECT id
         FROM customers
         WHERE email = ?
         LIMIT 1
     ");
     $stmt->execute([$email]);
-    $user = $stmt->fetch();
+    $existing = $stmt->fetch();
 
-    if (!$user) {
-        json_response(false, ['message' => 'Customer not found'], 404);
-    }
+    if ($existing) {
+        $update = $pdo->prepare("
+            UPDATE customers
+            SET
+                full_name = ?,
+                phone = ?,
+                whatsapp_country_code = ?,
+                whatsapp_number = ?,
+                whatsapp_full = ?,
+                whatsapp = ?,
+                otp_code = NULL,
+                otp_expires_at = NULL,
+                is_verified = 1,
+                email_verified_at = NOW(),
+                updated_at = NOW()
+            WHERE id = ?
+            LIMIT 1
+        ");
 
-    if ((int)($user['is_verified'] ?? 0) === 1) {
-        $_SESSION['customer_auth'] = [
-            'id' => (int)$user['id'],
-            'email' => (string)$user['email'],
-            'full_name' => (string)$user['full_name'],
-            'whatsapp_full' => (string)($user['whatsapp_full'] ?? '')
-        ];
-
-        json_response(true, [
-            'message' => 'Account already verified',
-            'customer' => $_SESSION['customer_auth']
+        $update->execute([
+            $fullName,
+            $phone,
+            $whatsappCountryCode,
+            $whatsappNumber,
+            $whatsappFull,
+            $whatsapp,
+            (int)$existing['id']
         ]);
-    }
 
-    $dbOtp = trim((string)($user['otp_code'] ?? ''));
-    if ($dbOtp === '' || $dbOtp !== $otp) {
-        json_response(false, ['message' => 'Invalid code'], 422);
-    }
+        $customerId = (int)$existing['id'];
+    } else {
+        $insert = $pdo->prepare("
+            INSERT INTO customers
+            (
+                full_name,
+                phone,
+                whatsapp_country_code,
+                whatsapp_number,
+                whatsapp_full,
+                whatsapp,
+                email,
+                otp_code,
+                otp_expires_at,
+                is_verified,
+                installment_approved,
+                email_verified_at,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1, 0, NOW(), NOW(), NOW())
+        ");
 
-    $expiresAt = (string)($user['otp_expires_at'] ?? '');
-    if ($expiresAt !== '') {
-        $expiresTs = strtotime($expiresAt);
-        if ($expiresTs !== false && $expiresTs < time()) {
-            json_response(false, ['message' => 'Code expired'], 422);
-        }
-    }
+        $insert->execute([
+            $fullName,
+            $phone,
+            $whatsappCountryCode,
+            $whatsappNumber,
+            $whatsappFull,
+            $whatsapp,
+            $email
+        ]);
 
-    $update = $pdo->prepare("
-        UPDATE customers
-        SET
-            is_verified = 1,
-            otp_code = NULL,
-            otp_expires_at = NULL,
-            email_verified_at = NOW(),
-            updated_at = NOW()
-        WHERE id = ?
-        LIMIT 1
-    ");
-    $update->execute([(int)$user['id']]);
+        $customerId = (int)$pdo->lastInsertId();
+    }
 
     $_SESSION['customer_auth'] = [
-        'id' => (int)$user['id'],
-        'email' => (string)$user['email'],
-        'full_name' => (string)$user['full_name'],
-        'whatsapp_full' => (string)($user['whatsapp_full'] ?? '')
+        'id' => $customerId,
+        'email' => $email,
+        'full_name' => $fullName,
+        'whatsapp_full' => $whatsappFull
     ];
+
+    unset($_SESSION['pending_customer_auth']);
 
     json_response(true, [
         'message' => 'Verification completed',
