@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+if (ob_get_level() === 0) {
+    ob_start();
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -35,6 +39,10 @@ function db(): PDO
 
 function json_response(bool $ok, array $data = [], int $statusCode = 200): void
 {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(
