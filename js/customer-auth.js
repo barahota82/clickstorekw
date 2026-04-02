@@ -82,16 +82,6 @@
         font-size: 14px !important;
         line-height: 1.6 !important;
       }
-
-      @media (max-width: 640px) {
-        #realCustomerAuthBox .auth-real-row {
-          flex-direction: row !important;
-        }
-
-        #realCustomerAuthBox .auth-real-select-wrap {
-          flex-basis: 44% !important;
-        }
-      }
     `;
     document.head.appendChild(style);
   }
@@ -104,6 +94,14 @@
   function clearLocalUser() {
     localStorage.removeItem(USER_STORAGE_KEY);
     document.dispatchEvent(new CustomEvent("customer-auth-updated", { detail: null }));
+  }
+
+  function getCurrentLocalUser() {
+    try {
+      return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || "null");
+    } catch {
+      return null;
+    }
   }
 
   async function postForm(url, data) {
@@ -124,7 +122,7 @@
     try {
       json = JSON.parse(raw);
     } catch (e) {
-      throw new Error("Server response: " + raw);
+      throw new Error(raw || "Unexpected server response.");
     }
 
     if (!res.ok || !json.ok) {
@@ -166,7 +164,7 @@
 
     const subtitle = authBox.querySelector(".auth-subtitle-global");
     if (subtitle) {
-      subtitle.textContent = "Register with your email and WhatsApp number.";
+      subtitle.textContent = "Sign in or register with your email, full name, and WhatsApp number.";
       subtitle.style.display = "block";
     }
 
@@ -196,14 +194,6 @@
 
       select.appendChild(option);
     });
-  }
-
-  function getCurrentLocalUser() {
-    try {
-      return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || "null");
-    } catch {
-      return null;
-    }
   }
 
   async function refreshCustomerStatus() {
@@ -257,6 +247,7 @@
           id="realAuthName"
           class="auth-real-input"
           placeholder="Full name"
+          autocomplete="name"
         >
 
         <div class="auth-real-row">
@@ -273,6 +264,8 @@
               id="realAuthWhatsappNumber"
               class="auth-real-input"
               placeholder="WhatsApp number"
+              inputmode="tel"
+              autocomplete="tel"
             >
           </div>
         </div>
@@ -282,6 +275,10 @@
           id="realAuthEmail"
           class="auth-real-input"
           placeholder="Email address"
+          autocomplete="email"
+          inputmode="email"
+          autocapitalize="off"
+          spellcheck="false"
           style="margin-top:10px;"
         >
 
@@ -299,7 +296,9 @@
             type="text"
             id="realAuthOtp"
             class="auth-real-input"
-            placeholder="Enter OTP code"
+            placeholder="Enter verification code"
+            inputmode="numeric"
+            autocomplete="one-time-code"
             style="margin-top:10px;"
           >
 
@@ -309,7 +308,7 @@
             class="auth-real-button auth-real-verify"
             style="margin-top:10px;"
           >
-            Verify Code
+            Verify & Sign In
           </button>
         </div>
 
@@ -320,8 +319,15 @@
 
     buildCountryOptions(document.getElementById("realAuthCountryCode"));
 
-    const user = getCurrentLocalUser();
-    setLabel(user && user.email ? user.email : "");
+    const savedUser = getCurrentLocalUser();
+    const savedEmail = savedUser && savedUser.email ? savedUser.email : "";
+    const emailInput = document.getElementById("realAuthEmail");
+
+    if (emailInput && !emailInput.value && savedEmail) {
+      emailInput.value = savedEmail;
+    }
+
+    setLabel(savedEmail);
 
     const sendBtn = document.getElementById("sendOtpBtn");
     const verifyBtn = document.getElementById("verifyOtpBtn");
@@ -340,14 +346,14 @@
         if (!full_name || !country_code || !whatsapp_number || !email) {
           if (msg) {
             msg.style.color = "#dc2626";
-            msg.textContent = "Fill all fields first.";
+            msg.textContent = "Full name, WhatsApp number, country code, and email are required.";
           }
           return;
         }
 
         if (msg) {
           msg.style.color = "#475569";
-          msg.textContent = "Sending verification code...";
+          msg.textContent = "Sending verification code to your email...";
         }
 
         try {
@@ -360,7 +366,7 @@
 
           if (msg) {
             msg.style.color = "#16a34a";
-            msg.textContent = data.message || "Verification code sent.";
+            msg.textContent = data.message || "Verification code sent to your email.";
           }
 
           if (otpSection) {
@@ -386,7 +392,7 @@
         if (!email || !otp) {
           if (msg) {
             msg.style.color = "#dc2626";
-            msg.textContent = "Enter email and OTP code.";
+            msg.textContent = "Enter email and verification code.";
           }
           return;
         }
@@ -401,7 +407,7 @@
 
           if (msg) {
             msg.style.color = "#16a34a";
-            msg.textContent = data.message || "Verification completed successfully.";
+            msg.textContent = data.message || "Signed in successfully.";
           }
 
           if (data.customer) {
@@ -417,7 +423,7 @@
           }
 
           if (typeof window.showToast === "function") {
-            window.showToast("Registration completed");
+            window.showToast("Signed in successfully");
           }
 
           if (typeof window.syncOrdersFromServer === "function") {
