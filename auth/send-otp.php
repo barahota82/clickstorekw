@@ -12,7 +12,7 @@ $country  = trim($_POST['country_code'] ?? '');
 $number   = trim($_POST['whatsapp'] ?? '');
 
 if ($fullName === '' || $email === '' || $country === '' || $number === '') {
-    json_response(false, ['message' => 'Fill all fields'], 422);
+    json_response(false, ['message' => 'Full name, WhatsApp number, country code, and email are required'], 422);
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -32,7 +32,7 @@ try {
     $pdo = db();
 
     $stmt = $pdo->prepare("
-        SELECT id, is_verified
+        SELECT id, email, is_verified
         FROM customers
         WHERE email = ?
         LIMIT 1
@@ -40,13 +40,8 @@ try {
     $stmt->execute([$email]);
     $existingCustomer = $stmt->fetch();
 
-    if ($existingCustomer && (int)$existingCustomer['is_verified'] === 1) {
-        json_response(false, ['message' => 'This email is already registered and verified'], 422);
-    }
-
-    smtp_send_mail($email, $fullName, 'Verification Code', "Code: {$otp}");
-
     $_SESSION['pending_customer_auth'] = [
+        'mode' => $existingCustomer ? 'signin' : 'signup',
         'full_name' => $fullName,
         'email' => $email,
         'whatsapp_country_code' => $country,
@@ -56,8 +51,16 @@ try {
         'otp_expires_at' => $expires
     ];
 
+    smtp_send_mail(
+        $email,
+        $fullName,
+        'Verification Code',
+        "Your verification code is: {$otp}\n\nThis code expires in 10 minutes."
+    );
+
     json_response(true, [
-        'message' => 'Code sent successfully'
+        'message' => 'Verification code sent to your email',
+        'mode' => $existingCustomer ? 'signin' : 'signup'
     ]);
 } catch (Throwable $e) {
     json_response(false, [
