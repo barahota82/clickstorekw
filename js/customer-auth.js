@@ -124,7 +124,7 @@
     try {
       json = JSON.parse(raw);
     } catch (e) {
-      throw new Error(raw || "Unexpected server response.");
+      throw new Error("Server response: " + raw);
     }
 
     if (!res.ok || !json.ok) {
