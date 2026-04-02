@@ -445,7 +445,10 @@
 
   window.logoutUser = async function () {
     try {
-      await fetch("/auth/logout.php", { cache: "no-store" });
+      await fetch("/auth/logout.php", {
+  cache: "no-store",
+  credentials: "same-origin"
+});
       clearLocalUser();
       setLabel("");
 
