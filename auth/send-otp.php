@@ -26,34 +26,37 @@ if ($numberDigits === '') {
 
 $whatsappFull = $country . $numberDigits;
 $otp = (string) random_int(100000, 999999);
-$expires = date('Y-m-d H:i:s', time() + 600);
+$expiresTs = time() + 600;
+$expires = date('Y-m-d H:i:s', $expiresTs);
 
 try {
-    $_SESSION['pending_customer_registration'] = [
+    $payload = [
         'full_name' => $fullName,
         'email' => $email,
         'whatsapp_country_code' => $country,
         'whatsapp_number' => $numberDigits,
         'whatsapp_full' => $whatsappFull,
+        'otp' => $otp,
+        'expires_ts' => $expiresTs,
     ];
 
-    $_SESSION['pending_customer_email'] = $email;
-    $_SESSION['pending_customer_otp'] = $otp;
-    $_SESSION['pending_customer_otp_expires_at'] = $expires;
-    unset($_SESSION['pending_customer_id']);
+    $jsonPayload = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($jsonPayload === false) {
+        throw new RuntimeException('Failed to encode verification payload');
+    }
+
+    $secret = hash('sha256', DB_HOST . '|' . DB_NAME . '|' . DB_USER . '|' . __FILE__);
+    $signature = hash_hmac('sha256', $jsonPayload, $secret);
+    $verificationToken = base64_encode($jsonPayload) . '.' . $signature;
 
     smtp_send_mail($email, $fullName, 'Verification Code', "Code: {$otp}");
 
     json_response(true, [
-        'message' => 'Code sent successfully'
+        'message' => 'Code sent successfully',
+        'verification_token' => $verificationToken,
+        'expires_at' => $expires
     ]);
 } catch (Throwable $e) {
-    unset($_SESSION['pending_customer_registration']);
-    unset($_SESSION['pending_customer_email']);
-    unset($_SESSION['pending_customer_otp']);
-    unset($_SESSION['pending_customer_otp_expires_at']);
-    unset($_SESSION['pending_customer_id']);
-
     json_response(false, [
         'message' => 'Failed to send verification code',
         'error' => $e->getMessage()
