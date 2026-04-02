@@ -124,7 +124,7 @@
     try {
       json = JSON.parse(raw);
     } catch (e) {
-      <script src="/js/customer-auth.js?v=2.7"></script>
+      throw new Error(raw || "Unexpected server response.");
     }
 
     if (!res.ok || !json.ok) {
