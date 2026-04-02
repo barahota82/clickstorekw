@@ -6,8 +6,8 @@ require_once __DIR__ . '/../config.php';
 try {
     require_post();
 
-    $email = strtolower(trim($_POST['email'] ?? ''));
-    $otp   = trim($_POST['otp'] ?? '');
+    $email = strtolower(trim((string)($_POST['email'] ?? '')));
+    $otp   = trim((string)($_POST['otp'] ?? ''));
 
     if ($email === '' || $otp === '') {
         json_response(false, ['message' => 'Email and code are required'], 422);
@@ -19,7 +19,9 @@ try {
         json_response(false, ['message' => 'No pending verification request found'], 422);
     }
 
+    $mode = strtolower(trim((string)($pending['mode'] ?? '')));
     $pendingEmail = strtolower(trim((string)($pending['email'] ?? '')));
+
     if ($pendingEmail === '' || $pendingEmail !== $email) {
         json_response(false, ['message' => 'Email does not match pending verification'], 422);
     }
@@ -38,6 +40,46 @@ try {
         }
     }
 
+    $pdo = db();
+
+    if ($mode === 'signin') {
+        $stmt = $pdo->prepare("
+            SELECT
+                id,
+                full_name,
+                email,
+                whatsapp_full,
+                is_verified
+            FROM customers
+            WHERE email = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$email]);
+        $customer = $stmt->fetch();
+
+        if (!$customer || (int)($customer['is_verified'] ?? 0) !== 1) {
+            json_response(false, ['message' => 'Customer not found or not verified'], 404);
+        }
+
+        $_SESSION['customer_auth'] = [
+            'id' => (int)$customer['id'],
+            'email' => (string)$customer['email'],
+            'full_name' => (string)$customer['full_name'],
+            'whatsapp_full' => (string)($customer['whatsapp_full'] ?? '')
+        ];
+
+        unset($_SESSION['pending_customer_auth']);
+
+        json_response(true, [
+            'message' => 'Sign in completed successfully',
+            'customer' => $_SESSION['customer_auth']
+        ]);
+    }
+
+    if ($mode !== 'signup') {
+        json_response(false, ['message' => 'Invalid verification mode'], 422);
+    }
+
     $fullName = trim((string)($pending['full_name'] ?? ''));
     $whatsappCountryCode = trim((string)($pending['whatsapp_country_code'] ?? ''));
     $whatsappNumber = trim((string)($pending['whatsapp_number'] ?? ''));
@@ -52,15 +94,8 @@ try {
         json_response(false, ['message' => 'Pending registration data is incomplete'], 422);
     }
 
-    $pdo = db();
-
     $stmt = $pdo->prepare("
-        SELECT
-            id,
-            email,
-            full_name,
-            whatsapp_full,
-            is_verified
+        SELECT id
         FROM customers
         WHERE email = ?
         LIMIT 1
@@ -135,7 +170,7 @@ try {
     unset($_SESSION['pending_customer_auth']);
 
     json_response(true, [
-        'message' => 'Signed in successfully',
+        'message' => 'Registration completed successfully',
         'customer' => $_SESSION['customer_auth']
     ]);
 } catch (Throwable $e) {
