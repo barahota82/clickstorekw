@@ -355,26 +355,21 @@
   }
 
   function ensureAuthModal() {
-    if (document.getElementById("authModalGlobal")) return;
+  if (document.getElementById("authModalGlobal")) return;
 
-    const modal = document.createElement("div");
-    modal.id = "authModalGlobal";
-    modal.className = "auth-modal-global";
-    modal.innerHTML = `
-      <div class="auth-box-global">
-        <button type="button" class="auth-close-global" aria-label="Close" onclick="closeAuthModal()">×</button>
-        <h3>Welcome 👋</h3>
-        <p class="auth-subtitle-global">Register with your email and WhatsApp number.</p>
+  const modal = document.createElement("div");
+  modal.id = "authModalGlobal";
+  modal.className = "auth-modal-global";
 
-        <div class="auth-user-box-global" id="authUserBoxGlobal" style="display:none;">
-          <div class="auth-user-box-title">You are signed in</div>
-          <div class="auth-user-box-name" id="authUserBoxName"></div>
-          <button type="button" class="auth-signout-global" onclick="logoutUser()">Sign Out</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  }
+  modal.innerHTML = `
+    <div class="auth-box-global">
+      <button type="button" class="auth-close-global" aria-label="Close" onclick="closeAuthModal()">×</button>
+      <!-- هنا هيتم حقن النظام الجديد بالكامل -->
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
 
   function ensureMobileAppBar() {
     if (document.getElementById("mobileAppBarGlobal")) return;
