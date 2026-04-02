@@ -110,13 +110,14 @@
     const body = new URLSearchParams(data);
 
     const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-      },
-      body,
-      cache: "no-store"
-    });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+  },
+  body,
+  cache: "no-store",
+  credentials: "same-origin"
+});
 
     const raw = await res.text();
 
@@ -135,7 +136,10 @@
   }
 
   async function getStatus() {
-    const res = await fetch("/auth/status.php", { cache: "no-store" });
+    const res = await fetch("/auth/status.php", {
+  cache: "no-store",
+  credentials: "same-origin"
+});
     const raw = await res.text();
 
     try {
