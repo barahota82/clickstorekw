@@ -39,15 +39,12 @@ try {
     }
 
     $fullName = trim((string)($pending['full_name'] ?? ''));
-    $phone = trim((string)($pending['phone'] ?? ''));
     $whatsappCountryCode = trim((string)($pending['whatsapp_country_code'] ?? ''));
     $whatsappNumber = trim((string)($pending['whatsapp_number'] ?? ''));
     $whatsappFull = trim((string)($pending['whatsapp_full'] ?? ''));
-    $whatsapp = trim((string)($pending['whatsapp'] ?? ''));
 
     if (
         $fullName === '' ||
-        $phone === '' ||
         $whatsappCountryCode === '' ||
         $whatsappNumber === '' ||
         $whatsappFull === ''
@@ -71,11 +68,9 @@ try {
             UPDATE customers
             SET
                 full_name = ?,
-                phone = ?,
                 whatsapp_country_code = ?,
                 whatsapp_number = ?,
                 whatsapp_full = ?,
-                whatsapp = ?,
                 otp_code = NULL,
                 otp_expires_at = NULL,
                 is_verified = 1,
@@ -87,11 +82,9 @@ try {
 
         $update->execute([
             $fullName,
-            $phone,
             $whatsappCountryCode,
             $whatsappNumber,
             $whatsappFull,
-            $whatsapp,
             (int)$existing['id']
         ]);
 
@@ -101,11 +94,9 @@ try {
             INSERT INTO customers
             (
                 full_name,
-                phone,
                 whatsapp_country_code,
                 whatsapp_number,
                 whatsapp_full,
-                whatsapp,
                 email,
                 otp_code,
                 otp_expires_at,
@@ -115,16 +106,14 @@ try {
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, 1, 0, NOW(), NOW(), NOW())
+            VALUES (?, ?, ?, ?, ?, NULL, NULL, 1, 0, NOW(), NOW(), NOW())
         ");
 
         $insert->execute([
             $fullName,
-            $phone,
             $whatsappCountryCode,
             $whatsappNumber,
             $whatsappFull,
-            $whatsapp,
             $email
         ]);
 
