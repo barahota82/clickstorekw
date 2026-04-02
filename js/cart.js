@@ -482,23 +482,16 @@
   }
 
   function updateAuthLabel() {
-    const user = getUserData();
-    const label = document.getElementById("mobileAuthLabel");
-    const authUserName = document.getElementById("authUserBoxName");
-    const authUserBox = document.getElementById("authUserBoxGlobal");
+  const user = getUserData();
 
-    if (label) {
-      label.textContent = user && user.email ? user.email : "Registration";
-    }
+  const desktopLabel = document.getElementById("desktopAuthLabel");
+  const mobileLabel = document.getElementById("mobileAuthLabel");
 
-    if (authUserName) {
-      authUserName.textContent = user && user.email ? user.email : "";
-    }
+  const value = user && user.email ? user.email : "Registration";
 
-    if (authUserBox) {
-      authUserBox.style.display = user && user.email ? "" : "none";
-    }
-  }
+  if (desktopLabel) desktopLabel.textContent = value;
+  if (mobileLabel) mobileLabel.textContent = value;
+}
 
   window.openAuthModal = function () {
     const modal = document.getElementById("authModalGlobal");
