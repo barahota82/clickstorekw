@@ -569,6 +569,11 @@
     const user = getCurrentLocalUser();
     setTopAuthLabel(user && user.email ? user.email : "");
 
+    const signinEmailInput = document.getElementById("authSigninEmail");
+    if (signinEmailInput && user && user.email && !signinEmailInput.value) {
+      signinEmailInput.value = user.email;
+    }
+
     if (user && user.email) {
       showLoggedView(user);
     } else {
