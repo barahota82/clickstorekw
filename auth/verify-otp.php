@@ -55,7 +55,12 @@ try {
     $pdo = db();
 
     $stmt = $pdo->prepare("
-        SELECT id
+        SELECT
+            id,
+            email,
+            full_name,
+            whatsapp_full,
+            is_verified
         FROM customers
         WHERE email = ?
         LIMIT 1
@@ -130,7 +135,7 @@ try {
     unset($_SESSION['pending_customer_auth']);
 
     json_response(true, [
-        'message' => 'Verification completed',
+        'message' => 'Signed in successfully',
         'customer' => $_SESSION['customer_auth']
     ]);
 } catch (Throwable $e) {
