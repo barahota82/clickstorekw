@@ -65,14 +65,15 @@
   }
 
   function setTopAuthLabel(value) {
-  const desktopLabel = document.getElementById("desktopAuthLabel");
-  const mobileLabel = document.getElementById("mobileAuthLabel");
+    const desktopLabel = document.getElementById("desktopAuthLabel");
+    const mobileLabel = document.getElementById("mobileAuthLabel");
+    const finalValue = value || "Login";
 
-  const finalValue = value || "Login";
+    if (desktopLabel) desktopLabel.textContent = finalValue;
+    if (mobileLabel) mobileLabel.textContent = finalValue;
+  }
 
-  if (desktopLabel) desktopLabel.textContent = finalValue;
-  if (mobileLabel) mobileLabel.textContent = finalValue;
-}
+  window.setTopAuthLabel = setTopAuthLabel;
 
   function buildCountryOptions(select) {
     if (!select || !window.COUNTRY_CODES || !Array.isArray(window.COUNTRY_CODES)) {
@@ -222,7 +223,7 @@
         }
       } else {
         clearLocalUser();
-        setTopAuthLabel("");
+        setTopAuthLabel("Login");
         switchAuthTab("signin");
 
         if (typeof window.syncOrdersFromServer === "function") {
@@ -536,7 +537,7 @@
     }
 
     const user = getCurrentLocalUser();
-    setTopAuthLabel(user && user.email ? user.email : "");
+    setTopAuthLabel(user && user.email ? user.email : "Login");
 
     const signinEmailInput = document.getElementById("authSigninEmail");
     if (signinEmailInput && user && user.email && !signinEmailInput.value) {
@@ -554,7 +555,7 @@
     try {
       await fetch("/auth/logout.php", { cache: "no-store" });
       clearLocalUser();
-      setTopAuthLabel("");
+      setTopAuthLabel("Login");
       switchAuthTab("signin");
 
       if (typeof window.showToast === "function") {
@@ -573,22 +574,23 @@
     }
   };
 
-  window.initAuthModal = function () {
+  window.initAuthModal = async function () {
     ensureRealAuthUI();
-    refreshCustomerStatus();
+    await refreshCustomerStatus();
   };
 
   document.addEventListener("DOMContentLoaded", function () {
-    const timer = setInterval(function () {
+    const timer = setInterval(async function () {
       const modal = document.getElementById("authModalGlobal");
       if (modal) {
         ensureRealAuthUI();
+        await refreshCustomerStatus();
         clearInterval(timer);
       }
     }, 250);
-
-    refreshCustomerStatus();
   });
 
-  document.addEventListener("customer-auth-opened", ensureRealAuthUI);
+  document.addEventListener("customer-auth-opened", function () {
+    ensureRealAuthUI();
+  });
 })();
