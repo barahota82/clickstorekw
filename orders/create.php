@@ -242,18 +242,23 @@ try {
         'date' => date('Y-m-d h:i A'),
         'status' => 'Pending Delivery',
         'server_order' => true,
+        'is_first_order' => (bool)$isFirstOrder,
         'has_promotional_gift' => (bool)$hasGift,
         'gift_label' => $hasGift ? $giftLabel : '',
         'items' => array_map(fn($row) => $row['frontend_item'], $normalizedItems),
     ];
 
-    $giftText = $hasGift ? "\n🎁 Gift: {$giftLabel}" : '';
+    $giftText = $hasGift ? "🎁 Gift: {$giftLabel}" : '';
 
     $whatsLines = [];
     foreach ($frontendOrder['items'] as $idx => $item) {
         $imageUrl = trim((string)$item['image']);
+
         if ($imageUrl !== '' && !preg_match('#^https?://#i', $imageUrl)) {
-            $imageUrl = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $imageUrl;
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+            $host = $_SERVER['HTTP_HOST'] ?? '';
+            $imageUrl = '/' . ltrim($imageUrl, '/');
+            $imageUrl = $scheme . $host . $imageUrl;
         }
 
         $whatsLines[] = implode("\n", [
@@ -269,7 +274,7 @@ try {
         ]);
     }
 
-    $whatsappMessage = implode("\n\n", [
+    $messageParts = [
         "Welcome to Click Company 👋",
         "",
         "#ORDER",
@@ -278,11 +283,17 @@ try {
         "Customer Email: " . (string)$customer['email'],
         "Customer WhatsApp: " . (string)($customer['whatsapp_full'] ?? ''),
         "Order Date: " . date('Y-m-d h:i A'),
-        $giftText,
-        implode("\n\n", $whatsLines),
-        "",
-        "Please confirm this order and proceed with processing."
-    ]);
+    ];
+
+    if ($giftText !== '') {
+        $messageParts[] = $giftText;
+    }
+
+    $messageParts[] = implode("\n\n", $whatsLines);
+    $messageParts[] = "";
+    $messageParts[] = "Please confirm this order and proceed with processing.";
+
+    $whatsappMessage = implode("\n", $messageParts);
 
     json_response(true, [
         'message' => 'Order created successfully',
