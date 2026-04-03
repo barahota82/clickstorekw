@@ -66,6 +66,7 @@
       date: String(order.date || new Date().toLocaleString()).trim(),
       status: String(order.status || "Pending Delivery").trim(),
       server_order: !!order.server_order,
+      is_first_order: !!order.is_first_order,
       has_promotional_gift: !!order.has_promotional_gift,
       gift_label: String(order.gift_label || "").trim(),
       items: Array.isArray(order.items) ? order.items.map(normalizeItem) : []
@@ -229,10 +230,41 @@
     updateAuthLabel();
   }
 
+  async function fetchJson(url, options = {}) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const res = await fetch(url, {
+        cache: "no-store",
+        credentials: "same-origin",
+        signal: controller.signal,
+        ...options
+      });
+
+      const raw = await res.text();
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch (e) {
+        throw new Error(raw || "Unexpected server response.");
+      }
+
+      return { res, data };
+    } catch (err) {
+      if (err.name === "AbortError") {
+        throw new Error("Request timeout. Please try again.");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async function fetchCustomerSession() {
     try {
-      const res = await fetch("/auth/status.php", { cache: "no-store" });
-      const data = await res.json();
+      const { data } = await fetchJson("/auth/status.php");
       return data;
     } catch {
       return { logged_in: false, customer: null };
@@ -244,7 +276,7 @@
 
     if (customerSession.logged_in && customerSession.customer) {
       setUserData({
-        name: customerSession.customer.email || "Customer",
+        name: customerSession.customer.full_name || customerSession.customer.email || "Customer",
         email: customerSession.customer.email || "",
         full_name: customerSession.customer.full_name || "",
         id: customerSession.customer.id || null,
@@ -483,7 +515,7 @@
 
   function updateAuthLabel() {
     const user = getUserData();
-    const value = user && user.email ? user.email : "Login";
+    const value = user && user.email ? (user.full_name || user.email) : "Login";
 
     if (typeof window.setTopAuthLabel === "function") {
       window.setTopAuthLabel(value);
@@ -532,7 +564,7 @@
   };
 
   window.goHomePage = function () {
-    window.location.href = "index.html";
+    window.location.href = "/index.html";
   };
 
   window.openWhatsAppDirect = function () {
@@ -773,6 +805,7 @@
   function getStatusClass(status) {
     const s = String(status || "").toLowerCase();
     if (s.includes("delivered")) return "status-delivered";
+    if (s.includes("completed")) return "status-delivered";
     if (s.includes("cancelled")) return "status-cancelled";
     return "status-pending";
   }
@@ -902,9 +935,7 @@
     }
 
     try {
-      const res = await fetch("/orders/list.php", { cache: "no-store" });
-      const data = await res.json();
-
+      const { data } = await fetchJson("/orders/list.php");
       if (!data.ok || !Array.isArray(data.orders)) {
         return;
       }
@@ -921,6 +952,7 @@
 
       orders = merged;
       saveAll();
+      renderCartSystem();
     } catch (e) {
       console.error("Order sync error:", e);
     }
@@ -929,8 +961,6 @@
   window.syncOrdersFromServer = syncOrdersFromServer;
 
   function buildGuestOrderMessage(order) {
-    const greeting = getGreeting();
-
     const lines = (order.items || []).map((item, idx) => {
       const imageUrl = getOriginImage(item.image);
       return [
@@ -986,18 +1016,22 @@ Please confirm this order and proceed with processing.`;
           }))
         };
 
-        const res = await fetch("/orders/create.php", {
+        const { res, data } = await fetchJson("/orders/create.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          credentials: "same-origin",
           body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
-
-        if (!data.ok) {
+        if (!res.ok || !data.ok) {
+          if (data.message && /auth|login|sign in|unauth/i.test(data.message)) {
+            clearUserData();
+            customerSession = { logged_in: false, customer: null };
+            if (typeof window.openAuthModal === "function") {
+              window.openAuthModal();
+            }
+          }
           showToast(data.message || "Failed to create order");
           return;
         }
@@ -1014,11 +1048,14 @@ Please confirm this order and proceed with processing.`;
 
         saveAll();
         renderCartSystem();
+
         openWhatsApp(data.whatsapp_message || buildGuestOrderMessage(serverOrder));
+        await syncOrdersFromServer();
+        showToast("Order created successfully");
         return;
       } catch (e) {
         console.error(e);
-        showToast("Failed to send order");
+        showToast(e.message || "Failed to send order");
         return;
       }
     }
@@ -1028,6 +1065,7 @@ Please confirm this order and proceed with processing.`;
       date: orderDate,
       status: "Pending Delivery",
       server_order: false,
+      is_first_order: false,
       has_promotional_gift: false,
       gift_label: "",
       items: selected.map(item => ({
@@ -1049,6 +1087,7 @@ Please confirm this order and proceed with processing.`;
 
     const message = buildGuestOrderMessage(guestOrder);
     openWhatsApp(message);
+    showToast("Order prepared successfully");
   };
 
   window.trackOrder = function (index) {
@@ -1085,19 +1124,17 @@ Please update me with the current status of this order.`;
       onConfirm: async function () {
         if (order.server_order) {
           try {
-            const res = await fetch("/orders/cancel.php", {
+            const { res, data } = await fetchJson("/orders/cancel.php", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"
               },
-              credentials: "same-origin",
               body: JSON.stringify({
                 order_number: order.id
               })
             });
 
-            const data = await res.json();
-            if (!data.ok) {
+            if (!res.ok || !data.ok) {
               showToast(data.message || "Failed to cancel order");
               return;
             }
@@ -1105,9 +1142,10 @@ Please update me with the current status of this order.`;
             order.status = "Cancelled";
             saveAll();
             renderCartSystem();
+            await syncOrdersFromServer();
           } catch (e) {
             console.error(e);
-            showToast("Failed to cancel order");
+            showToast(e.message || "Failed to cancel order");
             return;
           }
         } else {
@@ -1131,6 +1169,7 @@ I want to cancel this order.
 Please confirm the cancellation.`;
 
         openWhatsApp(text);
+        showToast("Order cancelled successfully");
       }
     });
   };
@@ -1156,6 +1195,7 @@ Please confirm the cancellation.`;
       modal.classList.remove("active");
       cancel.onclick = null;
       ok.onclick = null;
+      modal.onclick = null;
     };
 
     cancel.onclick = close;
