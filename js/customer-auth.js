@@ -26,41 +26,70 @@
   }
 
   async function postForm(url, data) {
-    const body = new URLSearchParams(data);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-      },
-      body,
-      cache: "no-store"
-    });
-
-    const raw = await res.text();
-
-    let json;
     try {
-      json = JSON.parse(raw);
-    } catch (e) {
-      throw new Error(raw || "Unexpected server response.");
-    }
+      const body = new URLSearchParams(data);
 
-    if (!res.ok || !json.ok) {
-      throw new Error(json.message || "Request failed");
-    }
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+        },
+        body,
+        cache: "no-store",
+        signal: controller.signal
+      });
 
-    return json;
+      const raw = await res.text();
+
+      let json;
+      try {
+        json = JSON.parse(raw);
+      } catch (e) {
+        throw new Error(raw || "Unexpected server response.");
+      }
+
+      if (!res.ok || !json.ok) {
+        throw new Error(json.message || "Request failed");
+      }
+
+      return json;
+    } catch (err) {
+      if (err.name === "AbortError") {
+        throw new Error("Request timeout. Please try again.");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   async function getStatus() {
-    const res = await fetch("/auth/status.php", { cache: "no-store" });
-    const raw = await res.text();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
     try {
-      return JSON.parse(raw);
-    } catch (e) {
-      throw new Error(raw || "Invalid status response.");
+      const res = await fetch("/auth/status.php", {
+        cache: "no-store",
+        signal: controller.signal
+      });
+
+      const raw = await res.text();
+
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        throw new Error(raw || "Invalid status response.");
+      }
+    } catch (err) {
+      if (err.name === "AbortError") {
+        throw new Error("Status request timeout.");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
@@ -112,6 +141,22 @@
 
     msg.className = "customer-auth-message";
     msg.textContent = "";
+  }
+
+  function setButtonLoading(button, isLoading, loadingText, normalText) {
+    if (!button) return;
+
+    if (!button.dataset.originalText) {
+      button.dataset.originalText = normalText || button.textContent || "";
+    }
+
+    if (isLoading) {
+      button.disabled = true;
+      button.textContent = loadingText || "Please wait...";
+    } else {
+      button.disabled = false;
+      button.textContent = normalText || button.dataset.originalText || "";
+    }
   }
 
   function switchAuthTab(mode) {
@@ -207,7 +252,7 @@
 
       if (data.logged_in && data.customer) {
         const user = {
-          name: data.customer.email || "Customer",
+          name: data.customer.full_name || data.customer.email || "Customer",
           email: data.customer.email || "",
           full_name: data.customer.full_name || "",
           id: data.customer.id || null,
@@ -215,7 +260,7 @@
         };
 
         setLocalUser(user);
-        setTopAuthLabel(user.email || "Customer");
+        setTopAuthLabel(user.full_name || user.email || "Customer");
         showLoggedView(user);
 
         if (typeof window.syncOrdersFromServer === "function") {
@@ -236,6 +281,7 @@
   }
 
   async function sendSigninCode() {
+    const btn = document.getElementById("sendSigninOtpBtn");
     const email = document.getElementById("authSigninEmail")?.value.trim() || "";
 
     if (!email) {
@@ -243,6 +289,7 @@
       return;
     }
 
+    setButtonLoading(btn, true, "Sending...", "Send Verification Code");
     setMessage("Sending verification code...", "info");
 
     try {
@@ -255,10 +302,13 @@
       setMessage(data.message || "Verification code sent to your email.", "success");
     } catch (e) {
       setMessage(e.message || "Failed to send verification code.", "error");
+    } finally {
+      setButtonLoading(btn, false, "Sending...", "Send Verification Code");
     }
   }
 
   async function sendSignupCode() {
+    const btn = document.getElementById("sendSignupOtpBtn");
     const full_name = document.getElementById("authSignupName")?.value.trim() || "";
     const country_code = document.getElementById("authSignupCountryCode")?.value.trim() || "";
     const whatsapp = document.getElementById("authSignupWhatsapp")?.value.trim() || "";
@@ -269,6 +319,7 @@
       return;
     }
 
+    setButtonLoading(btn, true, "Sending...", "Send Verification Code");
     setMessage("Sending verification code...", "info");
 
     try {
@@ -284,10 +335,13 @@
       setMessage(data.message || "Verification code sent to your email.", "success");
     } catch (e) {
       setMessage(e.message || "Failed to send verification code.", "error");
+    } finally {
+      setButtonLoading(btn, false, "Sending...", "Send Verification Code");
     }
   }
 
   async function verifyCode() {
+    const btn = document.getElementById("verifyOtpBtn");
     const email = document.getElementById("authVerifyEmail")?.value.trim() || "";
     const otp = document.getElementById("authVerifyOtp")?.value.trim() || "";
 
@@ -296,6 +350,7 @@
       return;
     }
 
+    setButtonLoading(btn, true, "Verifying...", "Verify Code");
     setMessage("Verifying code...", "info");
 
     try {
@@ -306,7 +361,7 @@
 
       if (data.customer) {
         const user = {
-          name: data.customer.email || "Customer",
+          name: data.customer.full_name || data.customer.email || "Customer",
           email: data.customer.email || "",
           full_name: data.customer.full_name || "",
           id: data.customer.id || null,
@@ -314,7 +369,7 @@
         };
 
         setLocalUser(user);
-        setTopAuthLabel(user.email || "Customer");
+        setTopAuthLabel(user.full_name || user.email || "Customer");
         showLoggedView(user);
       }
 
@@ -335,6 +390,8 @@
       }, 700);
     } catch (e) {
       setMessage(e.message || "Verification failed.", "error");
+    } finally {
+      setButtonLoading(btn, false, "Verifying...", "Verify Code");
     }
   }
 
@@ -536,16 +593,16 @@
       logoutUserBtn.addEventListener("click", window.logoutUser);
     }
 
-    const user = getCurrentLocalUser();
-    setTopAuthLabel(user && user.email ? user.email : "Login");
+    const localUser = getCurrentLocalUser();
+    setTopAuthLabel(localUser && localUser.email ? (localUser.full_name || localUser.email) : "Login");
 
     const signinEmailInput = document.getElementById("authSigninEmail");
-    if (signinEmailInput && user && user.email && !signinEmailInput.value) {
-      signinEmailInput.value = user.email;
+    if (signinEmailInput && localUser && localUser.email && !signinEmailInput.value) {
+      signinEmailInput.value = localUser.email;
     }
 
-    if (user && user.email) {
-      showLoggedView(user);
+    if (localUser && localUser.email) {
+      showLoggedView(localUser);
     } else {
       switchAuthTab(currentMode);
     }
@@ -553,7 +610,18 @@
 
   window.logoutUser = async function () {
     try {
-      await fetch("/auth/logout.php", { cache: "no-store" });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        await fetch("/auth/logout.php", {
+          cache: "no-store",
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+
       clearLocalUser();
       setTopAuthLabel("Login");
       switchAuthTab("signin");
