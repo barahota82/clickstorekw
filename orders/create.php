@@ -41,7 +41,7 @@ $countRow = $countStmt->fetch();
 $isFirstOrder = ((int)($countRow['total_orders'] ?? 0) === 0) ? 1 : 0;
 
 $giftEnabled = get_setting_bool('first_order_gift_enabled', true);
-$giftLabel = trim((string)get_setting('first_order_gift_label', 'هدية إضافية لأول طلب'));
+$giftLabel = trim((string)get_setting('first_order_gift_label', 'Free gift for first order'));
 $hasGift = ($giftEnabled && $isFirstOrder === 1) ? 1 : 0;
 
 $subtotal = 0.000;
