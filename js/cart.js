@@ -355,21 +355,20 @@
   }
 
   function ensureAuthModal() {
-  if (document.getElementById("authModalGlobal")) return;
+    if (document.getElementById("authModalGlobal")) return;
 
-  const modal = document.createElement("div");
-  modal.id = "authModalGlobal";
-  modal.className = "auth-modal-global";
+    const modal = document.createElement("div");
+    modal.id = "authModalGlobal";
+    modal.className = "auth-modal-global";
 
-  modal.innerHTML = `
-    <div class="auth-box-global">
-      <button type="button" class="auth-close-global" aria-label="Close" onclick="closeAuthModal()">×</button>
-      <!-- هنا هيتم حقن النظام الجديد بالكامل -->
-    </div>
-  `;
+    modal.innerHTML = `
+      <div class="auth-box-global">
+        <button type="button" class="auth-close-global" aria-label="Close" onclick="closeAuthModal()">×</button>
+      </div>
+    `;
 
-  document.body.appendChild(modal);
-}
+    document.body.appendChild(modal);
+  }
 
   function ensureMobileAppBar() {
     if (document.getElementById("mobileAppBarGlobal")) return;
@@ -462,6 +461,7 @@
       await syncCustomerSession();
       await syncOrdersFromServer();
       renderCartSystem();
+      updateAuthLabel();
     });
   }
 
@@ -482,22 +482,31 @@
   }
 
   function updateAuthLabel() {
-  const user = getUserData();
+    const user = getUserData();
+    const value = user && user.email ? user.email : "Login";
 
-  const desktopLabel = document.getElementById("desktopAuthLabel");
-  const mobileLabel = document.getElementById("mobileAuthLabel");
+    if (typeof window.setTopAuthLabel === "function") {
+      window.setTopAuthLabel(value);
+      return;
+    }
 
-  const value = user && user.email ? user.email : "Login";
+    const desktopLabel = document.getElementById("desktopAuthLabel");
+    const mobileLabel = document.getElementById("mobileAuthLabel");
 
-  if (desktopLabel) desktopLabel.textContent = value;
-  if (mobileLabel) mobileLabel.textContent = value;
-}
+    if (desktopLabel) desktopLabel.textContent = value;
+    if (mobileLabel) mobileLabel.textContent = value;
+  }
 
   window.openAuthModal = function () {
     const modal = document.getElementById("authModalGlobal");
     if (!modal) return;
 
     modal.classList.add("active");
+
+    if (typeof window.initAuthModal === "function") {
+      window.initAuthModal();
+    }
+
     document.dispatchEvent(new CustomEvent("customer-auth-opened"));
   };
 
@@ -937,7 +946,7 @@
       ].join("\n");
     }).join("\n\n");
 
-    return `${greeting}
+    return `${getGreeting()}
 
 #ORDER
 Order Reference: ${order.id}
@@ -1005,7 +1014,6 @@ Please confirm this order and proceed with processing.`;
 
         saveAll();
         renderCartSystem();
-
         openWhatsApp(data.whatsapp_message || buildGuestOrderMessage(serverOrder));
         return;
       } catch (e) {
@@ -1048,10 +1056,9 @@ Please confirm this order and proceed with processing.`;
     if (!order) return;
     if (String(order.status).toLowerCase() === "cancelled") return;
 
-    const greeting = getGreeting();
     const offers = (order.items || []).map(item => `- ${item.title}`).join("\n");
 
-    const text = `${greeting}
+    const text = `${getGreeting()}
 
 #ORDER_STATUS
 Order Reference: ${order.id}
@@ -1109,10 +1116,9 @@ Please update me with the current status of this order.`;
           renderCartSystem();
         }
 
-        const greeting = getGreeting();
         const offers = (order.items || []).map(item => `- ${item.title}`).join("\n");
 
-        const text = `${greeting}
+        const text = `${getGreeting()}
 
 #CANCEL_ORDER
 Order Reference: ${order.id}
