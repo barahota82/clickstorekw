@@ -396,7 +396,7 @@
 
       <button type="button" class="mobile-app-item" data-mobile-nav="auth" onclick="openAuthModal()">
         <span class="mobile-app-icon">👤</span>
-        <span class="mobile-app-label" id="mobileAuthLabel">Registration</span>
+        <span class="mobile-app-label" id="mobileAuthLabel">Login</span>
       </button>
     `;
     document.body.appendChild(bar);
@@ -487,7 +487,7 @@
   const desktopLabel = document.getElementById("desktopAuthLabel");
   const mobileLabel = document.getElementById("mobileAuthLabel");
 
-  const value = user && user.email ? user.email : "Registration";
+  const value = user && user.email ? user.email : "Login";
 
   if (desktopLabel) desktopLabel.textContent = value;
   if (mobileLabel) mobileLabel.textContent = value;
