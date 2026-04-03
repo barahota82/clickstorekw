@@ -7,11 +7,35 @@ if (session_status() === PHP_SESSION_NONE) {
 
 date_default_timezone_set('Asia/Kuwait');
 
+/*
+|--------------------------------------------------------------------------
+| Load Sensitive Config
+|--------------------------------------------------------------------------
+*/
+$envPath = __DIR__ . '/.env.php';
+
+if (!file_exists($envPath)) {
+    die('Missing .env.php configuration file');
+}
+
+$env = require $envPath;
+
+/*
+|--------------------------------------------------------------------------
+| Database Config
+|--------------------------------------------------------------------------
+*/
 const DB_HOST = 'localhost';
 const DB_NAME = 'click_db';
-const DB_USER = 'clickst1_click_user';
-const DB_PASS = 'Admin@Hem@3282';
 
+define('DB_USER', $env['DB_USER'] ?? '');
+define('DB_PASS', $env['DB_PASS'] ?? '');
+
+/*
+|--------------------------------------------------------------------------
+| PDO Connection
+|--------------------------------------------------------------------------
+*/
 function db(): PDO
 {
     static $pdo = null;
