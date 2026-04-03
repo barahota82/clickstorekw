@@ -68,7 +68,7 @@
   const desktopLabel = document.getElementById("desktopAuthLabel");
   const mobileLabel = document.getElementById("mobileAuthLabel");
 
-  const finalValue = value || "Registration";
+  const finalValue = value || "Login";
 
   if (desktopLabel) desktopLabel.textContent = finalValue;
   if (mobileLabel) mobileLabel.textContent = finalValue;
