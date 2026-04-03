@@ -337,6 +337,12 @@
         .replace(/\b\w/g, char => char.toUpperCase());
     }
 
+    function formatComboTitle(title) {
+      const raw = String(title || "").trim();
+      if (!raw) return "";
+      return raw.replace(/\s*\/\s*/g, " + ").replace(/\s*\+\s*/g, " + ");
+    }
+
     function extractNumber(value) {
       const raw = String(value || "").trim();
       const match = raw.match(/\d+(\.\d+)?/);
@@ -426,11 +432,12 @@
     function buildHotCard(product) {
       const imagePath = (product.image || "/images/logo.png").trim();
       const brandName = normalizeBrandValue(product.brand);
+      const titleText = formatComboTitle(product.title || "");
       const monthlyText = formatMonthly(product.monthly);
       const durationText = formatDuration(product.duration);
       const downPaymentText = formatDownPayment(product.down_payment);
       const totalPriceText = product.total_price ? formatMonthly(product.total_price) : calculateTotalPrice(product);
-      const devicesCountText = normalizeDevicesCount(product.devices_count, product.title);
+      const devicesCountText = normalizeDevicesCount(product.devices_count, titleText);
 
       const card = document.createElement("div");
       card.className = "product-card hot-card";
@@ -439,11 +446,11 @@
 
       card.innerHTML = `
         <div class="product-image">
-          <img src="${imagePath}" alt="${product.title || "Product"}" loading="lazy">
+          <img src="${imagePath}" alt="${titleText || "Product"}" loading="lazy">
         </div>
 
         <div class="product-body">
-          <div class="product-title">${product.title || ""}</div>
+          <div class="product-title">${titleText}</div>
 
           <div class="row">
             <div>
@@ -460,7 +467,7 @@
       if (addBtn) {
         addBtn.addEventListener("click", () => {
           addToCart({
-            title: product.title || "Product",
+            title: titleText || "Product",
             image: imagePath,
             price: monthlyText,
             months: `${durationText} • ${downPaymentText}`,
