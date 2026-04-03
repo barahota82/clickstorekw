@@ -7,7 +7,7 @@
   "down_payment": 0,
   "monthly": 10,
   "duration": 13,
-  "available": false,
+  "available": true,
   "hot_offer": false,
   "brand_priority": 7,
   "priority": 11
