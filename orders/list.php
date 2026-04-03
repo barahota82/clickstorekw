@@ -15,6 +15,7 @@ $orderStmt = $pdo->prepare("
         order_number,
         status,
         created_at,
+        is_first_order,
         has_promotional_gift,
         gift_label
     FROM orders
@@ -75,6 +76,8 @@ foreach ($orders as $order) {
         $frontendStatus = 'Cancelled';
     } elseif ($status === 'sent') {
         $frontendStatus = 'Pending Delivery';
+    } elseif ($status === 'pending') {
+        $frontendStatus = 'Pending Delivery';
     }
 
     $mapped[] = [
@@ -83,6 +86,7 @@ foreach ($orders as $order) {
         'date' => date('Y-m-d h:i A', strtotime((string)$order['created_at'])),
         'status' => $frontendStatus,
         'server_order' => true,
+        'is_first_order' => (bool)$order['is_first_order'],
         'has_promotional_gift' => (bool)$order['has_promotional_gift'],
         'gift_label' => (string)($order['gift_label'] ?? ''),
         'items' => $itemsByOrder[(int)$order['id']] ?? []
