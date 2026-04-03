@@ -30,8 +30,14 @@ if (!$order) {
     json_response(false, ['message' => 'Order not found'], 404);
 }
 
-if ((string)$order['status'] === 'cancelled') {
+$currentStatus = (string)$order['status'];
+
+if ($currentStatus === 'cancelled') {
     json_response(false, ['message' => 'Order already cancelled'], 422);
+}
+
+if ($currentStatus === 'completed') {
+    json_response(false, ['message' => 'Completed orders cannot be cancelled'], 422);
 }
 
 try {
@@ -66,7 +72,7 @@ try {
     ");
     $log->execute([
         'order_id' => (int)$order['id'],
-        'old_status' => (string)$order['status']
+        'old_status' => $currentStatus
     ]);
 
     $pdo->commit();
