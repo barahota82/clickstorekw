@@ -4,9 +4,44 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Click Company</title>
-  <script src="https://unpkg.com/netlify-identity-widget@1/build/netlify-identity-widget.js"></script>
-  <link rel="stylesheet" href="/css/style.css" />
+
+  <link rel="stylesheet" href="/css/style.css?v=20260404" />
+
   <style>
+    .promo-banner {
+      display: none;
+      width: 100%;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 10px 24px rgba(22,163,74,0.18);
+    }
+
+    .promo-banner.show {
+      display: block;
+    }
+
+    .promo-banner .promo-banner-inner {
+      width: min(1180px, 92%);
+      margin: auto;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.6;
+    }
+
+    .promo-banner .promo-banner-icon {
+      font-size: 18px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
     .catalog-filter-wrap {
       margin-top: 12px;
       display: flex;
@@ -109,6 +144,11 @@
     }
 
     @media (max-width: 640px) {
+      .promo-banner .promo-banner-inner {
+        font-size: 13px;
+        padding: 10px 0;
+      }
+
       .catalog-filter {
         max-width: 100%;
       }
@@ -133,6 +173,7 @@
   </style>
 </head>
 <body class="page-home">
+
   <header>
     <div class="container nav">
       <div class="brand">
@@ -147,15 +188,15 @@
 
       <nav class="nav-links">
         <div class="nav-row main-row">
-          <a href="index.html" class="active desktop-only">Home</a>
-          <a href="phones.html">Phones</a>
-          <a href="tablets.html">Tablets</a>
-          <a href="laptops.html">Laptops</a>
-          <a href="accessories.html">Accessories</a>
+          <a href="/index.html" class="active desktop-only">Home</a>
+          <a href="/phones.html">Phones</a>
+          <a href="/tablets.html">Tablets</a>
+          <a href="/laptops.html">Laptops</a>
+          <a href="/accessories.html">Accessories</a>
           <a href="#hot-offers" class="hot-link">Hot Offers</a>
 
           <button class="registration-top-btn desktop-only" type="button" onclick="openAuthModal()">
-          <span id="desktopAuthLabel">Login</span>
+            <span id="desktopAuthLabel">Login</span>
           </button>
 
           <button class="cart-btn" onclick="openCart()">
@@ -165,6 +206,13 @@
       </nav>
     </div>
   </header>
+
+  <div class="promo-banner" id="promoBanner">
+    <div class="promo-banner-inner">
+      <span class="promo-banner-icon">🎁</span>
+      <span id="promoBannerText"></span>
+    </div>
+  </div>
 
   <section class="hero">
     <div class="container hero-box">
@@ -268,26 +316,11 @@
 
   <script>
     window.addEventListener("DOMContentLoaded", function () {
-      document.getElementById("year").textContent = new Date().getFullYear();
+      const year = document.getElementById("year");
+      if (year) {
+        year.textContent = new Date().getFullYear();
+      }
     });
-  </script>
-
-  <script>
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.init();
-
-      if (window.location.hash.includes("recovery_token")) {
-        window.netlifyIdentity.open("recovery");
-      }
-
-      if (window.location.hash.includes("invite_token")) {
-        window.netlifyIdentity.open("signup");
-      }
-
-      window.netlifyIdentity.on("login", function () {
-        window.location.href = "/admin/";
-      });
-    }
   </script>
 
   <script>
@@ -423,19 +456,22 @@
         </div>
       `;
 
-      card.querySelector(".cart-add-btn").addEventListener("click", () => {
-        addToCart({
-          title: product.title || "Product",
-          image: imagePath,
-          price: monthlyText,
-          months: `${durationText} • ${downPaymentText}`,
-          monthly: monthlyText,
-          duration: durationText,
-          down_payment: downPaymentText,
-          total_price: totalPriceText,
-          devices_count: devicesCountText
+      const addBtn = card.querySelector(".cart-add-btn");
+      if (addBtn) {
+        addBtn.addEventListener("click", () => {
+          addToCart({
+            title: product.title || "Product",
+            image: imagePath,
+            price: monthlyText,
+            months: `${durationText} • ${downPaymentText}`,
+            monthly: monthlyText,
+            duration: durationText,
+            down_payment: downPaymentText,
+            total_price: totalPriceText,
+            devices_count: devicesCountText
+          });
         });
-      });
+      }
 
       return card;
     }
@@ -521,6 +557,7 @@
       try {
         const categories = ["phones", "tablets", "laptops", "accessories"];
         const results = await Promise.all(categories.map(loadCategoryHotData));
+
         hotOffersData = results
           .flat()
           .filter(item => item && item.available === true && item.hot_offer === true)
@@ -581,6 +618,7 @@
 
     setInterval(() => {
       if (!el) return;
+
       el.style.opacity = 0;
 
       setTimeout(() => {
@@ -591,8 +629,77 @@
     }, 3000);
   </script>
 
-<script src="/js/cart.js?v=20260404"></script>
-<script src="/js/country-codes.js?v=20260404"></script>
-<script src="/js/customer-auth.js?v=20260404"></script>
+  <script>
+    function orderAlreadyUsedGift(order) {
+      if (!order || typeof order !== "object") return false;
+
+      const hasGift = order.has_promotional_gift === true || order.has_promotional_gift === 1 || String(order.has_promotional_gift) === "1";
+      const hasGiftLabel = !!String(order.gift_label || "").trim();
+
+      return hasGift || hasGiftLabel;
+    }
+
+    function orderClearlyConsumedFirstOrderOffer(order) {
+      if (!order || typeof order !== "object") return false;
+
+      const status = String(order.status || "").toLowerCase();
+      const isDeliveredLike = status.includes("completed") || status.includes("delivered");
+      const isFirstOrder = order.is_first_order === true || order.is_first_order === 1 || String(order.is_first_order) === "1";
+
+      return isDeliveredLike && isFirstOrder && orderAlreadyUsedGift(order);
+    }
+
+    async function updatePromoBanner() {
+      const banner = document.getElementById("promoBanner");
+      const text = document.getElementById("promoBannerText");
+
+      if (!banner || !text) return;
+
+      banner.classList.remove("show");
+      banner.style.display = "";
+
+      try {
+        const statusRes = await fetch("/auth/status.php", { cache: "no-store" });
+        const statusData = await statusRes.json();
+
+        if (!statusData || !statusData.logged_in) {
+          text.textContent = "Register now and get a FREE gift with your first delivered order.";
+          banner.classList.add("show");
+          return;
+        }
+
+        text.textContent = "You are registered. Your FREE gift will be included with your first delivered order.";
+        banner.classList.add("show");
+
+        try {
+          const ordersRes = await fetch("/orders/list.php", { cache: "no-store" });
+          const ordersData = await ordersRes.json();
+
+          if (ordersData && ordersData.ok && Array.isArray(ordersData.orders)) {
+            const consumedOffer = ordersData.orders.some(orderClearlyConsumedFirstOrderOffer);
+
+            if (consumedOffer) {
+              banner.classList.remove("show");
+              banner.style.display = "none";
+              return;
+            }
+          }
+        } catch (orderError) {
+          console.error("Promo orders check failed:", orderError);
+        }
+      } catch (e) {
+        console.error("Promo status check failed:", e);
+        text.textContent = "Register now and get a FREE gift with your first delivered order.";
+        banner.classList.add("show");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", updatePromoBanner);
+    document.addEventListener("customer-auth-updated", updatePromoBanner);
+  </script>
+
+  <script src="/js/cart.js?v=20260404"></script>
+  <script src="/js/country-codes.js?v=20260404"></script>
+  <script src="/js/customer-auth.js?v=20260404"></script>
 </body>
 </html>
