@@ -248,6 +248,12 @@
         .replace(/\b\w/g, char => char.toUpperCase());
     }
 
+    function formatComboTitle(title) {
+      const raw = String(title || "").trim();
+      if (!raw) return "";
+      return raw.replace(/\s*\/\s*/g, " + ").replace(/\s*\+\s*/g, " + ");
+    }
+
     function extractNumber(value) {
       const raw = String(value || "").trim();
       const match = raw.match(/\d+(\.\d+)?/);
@@ -333,7 +339,7 @@
       const monthlyText = formatMonthly(product.monthly);
       const durationText = formatDuration(product.duration);
       const downPaymentText = formatDownPayment(product.down_payment);
-      const titleText = product.title || "";
+      const titleText = formatComboTitle(product.title || "");
       const totalPriceText = calculateTotalPrice(product, monthlyText, durationText, downPaymentText);
       const devicesCountText = normalizeDevicesCount(product.devices_count, titleText);
 
