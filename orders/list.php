@@ -72,17 +72,19 @@ foreach ($orders as $order) {
 
     $frontendStatus = 'Pending Delivery';
 
-    if ($status === 'completed') {
-        $frontendStatus = 'Delivered';
-    } elseif ($status === 'cancelled') {
-        $frontendStatus = 'Cancelled';
-    } elseif ($status === 'rejected') {
-        $frontendStatus = 'Rejected';
-    } elseif ($status === 'sent') {
-        $frontendStatus = 'Pending Delivery';
-    } elseif ($status === 'pending') {
-        $frontendStatus = 'Pending Delivery';
-    }
+if ($status === 'pending') {
+    $frontendStatus = 'Pending Delivery';
+} elseif ($status === 'approved') {
+    $frontendStatus = 'Approved';
+} elseif ($status === 'on_the_way') {
+    $frontendStatus = 'On The Way';
+} elseif ($status === 'completed') {
+    $frontendStatus = 'Delivered';
+} elseif ($status === 'rejected') {
+    $frontendStatus = 'Rejected';
+} elseif ($status === 'cancelled') {
+    $frontendStatus = 'Cancelled';
+}
 
     $mapped[] = [
         'id' => (string)$order['order_number'],
