@@ -38,6 +38,14 @@ if ($currentStatus === 'completed') {
     json_response(false, ['message' => 'Completed orders cannot be rejected'], 422);
 }
 
+if ($currentStatus === 'cancelled') {
+    json_response(false, ['message' => 'Cancelled orders cannot be rejected'], 422);
+}
+
+if ($currentStatus === 'on_the_way') {
+    json_response(false, ['message' => 'Orders on the way cannot be rejected'], 422);
+}
+
 $reason = 'Not matching conditions';
 
 try {
