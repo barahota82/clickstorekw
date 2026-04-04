@@ -771,9 +771,15 @@
   function renderOrderCard(order, index) {
     const itemNames = (order.items || []).map(item => `<div class="order-offer-name">• ${escapeHTML(item.title)}</div>`).join("");
     const statusClass = getStatusClass(order.status);
-    const orderStatusValue = String(order.status).toLowerCase();
-    const isCancelled = orderStatusValue === "cancelled";
-    const isRejected = orderStatusValue === "rejected";
+    const rawStatus = String(order.status || "").trim().toLowerCase();
+    const isCancelled = rawStatus === "cancelled";
+    const isRejected = rawStatus === "rejected";
+    const isDelivered = rawStatus === "delivered";
+    const isPending = rawStatus === "pending delivery";
+    const isApproved = rawStatus === "approved";
+    const isOnTheWay = rawStatus === "on the way";
+    const canTrack = isPending || isApproved || isOnTheWay;
+    const canCancel = isPending || isApproved;
     const giftHtml = order.has_promotional_gift && order.gift_label
       ? `<div class="order-offer-name">🎁 ${escapeHTML(order.gift_label)}</div>`
       : "";
@@ -791,16 +797,22 @@
         </div>
 
         <div class="order-card-actions">
-          ${(isCancelled || isRejected)
-            ? `<button type="button" class="order-small-btn order-track-btn order-disabled-btn" disabled>Track My Order</button>`
-            : `<button type="button" class="order-small-btn order-track-btn" onclick="trackOrder(${index})">Track My Order</button>`
+          ${canTrack
+            ? `<button type="button" class="order-small-btn order-track-btn" onclick="trackOrder(${index})">Track My Order</button>`
+            : `<button type="button" class="order-small-btn order-track-btn order-disabled-btn" disabled>Track My Order</button>`
           }
 
-          ${isCancelled
-            ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Cancelled</button>`
-            : isRejected
-              ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Rejected</button>`
-              : `<button type="button" class="order-small-btn order-cancel-btn" onclick="cancelOrderRequest(${index})">Cancel Order</button>`
+          ${canCancel
+            ? `<button type="button" class="order-small-btn order-cancel-btn" onclick="cancelOrderRequest(${index})">Cancel Order</button>`
+            : isCancelled
+              ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Cancelled</button>`
+              : isRejected
+                ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Rejected</button>`
+                : isDelivered
+                  ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Delivered</button>`
+                  : isOnTheWay
+                    ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Cancel By Company Only</button>`
+                    : `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Locked</button>`
           }
         </div>
       </div>
@@ -813,6 +825,8 @@
     if (s.includes("completed")) return "status-delivered";
     if (s.includes("cancelled")) return "status-cancelled";
     if (s.includes("rejected")) return "status-cancelled";
+    if (s.includes("on the way")) return "status-pending";
+    if (s.includes("approved")) return "status-pending";
     return "status-pending";
   }
 
@@ -823,6 +837,8 @@
     if (s === "cancelled") return "Cancelled";
     if (s === "rejected") return rejectionReason ? `Rejected - ${rejectionReason}` : "Rejected - Not matching conditions";
     if (s === "completed" || s === "delivered") return "Delivered";
+    if (s === "approved") return "Approved";
+    if (s === "on the way" || s === "on_the_way") return "On The Way";
     if (s === "pending" || s === "sent" || s === "pending delivery") return "Pending Delivery";
 
     return String(status || "").trim();
@@ -1106,8 +1122,11 @@ Please confirm this order and proceed with processing.`;
   window.trackOrder = function (index) {
     const order = orders[index];
     if (!order) return;
-    const currentStatus = String(order.status).toLowerCase();
-    if (currentStatus === "cancelled" || currentStatus === "rejected") return;
+
+    const currentStatus = String(order.status || "").trim().toLowerCase();
+    const canTrack = currentStatus === "pending delivery" || currentStatus === "approved" || currentStatus === "on the way";
+
+    if (!canTrack) return;
 
     const offers = (order.items || []).map(item => `- ${item.title}`).join("\n");
 
@@ -1129,8 +1148,10 @@ Please update me with the current status of this order.`;
     const order = orders[index];
     if (!order) return;
 
-    const currentStatus = String(order.status).toLowerCase();
-    if (currentStatus === "cancelled" || currentStatus === "rejected") return;
+    const currentStatus = String(order.status || "").trim().toLowerCase();
+    const canCancel = currentStatus === "pending delivery" || currentStatus === "approved";
+
+    if (!canCancel) return;
 
     openConfirmModal({
       title: "Cancel Order",
