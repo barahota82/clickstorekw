@@ -305,6 +305,10 @@ function bindTabSwitching() {
       const tabId = this.dataset.tab;
       const target = document.getElementById(tabId);
       if (target) target.classList.add('active');
+
+      if (tabId === 'tab-stats') {
+        loadOrdersManagement();
+      }
     });
   });
 }
@@ -518,6 +522,225 @@ function bindBoxButtons() {
   }
 }
 
+/* =========================
+   ORDERS MANAGEMENT
+========================= */
+
+async function adminFetchJson(url, options = {}) {
+  const res = await fetch(url, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    ...options
+  });
+
+  const raw = await res.text();
+  let data = null;
+
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(raw || 'Unexpected server response.');
+  }
+
+  return { res, data };
+}
+
+function formatAdminOrderStatus(rawStatus, rejectionReason = '') {
+  const status = String(rawStatus || '').toLowerCase();
+
+  if (status === 'completed') return 'Delivered';
+  if (status === 'cancelled') return 'Cancelled';
+  if (status === 'rejected') return rejectionReason ? `Rejected - ${rejectionReason}` : 'Rejected';
+  if (status === 'sent') return 'Sent';
+  return 'Pending';
+}
+
+function getAdminOrderStatusClass(rawStatus) {
+  const status = String(rawStatus || '').toLowerCase();
+
+  if (status === 'completed') return 'status-delivered';
+  if (status === 'cancelled') return 'status-cancelled';
+  if (status === 'rejected') return 'status-rejected';
+  return 'status-pending';
+}
+
+function renderAdminOrdersTable(orders) {
+  const tbody = document.getElementById('adminOrdersTableBody');
+  const emptyBox = document.getElementById('ordersEmptyBox');
+
+  if (!tbody) return;
+
+  if (!Array.isArray(orders) || orders.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align:center; color:#c8d4ea;">لا توجد طلبات مطابقة للفلاتر الحالية.</td>
+      </tr>
+    `;
+    if (emptyBox) emptyBox.style.display = 'block';
+    return;
+  }
+
+  if (emptyBox) emptyBox.style.display = 'none';
+
+  tbody.innerHTML = orders.map(order => {
+    const itemsHtml = (order.items || []).map(item => {
+      return `<span>• ${item.title} × ${item.quantity}</span>`;
+    }).join('');
+
+    const rawStatus = String(order.raw_status || '');
+    const statusClass = getAdminOrderStatusClass(rawStatus);
+    const statusLabel = formatAdminOrderStatus(rawStatus, order.rejection_reason || '');
+
+    const canReject = !['rejected', 'completed', 'cancelled'].includes(rawStatus);
+    const canDeliver = !['completed', 'cancelled', 'rejected'].includes(rawStatus);
+    const canPending = rawStatus !== 'pending';
+
+    return `
+      <tr>
+        <td>${order.order_number || ''}</td>
+        <td>${order.customer_name || ''}</td>
+        <td>${order.customer_email || ''}</td>
+        <td>${order.customer_whatsapp || ''}</td>
+        <td>${order.created_at || ''}</td>
+        <td>
+          <span class="status-chip ${statusClass}">
+            ${statusLabel}
+          </span>
+        </td>
+        <td>
+          <div class="order-items-preview">
+            ${itemsHtml || '<span>-</span>'}
+          </div>
+        </td>
+        <td>${Number(order.total_amount || 0).toFixed(3)} ${order.currency_code || 'KWD'}</td>
+        <td>
+          <div class="order-actions-cell">
+            ${canPending ? `<button class="btn btn-primary secondary-btn" type="button" onclick="setOrderPending('${order.order_number}')">Pending</button>` : ''}
+            ${canDeliver ? `<button class="btn success-btn" type="button" onclick="markOrderDelivered('${order.order_number}')">Delivered</button>` : ''}
+            ${canReject ? `<button class="btn warning-btn" type="button" onclick="rejectAdminOrder('${order.order_number}')">Reject</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderOrdersSummary(summary) {
+  const all = document.getElementById('ordersCountAll');
+  const pending = document.getElementById('ordersCountPending');
+  const delivered = document.getElementById('ordersCountDelivered');
+  const rejected = document.getElementById('ordersCountRejected');
+
+  if (all) all.textContent = String(summary?.all ?? 0);
+  if (pending) pending.textContent = String(summary?.pending ?? 0);
+  if (delivered) delivered.textContent = String(summary?.delivered ?? 0);
+  if (rejected) rejected.textContent = String(summary?.rejected_cancelled ?? 0);
+}
+
+async function loadOrdersManagement() {
+  const search = document.getElementById('ordersSearchInput')?.value.trim() || '';
+  const status = document.getElementById('ordersStatusFilter')?.value.trim() || '';
+  const date = document.getElementById('ordersDateFilter')?.value.trim() || '';
+
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (status) params.set('status', status);
+  if (date) params.set('date', date);
+
+  adminSetStatus('dashboardStatus', 'info', 'جاري تحميل الطلبات...');
+
+  try {
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const { data } = await adminFetchJson(`/admin/api/get-orders.php${query}`);
+
+    if (!data.ok) {
+      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل تحميل الطلبات.');
+      return;
+    }
+
+    renderAdminOrdersTable(data.orders || []);
+    renderOrdersSummary(data.summary || {});
+    adminSetStatus('dashboardStatus', 'success', 'تم تحميل الطلبات بنجاح.');
+  } catch (e) {
+    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء تحميل الطلبات.');
+  }
+}
+
+window.loadOrdersManagement = loadOrdersManagement;
+
+async function updateOrderStatus(orderNumber, endpoint, successMessage) {
+  adminSetStatus('dashboardStatus', 'info', 'جاري تحديث حالة الطلب...');
+
+  try {
+    const { data } = await adminFetchJson(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_number: orderNumber })
+    });
+
+    if (!data.ok) {
+      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل تحديث حالة الطلب.');
+      return;
+    }
+
+    adminSetStatus('dashboardStatus', 'success', successMessage);
+    await loadOrdersManagement();
+  } catch (e) {
+    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء تحديث حالة الطلب.');
+  }
+}
+
+window.rejectAdminOrder = async function (orderNumber) {
+  if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
+  await updateOrderStatus(orderNumber, '/admin/api/reject-order.php', 'تم رفض الطلب بنجاح.');
+};
+
+window.markOrderDelivered = async function (orderNumber) {
+  if (!confirm('هل أنت متأكد من تحويل الطلب إلى Delivered؟')) return;
+  await updateOrderStatus(orderNumber, '/admin/api/mark-order-delivered.php', 'تم تحويل الطلب إلى Delivered بنجاح.');
+};
+
+window.setOrderPending = async function (orderNumber) {
+  if (!confirm('هل أنت متأكد من إعادة الطلب إلى Pending؟')) return;
+  await updateOrderStatus(orderNumber, '/admin/api/mark-order-pending.php', 'تم تحويل الطلب إلى Pending بنجاح.');
+};
+
+function bindOrdersManagementButtons() {
+  const loadBtn = document.getElementById('loadOrdersBtn');
+  const refreshBtn = document.getElementById('refreshOrdersBtn');
+  const searchInput = document.getElementById('ordersSearchInput');
+  const statusFilter = document.getElementById('ordersStatusFilter');
+  const dateFilter = document.getElementById('ordersDateFilter');
+
+  if (loadBtn) {
+    loadBtn.addEventListener('click', loadOrdersManagement);
+  }
+
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', loadOrdersManagement);
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        loadOrdersManagement();
+      }
+    });
+  }
+
+  if (statusFilter) {
+    statusFilter.addEventListener('change', loadOrdersManagement);
+  }
+
+  if (dateFilter) {
+    dateFilter.addEventListener('change', loadOrdersManagement);
+  }
+}
+
+/* =========================
+   AUTH
+========================= */
+
 async function checkAuth() {
   try {
     const res = await fetch('/admin/api/check-auth.php', {
@@ -649,6 +872,7 @@ function initializeAdminUI() {
 
   bindBoxButtons();
   bindBoxInteractions();
+  bindOrdersManagementButtons();
   renderBoxes();
 
   checkAuth();
