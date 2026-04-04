@@ -65,6 +65,7 @@
       db_id: order.db_id ? Number(order.db_id) : null,
       date: String(order.date || new Date().toLocaleString()).trim(),
       status: String(order.status || "Pending Delivery").trim(),
+      rejection_reason: String(order.rejection_reason || "").trim(),
       server_order: !!order.server_order,
       is_first_order: !!order.is_first_order,
       has_promotional_gift: !!order.has_promotional_gift,
@@ -770,7 +771,9 @@
   function renderOrderCard(order, index) {
     const itemNames = (order.items || []).map(item => `<div class="order-offer-name">• ${escapeHTML(item.title)}</div>`).join("");
     const statusClass = getStatusClass(order.status);
-    const isCancelled = String(order.status).toLowerCase() === "cancelled";
+    const orderStatusValue = String(order.status).toLowerCase();
+    const isCancelled = orderStatusValue === "cancelled";
+    const isRejected = orderStatusValue === "rejected";
     const giftHtml = order.has_promotional_gift && order.gift_label
       ? `<div class="order-offer-name">🎁 ${escapeHTML(order.gift_label)}</div>`
       : "";
@@ -779,7 +782,7 @@
       <div class="order-card-item">
         <div class="order-card-top">
           <div class="order-date">${escapeHTML(order.date)}</div>
-          <div class="order-status ${statusClass}">${escapeHTML(formatStatusLabel(order.status))}</div>
+          <div class="order-status ${statusClass}">${escapeHTML(formatStatusLabel(order.status, order.rejection_reason))}</div>
         </div>
 
         <div class="order-offers-list">
@@ -788,14 +791,16 @@
         </div>
 
         <div class="order-card-actions">
-          ${isCancelled
+          ${(isCancelled || isRejected)
             ? `<button type="button" class="order-small-btn order-track-btn order-disabled-btn" disabled>Track My Order</button>`
             : `<button type="button" class="order-small-btn order-track-btn" onclick="trackOrder(${index})">Track My Order</button>`
           }
 
           ${isCancelled
             ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Cancelled</button>`
-            : `<button type="button" class="order-small-btn order-cancel-btn" onclick="cancelOrderRequest(${index})">Cancel Order</button>`
+            : isRejected
+              ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Rejected</button>`
+              : `<button type="button" class="order-small-btn order-cancel-btn" onclick="cancelOrderRequest(${index})">Cancel Order</button>`
           }
         </div>
       </div>
@@ -807,13 +812,20 @@
     if (s.includes("delivered")) return "status-delivered";
     if (s.includes("completed")) return "status-delivered";
     if (s.includes("cancelled")) return "status-cancelled";
+    if (s.includes("rejected")) return "status-cancelled";
     return "status-pending";
   }
 
-  function formatStatusLabel(status) {
-    const s = String(status || "").trim();
+  function formatStatusLabel(status, rejectionReason = "") {
+    const s = String(status || "").trim().toLowerCase();
+
     if (!s) return "Pending Delivery";
-    return s;
+
+    if (s === "rejected") {
+      return rejectionReason || "Rejected - Not matching conditions";
+    }
+
+    return status;
   }
 
   window.toggleItemSelection = function (type, index) {
@@ -1064,6 +1076,7 @@ Please confirm this order and proceed with processing.`;
       id: orderId,
       date: orderDate,
       status: "Pending Delivery",
+      rejection_reason: "",
       server_order: false,
       is_first_order: false,
       has_promotional_gift: false,
@@ -1093,7 +1106,8 @@ Please confirm this order and proceed with processing.`;
   window.trackOrder = function (index) {
     const order = orders[index];
     if (!order) return;
-    if (String(order.status).toLowerCase() === "cancelled") return;
+    const currentStatus = String(order.status).toLowerCase();
+    if (currentStatus === "cancelled" || currentStatus === "rejected") return;
 
     const offers = (order.items || []).map(item => `- ${item.title}`).join("\n");
 
@@ -1114,7 +1128,9 @@ Please update me with the current status of this order.`;
   window.cancelOrderRequest = function (index) {
     const order = orders[index];
     if (!order) return;
-    if (String(order.status).toLowerCase() === "cancelled") return;
+
+    const currentStatus = String(order.status).toLowerCase();
+    if (currentStatus === "cancelled" || currentStatus === "rejected") return;
 
     openConfirmModal({
       title: "Cancel Order",
