@@ -14,6 +14,7 @@ $orderStmt = $pdo->prepare("
         id,
         order_number,
         status,
+        rejection_reason,
         created_at,
         is_first_order,
         has_promotional_gift,
@@ -70,10 +71,13 @@ foreach ($orders as $order) {
     $status = (string)$order['status'];
 
     $frontendStatus = 'Pending Delivery';
+
     if ($status === 'completed') {
         $frontendStatus = 'Delivered';
     } elseif ($status === 'cancelled') {
         $frontendStatus = 'Cancelled';
+    } elseif ($status === 'rejected') {
+        $frontendStatus = 'Rejected';
     } elseif ($status === 'sent') {
         $frontendStatus = 'Pending Delivery';
     } elseif ($status === 'pending') {
@@ -85,6 +89,7 @@ foreach ($orders as $order) {
         'db_id' => (int)$order['id'],
         'date' => date('Y-m-d h:i A', strtotime((string)$order['created_at'])),
         'status' => $frontendStatus,
+        'rejection_reason' => (string)($order['rejection_reason'] ?? ''),
         'server_order' => true,
         'is_first_order' => (bool)$order['is_first_order'],
         'has_promotional_gift' => (bool)$order['has_promotional_gift'],
