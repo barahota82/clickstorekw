@@ -820,12 +820,12 @@
     const s = String(status || "").trim().toLowerCase();
 
     if (!s) return "Pending Delivery";
+    if (s === "cancelled") return "Cancelled";
+    if (s === "rejected") return rejectionReason ? `Rejected - ${rejectionReason}` : "Rejected - Not matching conditions";
+    if (s === "completed" || s === "delivered") return "Delivered";
+    if (s === "pending" || s === "sent" || s === "pending delivery") return "Pending Delivery";
 
-    if (s === "rejected") {
-      return rejectionReason || "Rejected - Not matching conditions";
-    }
-
-    return status;
+    return String(status || "").trim();
   }
 
   window.toggleItemSelection = function (type, index) {
