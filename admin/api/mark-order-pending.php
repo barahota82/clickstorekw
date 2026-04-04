@@ -38,6 +38,10 @@ if ($currentStatus === 'cancelled') {
     json_response(false, ['message' => 'Cancelled orders cannot be returned to pending'], 422);
 }
 
+if ($currentStatus === 'completed') {
+    json_response(false, ['message' => 'Delivered orders cannot be returned to pending'], 422);
+}
+
 try {
     $pdo->beginTransaction();
 
