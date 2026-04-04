@@ -224,6 +224,20 @@ $brands = $pdo->query("
       box-shadow: 0 12px 24px rgba(239,68,68,0.22);
     }
 
+    .success-btn {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      box-shadow: 0 12px 24px rgba(34,197,94,0.22);
+      border: none;
+      color: #fff;
+    }
+
+    .warning-btn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      box-shadow: 0 12px 24px rgba(245,158,11,0.22);
+      border: none;
+      color: #fff;
+    }
+
     .mini-note {
       margin-top: 14px;
       padding: 14px 16px;
@@ -358,6 +372,92 @@ $brands = $pdo->query("
       font-size: 14px;
     }
 
+    .orders-toolbar {
+      display: grid;
+      grid-template-columns: 1fr 180px 180px auto auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .status-pending {
+      background: rgba(59,130,246,0.16);
+      border: 1px solid rgba(59,130,246,0.28);
+    }
+
+    .status-delivered {
+      background: rgba(34,197,94,0.16);
+      border: 1px solid rgba(34,197,94,0.28);
+    }
+
+    .status-cancelled {
+      background: rgba(239,68,68,0.16);
+      border: 1px solid rgba(239,68,68,0.28);
+    }
+
+    .status-rejected {
+      background: rgba(245,158,11,0.16);
+      border: 1px solid rgba(245,158,11,0.28);
+    }
+
+    .order-actions-cell {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .order-items-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .order-items-preview span {
+      color: #c8d4ea;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .summary-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 14px;
+      color: #c8d4ea;
+      margin-bottom: 8px;
+    }
+
+    .summary-card span {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+    }
+
     @media (max-width: 1200px) {
       .admin-main-tabs {
         grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -365,11 +465,16 @@ $brands = $pdo->query("
 
       .top-grid,
       .edit-layout,
-      .placeholder-panels {
+      .placeholder-panels,
+      .summary-cards {
         grid-template-columns: 1fr;
       }
 
       .box-item-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .orders-toolbar {
         grid-template-columns: 1fr;
       }
     }
@@ -786,12 +891,100 @@ $brands = $pdo->query("
           </div>
         </div>
 
+        <!-- ORDERS MANAGEMENT -->
         <div id="tab-stats" class="admin-panel">
           <h3 class="panel-title">Statistics / Orders</h3>
-          <div class="placeholder-panels">
-            <div class="placeholder-card"><strong>Daily</strong><span>إحصائيات يومية للطلبات.</span></div>
-            <div class="placeholder-card"><strong>Monthly</strong><span>إحصائيات شهرية للطلبات.</span></div>
-            <div class="placeholder-card"><strong>Custom Range</strong><span>تقارير حسب المدة الزمنية.</span></div>
+          <p class="panel-desc">
+            هذا القسم مخصص لإدارة الطلبات المرسلة من العملاء، ومراجعتها وتغيير حالتها إلى Pending أو Delivered أو Rejected.
+          </p>
+
+          <div class="summary-cards">
+            <div class="summary-card">
+              <strong>All Orders</strong>
+              <span id="ordersCountAll">0</span>
+            </div>
+            <div class="summary-card">
+              <strong>Pending</strong>
+              <span id="ordersCountPending">0</span>
+            </div>
+            <div class="summary-card">
+              <strong>Delivered</strong>
+              <span id="ordersCountDelivered">0</span>
+            </div>
+            <div class="summary-card">
+              <strong>Rejected / Cancelled</strong>
+              <span id="ordersCountRejected">0</span>
+            </div>
+          </div>
+
+          <div class="sub-card">
+            <h4 class="sub-title">Orders Management</h4>
+
+            <div class="orders-toolbar">
+              <div class="form-group">
+                <label for="ordersSearchInput">بحث</label>
+                <input id="ordersSearchInput" type="text" placeholder="ابحث برقم الطلب أو اسم العميل أو الإيميل">
+              </div>
+
+              <div class="form-group">
+                <label for="ordersStatusFilter">حالة الطلب</label>
+                <select id="ordersStatusFilter">
+                  <option value="">الكل</option>
+                  <option value="pending">Pending</option>
+                  <option value="sent">Sent</option>
+                  <option value="completed">Delivered</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="ordersDateFilter">التاريخ</label>
+                <input id="ordersDateFilter" type="date">
+              </div>
+
+              <div class="form-group">
+                <button id="loadOrdersBtn" class="btn btn-primary" type="button">Load Orders</button>
+              </div>
+
+              <div class="form-group">
+                <button id="refreshOrdersBtn" class="btn btn-primary secondary-btn" type="button">Refresh</button>
+              </div>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table" id="adminOrdersTable">
+                <thead>
+                  <tr>
+                    <th>Order No.</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>WhatsApp</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Products</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminOrdersTableBody">
+                  <tr>
+                    <td colspan="9" style="text-align:center; color:#c8d4ea;">لم يتم تحميل الطلبات بعد.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="ordersEmptyBox" class="empty-box" style="display:none;">
+              لا توجد طلبات مطابقة للفلاتر الحالية.
+            </div>
+          </div>
+
+          <div class="mini-note">
+            عند رفض الطلب سيتم تسجيل الحالة:
+            <strong>Rejected</strong>
+            مع السبب الثابت:
+            <strong>Not matching conditions</strong>
           </div>
         </div>
 
