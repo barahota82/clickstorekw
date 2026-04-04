@@ -26,7 +26,7 @@ if ($search !== '') {
 }
 
 if ($status !== '') {
-    $allowedStatuses = ['pending', 'sent', 'completed', 'cancelled', 'rejected'];
+    $allowedStatuses = ['pending', 'approved', 'on_the_way', 'completed', 'cancelled', 'rejected'];
     if (!in_array($status, $allowedStatuses, true)) {
         json_response(false, ['message' => 'Invalid status filter'], 422);
     }
@@ -147,8 +147,11 @@ foreach ($orders as $order) {
     } elseif ($rawStatus === 'rejected') {
         $frontendStatus = 'Rejected';
         $summary['rejected_cancelled']++;
-    } elseif ($rawStatus === 'sent') {
-        $frontendStatus = 'Sent';
+    } elseif ($rawStatus === 'on_the_way') {
+        $frontendStatus = 'On The Way';
+        $summary['pending']++;
+    } elseif ($rawStatus === 'approved') {
+        $frontendStatus = 'Approved';
         $summary['pending']++;
     } else {
         $frontendStatus = 'Pending';
