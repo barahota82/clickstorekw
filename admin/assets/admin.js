@@ -548,10 +548,12 @@ async function adminFetchJson(url, options = {}) {
 function formatAdminOrderStatus(rawStatus, rejectionReason = '') {
   const status = String(rawStatus || '').toLowerCase();
 
+  if (status === 'approved') return 'Approved';
+  if (status === 'on_the_way') return 'On The Way';
   if (status === 'completed') return 'Delivered';
   if (status === 'cancelled') return 'Cancelled';
   if (status === 'rejected') return rejectionReason ? `Rejected - ${rejectionReason}` : 'Rejected';
-  if (status === 'sent') return 'Sent';
+  if (status === 'pending') return 'Pending';
   return 'Pending';
 }
 
@@ -587,13 +589,15 @@ function renderAdminOrdersTable(orders) {
       return `<span>• ${item.title} × ${item.quantity}</span>`;
     }).join('');
 
-    const rawStatus = String(order.raw_status || '');
+    const rawStatus = String(order.raw_status || '').toLowerCase();
     const statusClass = getAdminOrderStatusClass(rawStatus);
     const statusLabel = formatAdminOrderStatus(rawStatus, order.rejection_reason || '');
 
+    const canApprove = !['approved', 'on_the_way', 'completed', 'cancelled'].includes(rawStatus);
+    const canOnTheWay = ['pending', 'approved'].includes(rawStatus);
+    const canDeliver = ['approved', 'on_the_way'].includes(rawStatus);
     const canReject = !['rejected', 'completed', 'cancelled'].includes(rawStatus);
-    const canDeliver = !['completed', 'cancelled', 'rejected'].includes(rawStatus);
-    const canPending = rawStatus !== 'pending';
+    const canPending = rawStatus !== 'pending' && rawStatus !== 'cancelled';
 
     return `
       <tr>
@@ -615,6 +619,8 @@ function renderAdminOrdersTable(orders) {
         <td>${Number(order.total_amount || 0).toFixed(3)} ${order.currency_code || 'KWD'}</td>
         <td>
           <div class="order-actions-cell">
+            ${canApprove ? `<button class="btn btn-primary secondary-btn" type="button" onclick="approveAdminOrder('${order.order_number}')">Approve</button>` : ''}
+            ${canOnTheWay ? `<button class="btn btn-primary secondary-btn" type="button" onclick="markOrderOnTheWay('${order.order_number}')">On The Way</button>` : ''}
             ${canPending ? `<button class="btn btn-primary secondary-btn" type="button" onclick="setOrderPending('${order.order_number}')">Pending</button>` : ''}
             ${canDeliver ? `<button class="btn success-btn" type="button" onclick="markOrderDelivered('${order.order_number}')">Delivered</button>` : ''}
             ${canReject ? `<button class="btn warning-btn" type="button" onclick="rejectAdminOrder('${order.order_number}')">Reject</button>` : ''}
@@ -689,6 +695,16 @@ async function updateOrderStatus(orderNumber, endpoint, successMessage) {
     adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء تحديث حالة الطلب.');
   }
 }
+
+window.approveAdminOrder = async function (orderNumber) {
+  if (!confirm('هل أنت متأكد من اعتماد هذا الطلب؟')) return;
+  await updateOrderStatus(orderNumber, '/admin/api/approve-order.php', 'تم اعتماد الطلب بنجاح.');
+};
+
+window.markOrderOnTheWay = async function (orderNumber) {
+  if (!confirm('هل أنت متأكد من تحويل الطلب إلى On The Way؟')) return;
+  await updateOrderStatus(orderNumber, '/admin/api/mark-order-on-the-way.php', 'تم تحويل الطلب إلى On The Way بنجاح.');
+};
 
 window.rejectAdminOrder = async function (orderNumber) {
   if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
