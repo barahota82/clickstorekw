@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+$env = require __DIR__ . '/.env.php';
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
