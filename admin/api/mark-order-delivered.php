@@ -38,6 +38,14 @@ if ($currentStatus === 'cancelled') {
     json_response(false, ['message' => 'Cancelled orders cannot be marked as delivered'], 422);
 }
 
+if ($currentStatus === 'rejected') {
+    json_response(false, ['message' => 'Rejected orders cannot be marked as delivered'], 422);
+}
+
+if ($currentStatus === 'pending') {
+    json_response(false, ['message' => 'Pending orders cannot be marked as delivered directly'], 422);
+}
+
 try {
     $pdo->beginTransaction();
 
