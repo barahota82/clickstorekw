@@ -7,6 +7,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     json_response(false, ['message' => 'Invalid request method'], 405);
 }
 
+/*
+========================================
+  CLEAR ADMIN SESSION KEYS (ADDED ONLY)
+========================================
+*/
+unset(
+    $_SESSION['admin_user_id'],
+    $_SESSION['admin_full_name'],
+    $_SESSION['admin_username'],
+    $_SESSION['admin_role_name'],
+    $_SESSION['admin_role_id'],
+    $_SESSION['admin_permissions']
+);
+
+/*
+========================================
+  ORIGINAL LOGIC (UNCHANGED)
+========================================
+*/
 $_SESSION = [];
 
 if (ini_get('session.use_cookies')) {
