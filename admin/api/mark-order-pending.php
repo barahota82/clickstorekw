@@ -42,6 +42,16 @@ if ($currentStatus === 'completed') {
     json_response(false, ['message' => 'Delivered orders cannot be returned to pending'], 422);
 }
 
+$notes = 'Returned to pending from admin dashboard';
+
+if ($currentStatus === 'rejected') {
+    $notes = 'Admin override: changed order from rejected to pending';
+} elseif ($currentStatus === 'on_the_way') {
+    $notes = 'Admin direct action: changed order from on_the_way to pending';
+} elseif ($currentStatus === 'approved') {
+    $notes = 'Returned to pending from admin dashboard';
+}
+
 try {
     $pdo->beginTransaction();
 
@@ -82,7 +92,7 @@ try {
         'order_id' => (int)$order['id'],
         'old_status' => $currentStatus,
         'changed_by' => $_SESSION['admin_user_id'] ?? null,
-        'notes' => 'Returned to pending from admin dashboard'
+        'notes' => $notes
     ]);
 
     $pdo->commit();
