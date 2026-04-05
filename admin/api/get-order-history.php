@@ -3,30 +3,63 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../config.php';
 
+/*
+========================================
+  REQUIREMENTS
+========================================
+*/
 require_method('GET');
 require_admin_auth_json();
 
+/*
+========================================
+  INPUT
+========================================
+*/
 $orderNumber = trim((string)($_GET['order_number'] ?? ''));
 
 if ($orderNumber === '') {
-    json_response(false, ['message' => 'Order number is required'], 422);
+    json_response(false, [
+        'message' => 'Order number is required'
+    ], 422);
 }
 
+/*
+========================================
+  DB CONNECTION
+========================================
+*/
 $pdo = db();
 
+/*
+========================================
+  CHECK ORDER EXISTS
+========================================
+*/
 $orderStmt = $pdo->prepare("
-    SELECT id, order_number, status
+    SELECT
+        id,
+        order_number,
+        status
     FROM orders
     WHERE order_number = ?
     LIMIT 1
 ");
 $orderStmt->execute([$orderNumber]);
+
 $order = $orderStmt->fetch();
 
 if (!$order) {
-    json_response(false, ['message' => 'Order not found'], 404);
+    json_response(false, [
+        'message' => 'Order not found'
+    ], 404);
 }
 
+/*
+========================================
+  LOAD ORDER HISTORY
+========================================
+*/
 $logStmt = $pdo->prepare("
     SELECT
         l.id,
@@ -45,12 +78,22 @@ $logStmt = $pdo->prepare("
     ORDER BY l.id ASC
 ");
 $logStmt->execute([(int)$order['id']]);
+
 $logs = $logStmt->fetchAll();
 
-$mapped = [];
+/*
+========================================
+  MAP DATA
+========================================
+*/
+$history = [];
 
 foreach ($logs as $log) {
-    $changedById = $log['changed_by'] !== null ? (int)$log['changed_by'] : null;
+
+    $changedById = $log['changed_by'] !== null
+        ? (int)$log['changed_by']
+        : null;
+
     $changedByName = trim((string)($log['changed_by_full_name'] ?? ''));
     $changedByUsername = trim((string)($log['changed_by_username'] ?? ''));
 
@@ -58,15 +101,15 @@ foreach ($logs as $log) {
 
     if ($changedById !== null) {
         if ($changedByName !== '') {
-            $actorLabel = 'Admin: ' . $changedByName;
+            $actorLabel = 'User: ' . $changedByName;
         } elseif ($changedByUsername !== '') {
-            $actorLabel = 'Admin: ' . $changedByUsername;
+            $actorLabel = 'User: ' . $changedByUsername;
         } else {
-            $actorLabel = 'Admin #' . $changedById;
+            $actorLabel = 'User #' . $changedById;
         }
     }
 
-    $mapped[] = [
+    $history[] = [
         'id' => (int)$log['id'],
         'old_status' => (string)($log['old_status'] ?? ''),
         'new_status' => (string)($log['new_status'] ?? ''),
@@ -77,11 +120,16 @@ foreach ($logs as $log) {
     ];
 }
 
+/*
+========================================
+  RESPONSE
+========================================
+*/
 json_response(true, [
     'order' => [
         'id' => (int)$order['id'],
         'order_number' => (string)$order['order_number'],
         'current_status' => (string)$order['status']
     ],
-    'history' => $mapped
+    'history' => $history
 ]);
