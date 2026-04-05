@@ -42,12 +42,14 @@ if ($currentStatus === 'completed') {
     json_response(false, ['message' => 'Delivered orders cannot be approved'], 422);
 }
 
+if ($currentStatus === 'on_the_way') {
+    json_response(false, ['message' => 'On the way orders cannot be approved again'], 422);
+}
+
 $notes = 'Approved from admin dashboard';
 
 if ($currentStatus === 'rejected') {
     $notes = 'Admin override: changed order from rejected to approved';
-} elseif ($currentStatus === 'on_the_way') {
-    $notes = 'Approved from admin dashboard after on_the_way status';
 }
 
 try {
