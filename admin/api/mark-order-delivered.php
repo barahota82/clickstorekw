@@ -46,6 +46,14 @@ if ($currentStatus === 'pending') {
     json_response(false, ['message' => 'Pending orders cannot be marked as delivered directly'], 422);
 }
 
+$notes = 'Marked as delivered from admin dashboard';
+
+if ($currentStatus === 'approved') {
+    $notes = 'Admin direct action: changed order from approved to completed';
+} elseif ($currentStatus === 'on_the_way') {
+    $notes = 'Marked as delivered from admin dashboard';
+}
+
 try {
     $pdo->beginTransaction();
 
@@ -85,7 +93,7 @@ try {
         'order_id' => (int)$order['id'],
         'old_status' => $currentStatus,
         'changed_by' => $_SESSION['admin_user_id'] ?? null,
-        'notes' => 'Marked as delivered from admin dashboard'
+        'notes' => $notes
     ]);
 
     $pdo->commit();
