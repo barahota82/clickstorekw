@@ -30,14 +30,6 @@ if (!$order) {
 
 $currentStatus = (string)$order['status'];
 
-/*
-  القواعد:
-  - لا يمكن approve إذا:
-    - الطلب cancelled
-    - الطلب completed
-    - الطلب بالفعل approved
-*/
-
 if ($currentStatus === 'approved') {
     json_response(false, ['message' => 'Order already approved'], 422);
 }
@@ -48,6 +40,14 @@ if ($currentStatus === 'cancelled') {
 
 if ($currentStatus === 'completed') {
     json_response(false, ['message' => 'Delivered orders cannot be approved'], 422);
+}
+
+$notes = 'Approved from admin dashboard';
+
+if ($currentStatus === 'rejected') {
+    $notes = 'Admin override: changed order from rejected to approved';
+} elseif ($currentStatus === 'on_the_way') {
+    $notes = 'Approved from admin dashboard after on_the_way status';
 }
 
 try {
@@ -91,7 +91,7 @@ try {
         'order_id' => (int)$order['id'],
         'old_status' => $currentStatus,
         'changed_by' => $_SESSION['admin_user_id'] ?? null,
-        'notes' => 'Approved from admin dashboard'
+        'notes' => $notes
     ]);
 
     $pdo->commit();
@@ -102,7 +102,6 @@ try {
     ]);
 
 } catch (Throwable $e) {
-
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
