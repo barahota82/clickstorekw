@@ -142,7 +142,94 @@ function setElementDisabled(el, disabled) {
   }
 }
 
+function getPermissionValueFromElement(el, attrName) {
+  if (!el) return '';
+  return String(el.getAttribute(attrName) || '').trim();
+}
+
+function isElementAllowedByPermissionAttr(el, attrName = 'data-permission') {
+  const permissionKey = getPermissionValueFromElement(el, attrName);
+  if (!permissionKey) return true;
+  return hasAdminPermission(permissionKey);
+}
+
+function getFirstAllowedTabButton() {
+  const tabButtons = Array.from(document.querySelectorAll('.admin-tab-btn'));
+  return tabButtons.find(btn => isElementAllowedByPermissionAttr(btn, 'data-permission')) || null;
+}
+
+function activateAdminTab(tabId) {
+  if (!tabId) return;
+
+  const targetBtn = document.querySelector(`.admin-tab-btn[data-tab="${tabId}"]`);
+  const targetPanel = document.getElementById(tabId);
+
+  if (!targetBtn || !targetPanel) return;
+  if (!isElementAllowedByPermissionAttr(targetBtn, 'data-permission')) return;
+  if (!isElementAllowedByPermissionAttr(targetPanel, 'data-panel-permission')) return;
+
+  document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.remove('active'));
+
+  targetBtn.classList.add('active');
+  targetPanel.classList.add('active');
+
+  if (tabId === 'tab-stats') {
+    loadOrdersManagement();
+  }
+}
+
 function applyPermissionDrivenUI() {
+  document.querySelectorAll('.admin-tab-btn[data-permission]').forEach(btn => {
+    const allowed = isElementAllowedByPermissionAttr(btn, 'data-permission');
+    setElementVisible(btn, allowed);
+  });
+
+  document.querySelectorAll('.admin-panel[data-panel-permission]').forEach(panel => {
+    const allowed = isElementAllowedByPermissionAttr(panel, 'data-panel-permission');
+
+    if (!allowed) {
+      panel.classList.remove('active');
+      panel.style.display = 'none';
+    } else {
+      panel.style.display = '';
+    }
+  });
+
+  document.querySelectorAll('[data-permission]').forEach(el => {
+    const allowed = isElementAllowedByPermissionAttr(el, 'data-permission');
+
+    if (el.classList.contains('admin-tab-btn')) return;
+
+    if (
+      el.tagName === 'BUTTON' ||
+      el.tagName === 'INPUT' ||
+      el.tagName === 'SELECT' ||
+      el.tagName === 'TEXTAREA'
+    ) {
+      setElementDisabled(el, !allowed);
+      if (!allowed && el.tagName === 'BUTTON') {
+        setElementVisible(el, false);
+      }
+    } else {
+      setElementVisible(el, allowed);
+    }
+  });
+
+  const activeTabBtn = document.querySelector('.admin-tab-btn.active');
+  const activeTabId = activeTabBtn?.dataset?.tab || '';
+  const activeBtnAllowed = activeTabBtn ? isElementAllowedByPermissionAttr(activeTabBtn, 'data-permission') : false;
+  const activePanelAllowed = activeTabId
+    ? isElementAllowedByPermissionAttr(document.getElementById(activeTabId), 'data-panel-permission')
+    : false;
+
+  if (!activeBtnAllowed || !activePanelAllowed) {
+    const firstAllowedBtn = getFirstAllowedTabButton();
+    if (firstAllowedBtn?.dataset?.tab) {
+      activateAdminTab(firstAllowedBtn.dataset.tab);
+    }
+  }
+
   const ordersTabBtn = document.querySelector('.admin-tab-btn[data-tab="tab-stats"]');
   const canViewOrders = hasAdminPermission('orders_view');
 
@@ -475,8 +562,14 @@ function bindTabSwitching() {
     btn.addEventListener('click', function () {
       const tabId = this.dataset.tab;
 
-      if (tabId === 'tab-stats' && !hasAdminPermission('orders_view')) {
-        adminSetStatus('dashboardStatus', 'error', 'ليس لديك صلاحية لعرض الطلبات.');
+      if (!isElementAllowedByPermissionAttr(this, 'data-permission')) {
+        adminSetStatus('dashboardStatus', 'error', 'ليس لديك صلاحية لفتح هذا القسم.');
+        return;
+      }
+
+      const target = document.getElementById(tabId);
+      if (target && !isElementAllowedByPermissionAttr(target, 'data-panel-permission')) {
+        adminSetStatus('dashboardStatus', 'error', 'ليس لديك صلاحية لعرض هذا القسم.');
         return;
       }
 
@@ -485,7 +578,6 @@ function bindTabSwitching() {
 
       this.classList.add('active');
 
-      const target = document.getElementById(tabId);
       if (target) target.classList.add('active');
 
       if (tabId === 'tab-stats') {
