@@ -36,11 +36,11 @@ $logStmt = $pdo->prepare("
         l.changed_by,
         l.notes,
         l.created_at,
-        au.username AS changed_by_username,
-        au.full_name AS changed_by_full_name
+        u.username AS changed_by_username,
+        u.full_name AS changed_by_full_name
     FROM order_status_logs l
-    LEFT JOIN admin_users au
-        ON au.id = l.changed_by
+    LEFT JOIN users u
+        ON u.id = l.changed_by
     WHERE l.order_id = ?
     ORDER BY l.id ASC
 ");
