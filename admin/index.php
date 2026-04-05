@@ -458,6 +458,85 @@ $brands = $pdo->query("
       color: #fff;
     }
 
+    .history-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(2,6,23,0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    .history-modal.active {
+      display: flex;
+    }
+
+    .history-box {
+      width: min(900px, 100%);
+      max-height: 85vh;
+      overflow: auto;
+      background: #0f172a;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .history-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .history-title {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .history-close {
+      border: none;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 22px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .history-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .history-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .history-meta {
+      color: #c8d4ea;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
     @media (max-width: 1200px) {
       .admin-main-tabs {
         grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -895,7 +974,7 @@ $brands = $pdo->query("
         <div id="tab-stats" class="admin-panel">
           <h3 class="panel-title">Statistics / Orders</h3>
           <p class="panel-desc">
-            هذا القسم مخصص لإدارة الطلبات المرسلة من العملاء، ومراجعتها وتغيير حالتها إلى Pending أو Delivered أو Rejected.
+            هذا القسم مخصص لإدارة الطلبات المرسلة من العملاء، ومراجعتها وتغيير حالتها إلى Pending أو Approved أو On The Way أو Delivered أو Rejected.
           </p>
 
           <div class="summary-cards">
@@ -904,7 +983,7 @@ $brands = $pdo->query("
               <span id="ordersCountAll">0</span>
             </div>
             <div class="summary-card">
-              <strong>Pending</strong>
+              <strong>Pending / Active</strong>
               <span id="ordersCountPending">0</span>
             </div>
             <div class="summary-card">
@@ -931,7 +1010,8 @@ $brands = $pdo->query("
                 <select id="ordersStatusFilter">
                   <option value="">الكل</option>
                   <option value="pending">Pending</option>
-                  <option value="sent">Sent</option>
+                  <option value="approved">Approved</option>
+                  <option value="on_the_way">On The Way</option>
                   <option value="completed">Delivered</option>
                   <option value="rejected">Rejected</option>
                   <option value="cancelled">Cancelled</option>
@@ -985,6 +1065,7 @@ $brands = $pdo->query("
             <strong>Rejected</strong>
             مع السبب الثابت:
             <strong>Not matching conditions</strong>
+            وسيظهر ذلك أيضًا داخل سجل التغييرات History.
           </div>
         </div>
 
@@ -992,6 +1073,18 @@ $brands = $pdo->query("
 
       <div id="dashboardStatus" class="status-box mt-20"></div>
     </section>
+  </div>
+</div>
+
+<div id="orderHistoryModal" class="history-modal">
+  <div class="history-box">
+    <div class="history-head">
+      <h3 class="history-title" id="orderHistoryTitle">Order History</h3>
+      <button type="button" class="history-close" id="orderHistoryCloseBtn">×</button>
+    </div>
+    <div id="orderHistoryContent" class="history-list">
+      <div class="empty-box">لم يتم تحميل السجل بعد.</div>
+    </div>
   </div>
 </div>
 
