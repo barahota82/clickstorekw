@@ -3,6 +3,176 @@ let ocrBoxes = [];
 let selectedBoxId = null;
 let dragState = null;
 
+/* =========================
+   PERMISSIONS STATE
+========================= */
+
+const ADMIN_STATE = {
+  user: null,
+  permissions: new Set()
+};
+
+const ADMIN_PERMISSION_ALIASES = {
+  orders_view: [
+    'orders.view',
+    'view_orders',
+    'manage_orders',
+    'orders_manage',
+    'admin.full_access'
+  ],
+  orders_history_view: [
+    'orders.history.view',
+    'view_order_history',
+    'orders.view',
+    'view_orders',
+    'manage_orders',
+    'admin.full_access'
+  ],
+  orders_approve: [
+    'orders.approve',
+    'approve_orders',
+    'manage_orders',
+    'admin.full_access'
+  ],
+  orders_reject: [
+    'orders.reject',
+    'reject_orders',
+    'manage_orders',
+    'admin.full_access'
+  ],
+  orders_mark_on_the_way: [
+    'orders.on_the_way',
+    'mark_orders_on_the_way',
+    'manage_orders',
+    'admin.full_access'
+  ],
+  orders_mark_delivered: [
+    'orders.deliver',
+    'mark_orders_delivered',
+    'manage_orders',
+    'admin.full_access'
+  ],
+  orders_mark_pending: [
+    'orders.pending',
+    'return_orders_to_pending',
+    'manage_orders',
+    'admin.full_access'
+  ],
+  ocr_view: [
+    'ocr.view',
+    'manage_ocr',
+    'admin.full_access'
+  ],
+  products_edit: [
+    'products.edit',
+    'edit_products',
+    'manage_products',
+    'admin.full_access'
+  ],
+  products_delete: [
+    'products.delete',
+    'delete_products',
+    'manage_products',
+    'admin.full_access'
+  ],
+  brands_order: [
+    'brands.order',
+    'manage_brand_order',
+    'manage_products',
+    'admin.full_access'
+  ],
+  products_order: [
+    'products.order',
+    'manage_product_order',
+    'manage_products',
+    'admin.full_access'
+  ],
+  hot_offers_order: [
+    'hot_offers.order',
+    'manage_hot_offers',
+    'manage_products',
+    'admin.full_access'
+  ],
+  stock_manage: [
+    'stock.manage',
+    'manage_stock',
+    'admin.full_access'
+  ]
+};
+
+function normalizePermissionKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+}
+
+function setAdminAuthState(user = null, permissions = []) {
+  ADMIN_STATE.user = user || null;
+  ADMIN_STATE.permissions = new Set(
+    (Array.isArray(permissions) ? permissions : [])
+      .map(normalizePermissionKey)
+      .filter(Boolean)
+  );
+}
+
+function hasAdminPermission(key) {
+  const aliases = ADMIN_PERMISSION_ALIASES[key] || [key];
+  return aliases.some(alias => ADMIN_STATE.permissions.has(normalizePermissionKey(alias)));
+}
+
+function requireFrontendPermissionOrWarn(key, message) {
+  if (hasAdminPermission(key)) return true;
+  adminSetStatus('dashboardStatus', 'error', message || 'ليس لديك صلاحية لتنفيذ هذا الإجراء.');
+  return false;
+}
+
+function setElementVisible(el, visible) {
+  if (!el) return;
+  el.style.display = visible ? '' : 'none';
+}
+
+function setElementDisabled(el, disabled) {
+  if (!el) return;
+  el.disabled = !!disabled;
+  if (disabled) {
+    el.classList.add('disabled');
+  } else {
+    el.classList.remove('disabled');
+  }
+}
+
+function applyPermissionDrivenUI() {
+  const ordersTabBtn = document.querySelector('.admin-tab-btn[data-tab="tab-stats"]');
+  const canViewOrders = hasAdminPermission('orders_view');
+
+  setElementVisible(ordersTabBtn, canViewOrders);
+
+  const loadBtn = document.getElementById('loadOrdersBtn');
+  const refreshBtn = document.getElementById('refreshOrdersBtn');
+  const searchInput = document.getElementById('ordersSearchInput');
+  const statusFilter = document.getElementById('ordersStatusFilter');
+  const dateFilter = document.getElementById('ordersDateFilter');
+
+  setElementDisabled(loadBtn, !canViewOrders);
+  setElementDisabled(refreshBtn, !canViewOrders);
+  setElementDisabled(searchInput, !canViewOrders);
+  setElementDisabled(statusFilter, !canViewOrders);
+  setElementDisabled(dateFilter, !canViewOrders);
+}
+
+function getOrderActionPermissions() {
+  return {
+    canViewOrders: hasAdminPermission('orders_view'),
+    canViewHistory: hasAdminPermission('orders_history_view'),
+    canApprove: hasAdminPermission('orders_approve'),
+    canReject: hasAdminPermission('orders_reject'),
+    canOnTheWay: hasAdminPermission('orders_mark_on_the_way'),
+    canDeliver: hasAdminPermission('orders_mark_delivered'),
+    canPending: hasAdminPermission('orders_mark_pending')
+  };
+}
+
 function adminSetStatus(id, type, message) {
   const box = document.getElementById(id);
   if (!box) return;
@@ -210,6 +380,8 @@ function bindOCRUploadButton() {
 
   uploadBtn.onclick = null;
   uploadBtn.addEventListener('click', function () {
+    if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية للوصول إلى OCR.')) return;
+
     input.value = '';
     input.click();
   });
@@ -255,6 +427,8 @@ function bindOCRAnalyzeButton() {
 
   analyzeBtn.onclick = null;
   analyzeBtn.addEventListener('click', function () {
+    if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية لاستخدام OCR.')) return;
+
     if (!currentOCRFile) {
       adminSetStatus('dashboardStatus', 'error', 'ارفع صورة أولًا قبل التحليل.');
       return;
@@ -276,6 +450,8 @@ function bindEditImageButton() {
 
   btn.onclick = null;
   btn.addEventListener('click', function () {
+    if (!requireFrontendPermissionOrWarn('products_edit', 'ليس لديك صلاحية تعديل المنتجات.')) return;
+
     input.value = '';
     input.click();
   });
@@ -297,12 +473,18 @@ function bindEditImageButton() {
 function bindTabSwitching() {
   document.querySelectorAll('.admin-tab-btn').forEach(btn => {
     btn.addEventListener('click', function () {
+      const tabId = this.dataset.tab;
+
+      if (tabId === 'tab-stats' && !hasAdminPermission('orders_view')) {
+        adminSetStatus('dashboardStatus', 'error', 'ليس لديك صلاحية لعرض الطلبات.');
+        return;
+      }
+
       document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.admin-panel').forEach(panel => panel.classList.remove('active'));
 
       this.classList.add('active');
 
-      const tabId = this.dataset.tab;
       const target = document.getElementById(tabId);
       if (target) target.classList.add('active');
 
@@ -502,12 +684,14 @@ function bindBoxButtons() {
 
   if (insertBtn) {
     insertBtn.addEventListener('click', function () {
+      if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
       addNewBox();
     });
   }
 
   if (clearBoxesBtn) {
     clearBoxesBtn.addEventListener('click', function () {
+      if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
       ocrBoxes = [];
       selectedBoxId = null;
       renderBoxes();
@@ -516,6 +700,7 @@ function bindBoxButtons() {
 
   if (clearDataBtn) {
     clearDataBtn.addEventListener('click', function () {
+      if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
       clearOCRData(true);
       adminSetStatus('dashboardStatus', 'info', 'تم تفريغ البيانات مع الإبقاء على أماكن المربعات.');
     });
@@ -597,8 +782,19 @@ function groupOrderItems(items) {
 function renderAdminOrdersTable(orders) {
   const tbody = document.getElementById('adminOrdersTableBody');
   const emptyBox = document.getElementById('ordersEmptyBox');
+  const perms = getOrderActionPermissions();
 
   if (!tbody) return;
+
+  if (!perms.canViewOrders) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align:center; color:#c8d4ea;">ليس لديك صلاحية عرض الطلبات.</td>
+      </tr>
+    `;
+    if (emptyBox) emptyBox.style.display = 'block';
+    return;
+  }
 
   if (!Array.isArray(orders) || orders.length === 0) {
     tbody.innerHTML = `
@@ -634,11 +830,12 @@ function renderAdminOrdersTable(orders) {
     const statusClass = getAdminOrderStatusClass(rawStatus);
     const statusLabel = formatAdminOrderStatus(rawStatus, order.rejection_reason || '');
 
-    const canApprove = !['approved', 'on_the_way', 'completed', 'cancelled'].includes(rawStatus);
-    const canOnTheWay = ['pending', 'approved'].includes(rawStatus);
-    const canDeliver = ['approved', 'on_the_way'].includes(rawStatus);
-    const canReject = !['rejected', 'completed', 'cancelled', 'on_the_way'].includes(rawStatus);
-    const canPending = !['pending', 'cancelled', 'completed'].includes(rawStatus);
+    const canApprove = perms.canApprove && !['approved', 'on_the_way', 'completed', 'cancelled'].includes(rawStatus);
+    const canOnTheWay = perms.canOnTheWay && ['pending', 'approved'].includes(rawStatus);
+    const canDeliver = perms.canDeliver && ['approved', 'on_the_way'].includes(rawStatus);
+    const canReject = perms.canReject && !['rejected', 'completed', 'cancelled', 'on_the_way'].includes(rawStatus);
+    const canPending = perms.canPending && !['pending', 'cancelled', 'completed'].includes(rawStatus);
+    const canHistory = perms.canViewHistory;
 
     return `
       <tr>
@@ -665,7 +862,7 @@ function renderAdminOrdersTable(orders) {
             ${canPending ? `<button class="btn btn-primary secondary-btn" type="button" onclick="setOrderPending('${order.order_number}')">Pending</button>` : ''}
             ${canDeliver ? `<button class="btn success-btn" type="button" onclick="markOrderDelivered('${order.order_number}')">Delivered</button>` : ''}
             ${canReject ? `<button class="btn warning-btn" type="button" onclick="rejectAdminOrder('${order.order_number}')">Reject</button>` : ''}
-            <button class="btn btn-primary secondary-btn" type="button" onclick="openOrderHistory('${order.order_number}')">History</button>
+            ${canHistory ? `<button class="btn btn-primary secondary-btn" type="button" onclick="openOrderHistory('${order.order_number}')">History</button>` : ''}
           </div>
         </td>
       </tr>
@@ -686,6 +883,19 @@ function renderOrdersSummary(summary) {
 }
 
 async function loadOrdersManagement() {
+  if (!requireFrontendPermissionOrWarn('orders_view', 'ليس لديك صلاحية لعرض الطلبات.')) {
+    const tbody = document.getElementById('adminOrdersTableBody');
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align:center; color:#c8d4ea;">ليس لديك صلاحية عرض الطلبات.</td>
+        </tr>
+      `;
+    }
+    renderOrdersSummary({ all: 0, pending: 0, delivered: 0, rejected_cancelled: 0 });
+    return;
+  }
+
   const search = document.getElementById('ordersSearchInput')?.value.trim() || '';
   const status = document.getElementById('ordersStatusFilter')?.value.trim() || '';
   const date = document.getElementById('ordersDateFilter')?.value.trim() || '';
@@ -716,7 +926,9 @@ async function loadOrdersManagement() {
 
 window.loadOrdersManagement = loadOrdersManagement;
 
-async function updateOrderStatus(orderNumber, endpoint, successMessage) {
+async function updateOrderStatus(orderNumber, endpoint, permissionKey, successMessage) {
+  if (!requireFrontendPermissionOrWarn(permissionKey, 'ليس لديك صلاحية لتنفيذ هذا الإجراء.')) return;
+
   adminSetStatus('dashboardStatus', 'info', 'جاري تحديث حالة الطلب...');
 
   try {
@@ -740,27 +952,27 @@ async function updateOrderStatus(orderNumber, endpoint, successMessage) {
 
 window.approveAdminOrder = async function (orderNumber) {
   if (!confirm('هل أنت متأكد من اعتماد هذا الطلب؟')) return;
-  await updateOrderStatus(orderNumber, '/admin/api/approve-order.php', 'تم اعتماد الطلب بنجاح.');
+  await updateOrderStatus(orderNumber, '/admin/api/approve-order.php', 'orders_approve', 'تم اعتماد الطلب بنجاح.');
 };
 
 window.markOrderOnTheWay = async function (orderNumber) {
   if (!confirm('هل أنت متأكد من تحويل الطلب إلى On The Way؟')) return;
-  await updateOrderStatus(orderNumber, '/admin/api/mark-order-on-the-way.php', 'تم تحويل الطلب إلى On The Way بنجاح.');
+  await updateOrderStatus(orderNumber, '/admin/api/mark-order-on-the-way.php', 'orders_mark_on_the_way', 'تم تحويل الطلب إلى On The Way بنجاح.');
 };
 
 window.rejectAdminOrder = async function (orderNumber) {
   if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
-  await updateOrderStatus(orderNumber, '/admin/api/reject-order.php', 'تم رفض الطلب بنجاح.');
+  await updateOrderStatus(orderNumber, '/admin/api/reject-order.php', 'orders_reject', 'تم رفض الطلب بنجاح.');
 };
 
 window.markOrderDelivered = async function (orderNumber) {
   if (!confirm('هل أنت متأكد من تحويل الطلب إلى Delivered؟')) return;
-  await updateOrderStatus(orderNumber, '/admin/api/mark-order-delivered.php', 'تم تحويل الطلب إلى Delivered بنجاح.');
+  await updateOrderStatus(orderNumber, '/admin/api/mark-order-delivered.php', 'orders_mark_delivered', 'تم تحويل الطلب إلى Delivered بنجاح.');
 };
 
 window.setOrderPending = async function (orderNumber) {
   if (!confirm('هل أنت متأكد من إعادة الطلب إلى Pending؟')) return;
-  await updateOrderStatus(orderNumber, '/admin/api/mark-order-pending.php', 'تم تحويل الطلب إلى Pending بنجاح.');
+  await updateOrderStatus(orderNumber, '/admin/api/mark-order-pending.php', 'orders_mark_pending', 'تم تحويل الطلب إلى Pending بنجاح.');
 };
 
 function renderOrderHistory(history) {
@@ -778,9 +990,10 @@ function renderOrderHistory(history) {
     const actor = String(item.changed_by_label || 'System').trim();
     const notes = String(item.notes || '').trim() || '-';
     const createdAt = String(item.created_at || '').trim() || '-';
+    const isAdminOverride = /override|exception|admin/i.test(notes) || Boolean(item.is_admin_override);
 
     return `
-      <div class="history-item">
+      <div class="history-item ${isAdminOverride ? 'admin-override-item' : ''}">
         <div class="history-row">
           <strong>From:</strong> <span>${oldStatus}</span>
           <strong>To:</strong> <span>${newStatus}</span>
@@ -789,6 +1002,7 @@ function renderOrderHistory(history) {
           <div><strong>By:</strong> ${actor}</div>
           <div><strong>Notes:</strong> ${notes}</div>
           <div><strong>Date:</strong> ${createdAt}</div>
+          ${isAdminOverride ? `<div><strong>Override:</strong> Admin Override</div>` : ''}
         </div>
       </div>
     `;
@@ -796,6 +1010,8 @@ function renderOrderHistory(history) {
 }
 
 window.openOrderHistory = async function (orderNumber) {
+  if (!requireFrontendPermissionOrWarn('orders_history_view', 'ليس لديك صلاحية لعرض سجل الطلب.')) return;
+
   const modal = document.getElementById('orderHistoryModal');
   const title = document.getElementById('orderHistoryTitle');
   const content = document.getElementById('orderHistoryContent');
@@ -889,16 +1105,21 @@ async function checkAuth() {
   try {
     const res = await fetch('/admin/api/check-auth.php', {
       method: 'GET',
-      credentials: 'same-origin'
+      credentials: 'same-origin',
+      cache: 'no-store'
     });
     const data = await res.json();
 
     if (data.ok) {
+      setAdminAuthState(data.user || null, data.permissions || []);
       showDashboard(data.user);
+      applyPermissionDrivenUI();
     } else {
+      setAdminAuthState(null, []);
       showLogin();
     }
   } catch (e) {
+    setAdminAuthState(null, []);
     showLogin();
   }
 }
@@ -979,6 +1200,7 @@ async function doLogout() {
     const password = document.getElementById('password');
     if (password) password.value = '';
 
+    setAdminAuthState(null, []);
     adminSetStatus('loginStatus', 'success', 'تم تسجيل الخروج بنجاح.');
     showLogin();
   } catch (e) {
