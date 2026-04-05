@@ -661,20 +661,20 @@ $brands = $pdo->query("
       </div>
 
       <div class="admin-main-tabs">
-        <button class="admin-tab-btn active" data-tab="tab-add-ocr" type="button">Add Product (OCR)</button>
-        <button class="admin-tab-btn" data-tab="tab-edit-delete" type="button">Edit / Delete Product</button>
-        <button class="admin-tab-btn" data-tab="tab-hot-offers" type="button">Hot Offers</button>
-        <button class="admin-tab-btn" data-tab="tab-brand-order" type="button">Brand Ordering</button>
-        <button class="admin-tab-btn" data-tab="tab-product-order" type="button">Product Ordering</button>
-        <button class="admin-tab-btn" data-tab="tab-stock" type="button">Stock Management</button>
-        <button class="admin-tab-btn" data-tab="tab-users" type="button">User Permissions</button>
-        <button class="admin-tab-btn" data-tab="tab-stats" type="button">Statistics / Orders</button>
+        <button class="admin-tab-btn active" data-tab="tab-add-ocr" data-permission="ocr_view" id="tabBtnAddOcr" type="button">Add Product (OCR)</button>
+        <button class="admin-tab-btn" data-tab="tab-edit-delete" data-permission="products_edit" id="tabBtnEditDelete" type="button">Edit / Delete Product</button>
+        <button class="admin-tab-btn" data-tab="tab-hot-offers" data-permission="hot_offers_order" id="tabBtnHotOffers" type="button">Hot Offers</button>
+        <button class="admin-tab-btn" data-tab="tab-brand-order" data-permission="brands_order" id="tabBtnBrandOrder" type="button">Brand Ordering</button>
+        <button class="admin-tab-btn" data-tab="tab-product-order" data-permission="products_order" id="tabBtnProductOrder" type="button">Product Ordering</button>
+        <button class="admin-tab-btn" data-tab="tab-stock" data-permission="stock_manage" id="tabBtnStock" type="button">Stock Management</button>
+        <button class="admin-tab-btn" data-tab="tab-users" data-permission="admin.full_access" id="tabBtnUsers" type="button">User Permissions</button>
+        <button class="admin-tab-btn" data-tab="tab-stats" data-permission="orders_view" id="tabBtnStats" type="button">Statistics / Orders</button>
       </div>
 
       <div class="admin-tab-panels">
 
         <!-- ADD PRODUCT OCR -->
-        <div id="tab-add-ocr" class="admin-panel active">
+        <div id="tab-add-ocr" class="admin-panel active" data-panel-permission="ocr_view">
           <h3 class="panel-title">Add Product (OCR)</h3>
           <p class="panel-desc">
             هذا القسم لإضافة منتج جديد. اسم الملف هو الأساس، والـ OCR مساعد للتحقق أو قراءة مناطق محددة من الصورة.
@@ -695,11 +695,11 @@ $brands = $pdo->query("
               <input id="ocrImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
 
               <div class="action-row">
-                <button class="btn btn-primary" type="button" id="ocrUploadBtn">Upload Image</button>
-                <button class="btn btn-primary secondary-btn" type="button" id="ocrInsertBoxBtn">Insert Box</button>
-                <button class="btn btn-primary secondary-btn" type="button" id="ocrAnalyzeBtn">Analyze (OCR)</button>
-                <button class="btn btn-primary secondary-btn" type="button" id="ocrClearDataBtn">Clear Form</button>
-                <button class="btn danger-btn" type="button" id="ocrClearBoxesBtn">Clear Boxes</button>
+                <button class="btn btn-primary" type="button" id="ocrUploadBtn" data-permission="ocr_view">Upload Image</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrInsertBoxBtn" data-permission="ocr_view">Insert Box</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrAnalyzeBtn" data-permission="ocr_view">Analyze (OCR)</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrClearDataBtn" data-permission="ocr_view">Clear Form</button>
+                <button class="btn danger-btn" type="button" id="ocrClearBoxesBtn" data-permission="ocr_view">Clear Boxes</button>
               </div>
 
               <div class="mini-note">
@@ -795,14 +795,14 @@ $brands = $pdo->query("
               </div>
 
               <div class="action-row">
-                <button class="btn btn-primary" type="button" id="ocrSaveBtn">Save Product</button>
+                <button class="btn btn-primary" type="button" id="ocrSaveBtn" data-permission="ocr_view">Save Product</button>
               </div>
             </div>
           </div>
         </div>
 
         <!-- EDIT DELETE -->
-        <div id="tab-edit-delete" class="admin-panel">
+        <div id="tab-edit-delete" class="admin-panel" data-panel-permission="products_edit">
           <h3 class="panel-title">Edit / Delete Product</h3>
           <p class="panel-desc">
             هذا القسم مخصص لاستدعاء منتج موجود حسب الفئة والبراند، ثم تعديله أو حذفه. تغيير الصورة هنا يتم يدويًا فقط بدون OCR.
@@ -827,7 +827,7 @@ $brands = $pdo->query("
               </div>
 
               <div class="form-group">
-                <button class="btn btn-primary" type="button">Load Products</button>
+                <button class="btn btn-primary" type="button" id="editLoadProductsBtn" data-permission="products_edit">Load Products</button>
               </div>
             </div>
 
@@ -850,8 +850,8 @@ $brands = $pdo->query("
                     <td>Down / Monthly / Months</td>
                     <td>
                       <div class="action-row">
-                        <button class="btn btn-primary secondary-btn" type="button">Edit</button>
-                        <button class="btn danger-btn" type="button">Delete</button>
+                        <button class="btn btn-primary secondary-btn" type="button" data-permission="products_edit">Edit</button>
+                        <button class="btn danger-btn" type="button" data-permission="products_delete">Delete</button>
                       </div>
                     </td>
                   </tr>
@@ -899,8 +899,8 @@ $brands = $pdo->query("
               </div>
 
               <div class="action-row">
-                <button class="btn btn-primary" type="button">Save Changes</button>
-                <button class="btn danger-btn" type="button">Delete Product</button>
+                <button class="btn btn-primary" type="button" id="editSaveChangesBtn" data-permission="products_edit">Save Changes</button>
+                <button class="btn danger-btn" type="button" id="editDeleteProductBtn" data-permission="products_delete">Delete Product</button>
               </div>
             </div>
 
@@ -914,7 +914,7 @@ $brands = $pdo->query("
               <input id="editImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
 
               <div class="action-row">
-                <button class="btn btn-primary secondary-btn" type="button" id="editChangeImageBtn">Change Image</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="editChangeImageBtn" data-permission="products_edit">Change Image</button>
               </div>
 
               <div class="mini-note">
@@ -925,7 +925,7 @@ $brands = $pdo->query("
         </div>
 
         <!-- PLACEHOLDERS -->
-        <div id="tab-hot-offers" class="admin-panel">
+        <div id="tab-hot-offers" class="admin-panel" data-panel-permission="hot_offers_order">
           <h3 class="panel-title">Hot Offers</h3>
           <div class="placeholder-panels">
             <div class="placeholder-card"><strong>Hot Offers</strong><span>سيتم ترتيب وعرض المنتجات المميزة هنا.</span></div>
@@ -934,7 +934,7 @@ $brands = $pdo->query("
           </div>
         </div>
 
-        <div id="tab-brand-order" class="admin-panel">
+        <div id="tab-brand-order" class="admin-panel" data-panel-permission="brands_order">
           <h3 class="panel-title">Brand Ordering</h3>
           <div class="placeholder-panels">
             <div class="placeholder-card"><strong>Ordering by Category</strong><span>كل فئة لها ترتيب مستقل للبراندات.</span></div>
@@ -943,7 +943,7 @@ $brands = $pdo->query("
           </div>
         </div>
 
-        <div id="tab-product-order" class="admin-panel">
+        <div id="tab-product-order" class="admin-panel" data-panel-permission="products_order">
           <h3 class="panel-title">Product Ordering</h3>
           <div class="placeholder-panels">
             <div class="placeholder-card"><strong>Manual Product Order</strong><span>ترتيب المنتجات داخل البراند أو القسم.</span></div>
@@ -952,7 +952,7 @@ $brands = $pdo->query("
           </div>
         </div>
 
-        <div id="tab-stock" class="admin-panel">
+        <div id="tab-stock" class="admin-panel" data-panel-permission="stock_manage">
           <h3 class="panel-title">Stock Management</h3>
           <div class="placeholder-panels">
             <div class="placeholder-card"><strong>stock_catalog</strong><span>تعريف الأصناف الفعلية في المخزن.</span></div>
@@ -961,7 +961,7 @@ $brands = $pdo->query("
           </div>
         </div>
 
-        <div id="tab-users" class="admin-panel">
+        <div id="tab-users" class="admin-panel" data-panel-permission="admin.full_access">
           <h3 class="panel-title">User Permissions</h3>
           <div class="placeholder-panels">
             <div class="placeholder-card"><strong>Roles</strong><span>إدارة الأدوار مثل Super Admin و Viewer.</span></div>
@@ -971,7 +971,7 @@ $brands = $pdo->query("
         </div>
 
         <!-- ORDERS MANAGEMENT -->
-        <div id="tab-stats" class="admin-panel">
+        <div id="tab-stats" class="admin-panel" data-panel-permission="orders_view">
           <h3 class="panel-title">Statistics / Orders</h3>
           <p class="panel-desc">
             هذا القسم مخصص لإدارة الطلبات المرسلة من العملاء، ومراجعتها وتغيير حالتها إلى Pending أو Approved أو On The Way أو Delivered أو Rejected.
@@ -1002,12 +1002,12 @@ $brands = $pdo->query("
             <div class="orders-toolbar">
               <div class="form-group">
                 <label for="ordersSearchInput">بحث</label>
-                <input id="ordersSearchInput" type="text" placeholder="ابحث برقم الطلب أو اسم العميل أو الإيميل">
+                <input id="ordersSearchInput" type="text" placeholder="ابحث برقم الطلب أو اسم العميل أو الإيميل" data-permission="orders_view">
               </div>
 
               <div class="form-group">
                 <label for="ordersStatusFilter">حالة الطلب</label>
-                <select id="ordersStatusFilter">
+                <select id="ordersStatusFilter" data-permission="orders_view">
                   <option value="">الكل</option>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
@@ -1020,15 +1020,15 @@ $brands = $pdo->query("
 
               <div class="form-group">
                 <label for="ordersDateFilter">التاريخ</label>
-                <input id="ordersDateFilter" type="date">
+                <input id="ordersDateFilter" type="date" data-permission="orders_view">
               </div>
 
               <div class="form-group">
-                <button id="loadOrdersBtn" class="btn btn-primary" type="button">Load Orders</button>
+                <button id="loadOrdersBtn" class="btn btn-primary" type="button" data-permission="orders_view">Load Orders</button>
               </div>
 
               <div class="form-group">
-                <button id="refreshOrdersBtn" class="btn btn-primary secondary-btn" type="button">Refresh</button>
+                <button id="refreshOrdersBtn" class="btn btn-primary secondary-btn" type="button" data-permission="orders_view">Refresh</button>
               </div>
             </div>
 
