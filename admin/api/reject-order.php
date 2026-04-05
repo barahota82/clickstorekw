@@ -47,6 +47,13 @@ if ($currentStatus === 'on_the_way') {
 }
 
 $reason = 'Not matching conditions';
+$notes = $reason;
+
+if ($currentStatus === 'approved') {
+    $notes = 'Admin action: changed order from approved to rejected - Not matching conditions';
+} elseif ($currentStatus === 'pending') {
+    $notes = 'Not matching conditions';
+}
 
 try {
     $pdo->beginTransaction();
@@ -89,7 +96,7 @@ try {
         'order_id' => (int)$order['id'],
         'old_status' => $currentStatus,
         'changed_by' => $_SESSION['admin_user_id'] ?? null,
-        'notes' => $reason
+        'notes' => $notes
     ]);
 
     $pdo->commit();
