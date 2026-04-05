@@ -566,6 +566,34 @@ function getAdminOrderStatusClass(rawStatus) {
   return 'status-pending';
 }
 
+function groupOrderItems(items) {
+  const map = new Map();
+
+  (items || []).forEach(item => {
+    const key = [
+      String(item.title || '').trim(),
+      String(item.down_payment || '').trim(),
+      String(item.monthly || '').trim(),
+      String(item.duration || '').trim()
+    ].join('||');
+
+    if (!map.has(key)) {
+      map.set(key, {
+        title: String(item.title || '').trim(),
+        quantity: Number(item.quantity || 0),
+        down_payment: String(item.down_payment || '').trim(),
+        monthly: String(item.monthly || '').trim(),
+        duration: String(item.duration || '').trim()
+      });
+    } else {
+      const existing = map.get(key);
+      existing.quantity += Number(item.quantity || 0);
+    }
+  });
+
+  return Array.from(map.values());
+}
+
 function renderAdminOrdersTable(orders) {
   const tbody = document.getElementById('adminOrdersTableBody');
   const emptyBox = document.getElementById('ordersEmptyBox');
@@ -585,8 +613,21 @@ function renderAdminOrdersTable(orders) {
   if (emptyBox) emptyBox.style.display = 'none';
 
   tbody.innerHTML = orders.map(order => {
-    const itemsHtml = (order.items || []).map(item => {
-      return `<span>• ${item.title} × ${item.quantity}</span>`;
+    const groupedItems = groupOrderItems(order.items || []);
+
+    const itemsHtml = groupedItems.map(item => {
+      const details = [
+        item.down_payment,
+        item.monthly,
+        item.duration
+      ].filter(Boolean).join(' / ');
+
+      return `
+        <span>
+          • ${item.title} × ${item.quantity}
+          ${details ? `<br><small style="color:#8fa6c9;">${details}</small>` : ''}
+        </span>
+      `;
     }).join('');
 
     const rawStatus = String(order.raw_status || '').toLowerCase();
@@ -596,8 +637,8 @@ function renderAdminOrdersTable(orders) {
     const canApprove = !['approved', 'on_the_way', 'completed', 'cancelled'].includes(rawStatus);
     const canOnTheWay = ['pending', 'approved'].includes(rawStatus);
     const canDeliver = ['approved', 'on_the_way'].includes(rawStatus);
-    const canReject = !['rejected', 'completed', 'cancelled'].includes(rawStatus);
-    const canPending = rawStatus !== 'pending' && rawStatus !== 'cancelled';
+    const canReject = !['rejected', 'completed', 'cancelled', 'on_the_way'].includes(rawStatus);
+    const canPending = !['pending', 'cancelled', 'completed'].includes(rawStatus);
 
     return `
       <tr>
@@ -624,6 +665,7 @@ function renderAdminOrdersTable(orders) {
             ${canPending ? `<button class="btn btn-primary secondary-btn" type="button" onclick="setOrderPending('${order.order_number}')">Pending</button>` : ''}
             ${canDeliver ? `<button class="btn success-btn" type="button" onclick="markOrderDelivered('${order.order_number}')">Delivered</button>` : ''}
             ${canReject ? `<button class="btn warning-btn" type="button" onclick="rejectAdminOrder('${order.order_number}')">Reject</button>` : ''}
+            <button class="btn btn-primary secondary-btn" type="button" onclick="openOrderHistory('${order.order_number}')">History</button>
           </div>
         </td>
       </tr>
@@ -720,6 +762,92 @@ window.setOrderPending = async function (orderNumber) {
   if (!confirm('هل أنت متأكد من إعادة الطلب إلى Pending؟')) return;
   await updateOrderStatus(orderNumber, '/admin/api/mark-order-pending.php', 'تم تحويل الطلب إلى Pending بنجاح.');
 };
+
+function renderOrderHistory(history) {
+  const content = document.getElementById('orderHistoryContent');
+  if (!content) return;
+
+  if (!Array.isArray(history) || history.length === 0) {
+    content.innerHTML = `<div class="empty-box">لا يوجد سجل تغييرات لهذا الطلب حتى الآن.</div>`;
+    return;
+  }
+
+  content.innerHTML = history.map(item => {
+    const oldStatus = String(item.old_status || '').trim() || '-';
+    const newStatus = String(item.new_status || '').trim() || '-';
+    const actor = String(item.changed_by_label || 'System').trim();
+    const notes = String(item.notes || '').trim() || '-';
+    const createdAt = String(item.created_at || '').trim() || '-';
+
+    return `
+      <div class="history-item">
+        <div class="history-row">
+          <strong>From:</strong> <span>${oldStatus}</span>
+          <strong>To:</strong> <span>${newStatus}</span>
+        </div>
+        <div class="history-meta">
+          <div><strong>By:</strong> ${actor}</div>
+          <div><strong>Notes:</strong> ${notes}</div>
+          <div><strong>Date:</strong> ${createdAt}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.openOrderHistory = async function (orderNumber) {
+  const modal = document.getElementById('orderHistoryModal');
+  const title = document.getElementById('orderHistoryTitle');
+  const content = document.getElementById('orderHistoryContent');
+
+  if (!modal || !title || !content) return;
+
+  title.textContent = `Order History - ${orderNumber}`;
+  content.innerHTML = `<div class="empty-box">جاري تحميل السجل...</div>`;
+  modal.classList.add('active');
+
+  try {
+    const params = new URLSearchParams({ order_number: orderNumber });
+    const { data } = await adminFetchJson(`/admin/api/get-order-history.php?${params.toString()}`);
+
+    if (!data.ok) {
+      content.innerHTML = `<div class="empty-box">${data.message || 'فشل تحميل السجل.'}</div>`;
+      return;
+    }
+
+    renderOrderHistory(data.history || []);
+  } catch (e) {
+    content.innerHTML = `<div class="empty-box">${e.message || 'حدث خطأ أثناء تحميل السجل.'}</div>`;
+  }
+};
+
+window.closeOrderHistory = function () {
+  const modal = document.getElementById('orderHistoryModal');
+  if (modal) modal.classList.remove('active');
+};
+
+function bindOrderHistoryModal() {
+  const modal = document.getElementById('orderHistoryModal');
+  const closeBtn = document.getElementById('orderHistoryCloseBtn');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeOrderHistory);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) {
+        closeOrderHistory();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeOrderHistory();
+    }
+  });
+}
 
 function bindOrdersManagementButtons() {
   const loadBtn = document.getElementById('loadOrdersBtn');
@@ -889,6 +1017,7 @@ function initializeAdminUI() {
   bindBoxButtons();
   bindBoxInteractions();
   bindOrdersManagementButtons();
+  bindOrderHistoryModal();
   renderBoxes();
 
   checkAuth();
