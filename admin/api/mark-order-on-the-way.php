@@ -30,17 +30,6 @@ if (!$order) {
 
 $currentStatus = (string)$order['status'];
 
-/*
-  القواعد:
-  - لا يمكن التحويل إلى on_the_way إذا:
-    - الطلب cancelled
-    - الطلب rejected
-    - الطلب completed
-    - الطلب بالفعل on_the_way
-  - الطبيعي أن يكون الطلب approved أولًا،
-    لكن سنسمح أيضًا من pending لو الأدمن أراد التحويل مباشرة.
-*/
-
 if ($currentStatus === 'on_the_way') {
     json_response(false, ['message' => 'Order already on the way'], 422);
 }
@@ -55,6 +44,14 @@ if ($currentStatus === 'rejected') {
 
 if ($currentStatus === 'completed') {
     json_response(false, ['message' => 'Delivered orders cannot be sent to delivery again'], 422);
+}
+
+$notes = 'Marked as on the way from admin dashboard';
+
+if ($currentStatus === 'pending') {
+    $notes = 'Admin direct action: changed order from pending to on_the_way';
+} elseif ($currentStatus === 'approved') {
+    $notes = 'Marked as on the way from admin dashboard';
 }
 
 try {
@@ -97,7 +94,7 @@ try {
         'order_id' => (int)$order['id'],
         'old_status' => $currentStatus,
         'changed_by' => $_SESSION['admin_user_id'] ?? null,
-        'notes' => 'Marked as on the way from admin dashboard'
+        'notes' => $notes
     ]);
 
     $pdo->commit();
