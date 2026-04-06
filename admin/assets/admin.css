@@ -1,3 +1,4 @@
+/* ===== RESET ===== */
 * {
   box-sizing: border-box;
 }
@@ -306,6 +307,61 @@ select:focus {
 
 .mt-20 {
   margin-top: 20px;
+}
+
+/* ===== ADDED: DISABLED / PERMISSION STATES ===== */
+.disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
+button.disabled,
+.btn.disabled {
+  filter: grayscale(0.15);
+  box-shadow: none !important;
+}
+
+input.disabled,
+select.disabled,
+textarea.disabled {
+  background: rgba(255,255,255,0.04) !important;
+  color: rgba(255,255,255,0.55) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:disabled {
+  box-shadow: none !important;
+}
+
+/* ===== ADDED: ORDER HISTORY OVERRIDE STYLE ===== */
+.admin-override-item {
+  border: 1px solid rgba(245,158,11,0.35) !important;
+  background: linear-gradient(180deg, rgba(245,158,11,0.10), rgba(255,255,255,0.03)) !important;
+  box-shadow: 0 10px 22px rgba(245,158,11,0.08);
+}
+
+.admin-override-item .history-row strong,
+.admin-override-item .history-meta strong {
+  color: #fbbf24;
+}
+
+.admin-override-item .history-meta {
+  color: #fde7b0;
+}
+
+/* ===== ADDED: HIDDEN PERMISSION HELPERS ===== */
+[data-permission],
+[data-panel-permission] {
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
 @media (max-width: 980px) {
