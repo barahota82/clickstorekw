@@ -260,6 +260,10 @@ function getOrderActionPermissions() {
   };
 }
 
+/* =========================
+   UTILITIES
+========================= */
+
 function adminSetStatus(id, type, message) {
   const box = document.getElementById(id);
   if (!box) return;
@@ -277,7 +281,7 @@ function adminClearStatus(id) {
 }
 
 function slugToTitle(text) {
-  return (text || '')
+  return String(text || '')
     .replace(/\.[^.]+$/, '')
     .replace(/[_\-]+/g, ' ')
     .replace(/\s+/g, ' ')
@@ -285,7 +289,7 @@ function slugToTitle(text) {
 }
 
 function normalizeStockText(text) {
-  return (text || '')
+  return String(text || '')
     .toLowerCase()
     .replace(/\.[^.]+$/, '')
     .replace(/[_\-]+/g, ' ')
@@ -293,8 +297,13 @@ function normalizeStockText(text) {
     .trim();
 }
 
+function safeNum(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function splitDevicesFromFilename(filename) {
-  const noExt = (filename || '').replace(/\.[^.]+$/, '');
+  const noExt = String(filename || '').replace(/\.[^.]+$/, '');
   return noExt
     .split('+')
     .map(part => part.trim())
@@ -336,6 +345,37 @@ function detectBrandFromFilename(text) {
   return '';
 }
 
+function detectCategoryFromFilename(text) {
+  const source = normalizeStockText(text);
+
+  const rules = [
+    {
+      category: 'laptops',
+      keys: ['laptop', 'notebook', 'chromebook', 'macbook', 'lenovo', 'hp', 'dell', 'asus', 'acer']
+    },
+    {
+      category: 'tablets',
+      keys: ['tablet', 'ipad', 'tab']
+    },
+    {
+      category: 'phones',
+      keys: ['iphone', 'samsung', 'honor', 'xiaomi', 'redmi', 'oppo', 'vivo', 'realme', 'huawei', 'tecno', 'infinix', 'pixel', 'phone', 'mobile']
+    },
+    {
+      category: 'accessories',
+      keys: ['watch', 'buds', 'earbuds', 'airpods', 'headphone', 'charger', 'case', 'cover', 'keyboard', 'mouse', 'speaker']
+    }
+  ];
+
+  for (const rule of rules) {
+    if (rule.keys.some(key => source.includes(key))) {
+      return rule.category;
+    }
+  }
+
+  return '';
+}
+
 function buildDisplayNameFromFilename(part) {
   const cleaned = slugToTitle(part);
 
@@ -354,68 +394,331 @@ function buildDisplayNameFromFilename(part) {
 function analyzeFilenameForOCR(filename) {
   const devices = splitDevicesFromFilename(filename);
   const firstDevice = devices[0] || '';
+  const brand = detectBrandFromFilename(firstDevice);
+  const title = buildDisplayNameFromFilename(firstDevice);
 
   return {
     fileName: filename || '',
     devicesCount: devices.length || 1,
-    brandFromFilename: detectBrandFromFilename(firstDevice),
-    title: buildDisplayNameFromFilename(firstDevice),
-    stockDisplayName: buildDisplayNameFromFilename(firstDevice)
+    brandFromFilename: brand,
+    title,
+    stockDisplayName: title,
+    categorySlugGuess: detectCategoryFromFilename(firstDevice)
   };
 }
 
+function getEl(id) {
+  return document.getElementById(id);
+}
+
+function setInputValue(id, value) {
+  const el = getEl(id);
+  if (el) el.value = value ?? '';
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/* =========================
+   BOOTSTRAP DATA
+========================= */
+
+function getBootstrapCategories() {
+  return Array.isArray(window.ADMIN_BOOTSTRAP?.categories) ? window.ADMIN_BOOTSTRAP.categories : [];
+}
+
+function getBootstrapBrands() {
+  return Array.isArray(window.ADMIN_BOOTSTRAP?.brands) ? window.ADMIN_BOOTSTRAP.brands : [];
+}
+
 function populateCategorySelect(selectId) {
-  const select = document.getElementById(selectId);
+  const select = getEl(selectId);
   if (!select) return;
 
+  const currentValue = String(select.value || '');
   select.innerHTML = '<option value="">Select Category</option>';
 
-  (window.ADMIN_BOOTSTRAP?.categories || []).forEach(cat => {
+  getBootstrapCategories().forEach(cat => {
     const opt = document.createElement('option');
     opt.value = String(cat.id);
     opt.textContent = cat.display_name;
+    opt.dataset.slug = String(cat.slug || '').toLowerCase();
     select.appendChild(opt);
   });
+
+  if (currentValue) {
+    select.value = currentValue;
+  }
 }
 
 function populateBrandSelect(selectId, categoryId = '') {
-  const select = document.getElementById(selectId);
+  const select = getEl(selectId);
   if (!select) return;
 
+  const currentValue = String(select.value || '');
   select.innerHTML = '<option value="">Select Brand</option>';
 
-  (window.ADMIN_BOOTSTRAP?.brands || []).forEach(brand => {
+  getBootstrapBrands().forEach(brand => {
     if (categoryId && String(brand.category_id) !== String(categoryId)) return;
 
     const opt = document.createElement('option');
     opt.value = String(brand.id);
     opt.textContent = brand.name;
     opt.dataset.categoryId = String(brand.category_id);
+    opt.dataset.slug = String(brand.slug || '').toLowerCase();
     select.appendChild(opt);
   });
+
+  if (currentValue) {
+    select.value = currentValue;
+  }
 }
 
-function bindCategoryBrandFilter(categoryId, brandId, autoFieldId = null) {
-  const category = document.getElementById(categoryId);
-  const brand = document.getElementById(brandId);
-  const autoField = autoFieldId ? document.getElementById(autoFieldId) : null;
+function bindEditCategoryBrandFilter(categoryId, brandId) {
+  const category = getEl(categoryId);
+  const brand = getEl(brandId);
 
   if (!category || !brand) return;
 
   populateCategorySelect(categoryId);
-  populateBrandSelect(brandId);
+  populateBrandSelect(brandId, category.value || '');
 
   category.addEventListener('change', function () {
     populateBrandSelect(brandId, this.value);
   });
+}
 
-  brand.addEventListener('change', function () {
-    if (autoField) {
-      const selected = this.options[this.selectedIndex];
-      autoField.value = selected ? selected.textContent : '';
+function bindOcrCategoryOnly(selectId) {
+  const category = getEl(selectId);
+  if (!category) return;
+  populateCategorySelect(selectId);
+}
+
+function selectCategoryBySlug(selectId, slugGuess) {
+  if (!slugGuess) return false;
+
+  const select = getEl(selectId);
+  if (!select) return false;
+
+  const options = Array.from(select.options);
+  const found = options.find(
+    opt => String(opt.dataset.slug || '').toLowerCase() === String(slugGuess).toLowerCase()
+  );
+
+  if (!found) return false;
+  select.value = found.value;
+  select.dispatchEvent(new Event('change'));
+  return true;
+}
+
+/* =========================
+   OCR VALUE PARSING
+========================= */
+
+function normalizeOcrText(text) {
+  return String(text || '')
+    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseOcrFinancials(text) {
+  const normalized = normalizeOcrText(text).toLowerCase();
+
+  const result = {
+    downPayment: '',
+    monthlyAmount: '',
+    durationMonths: ''
+  };
+
+  const downPatterns = [
+    /zero\s*down\s*payment/i,
+    /بدون\s*مقدم/i,
+    /مقدم\s*0/i,
+    /0\s*(?:kd|kwd)\s*(?:down|down payment|مقدم)/i
+  ];
+
+  if (downPatterns.some(rx => rx.test(normalized))) {
+    result.downPayment = '0';
+  }
+
+  const monthlyPatterns = [
+    /(\d+(?:\.\d+)?)\s*(?:kd|kwd)\s*monthly/i,
+    /monthly\s*(\d+(?:\.\d+)?)/i,
+    /القسط(?:\s*الشهري)?\s*(\d+(?:\.\d+)?)/i
+  ];
+
+  for (const rx of monthlyPatterns) {
+    const m = normalized.match(rx);
+    if (m && m[1]) {
+      result.monthlyAmount = m[1];
+      break;
     }
+  }
+
+  const durationPatterns = [
+    /(\d+)\s*months?/i,
+    /(\d+)\s*month\s*to\s*pay/i,
+    /(\d+)\s*months\s*to\s*pay/i,
+    /(\d+)\s*شهر/i
+  ];
+
+  for (const rx of durationPatterns) {
+    const m = normalized.match(rx);
+    if (m && m[1]) {
+      result.durationMonths = m[1];
+      break;
+    }
+  }
+
+  const downPayPatterns = [
+    /down\s*payment\s*(\d+(?:\.\d+)?)/i,
+    /(\d+(?:\.\d+)?)\s*(?:kd|kwd)\s*down\s*payment/i,
+    /مقدم\s*(\d+(?:\.\d+)?)/i
+  ];
+
+  if (!result.downPayment) {
+    for (const rx of downPayPatterns) {
+      const m = normalized.match(rx);
+      if (m && m[1]) {
+        result.downPayment = m[1];
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/* =========================
+   OCR API
+========================= */
+
+async function runServerSideOcr(file, boxes = []) {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    formData.append('boxes_json', JSON.stringify(boxes || []));
+  } catch (e) {
+    formData.append('boxes_json', '[]');
+  }
+
+  const res = await fetch('/admin/api/ocr-read.php', {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: formData
+  });
+
+  const raw = await res.text();
+  let data = null;
+
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(raw || 'OCR response is not valid JSON.');
+  }
+
+  return data;
+}
+
+/* =========================
+   JSON PREVIEW / OCR HELPERS
+========================= */
+
+function buildProductJsonPreviewObject() {
+  return {
+    title: String(getEl('ocrTitle')?.value || '').trim(),
+    category_id: String(getEl('ocrCategory')?.value || '').trim(),
+    brand: String(getEl('ocrBrandFromFilename')?.value || '').trim(),
+    file_name: String(getEl('ocrFileName')?.value || '').trim(),
+    stock_display_name: String(getEl('ocrStockDisplayName')?.value || '').trim(),
+    matched_stock_model: String(getEl('ocrMatchedStockModel')?.value || '').trim(),
+    devices_count: String(getEl('ocrDevicesCount')?.value || '').trim(),
+    down_payment: String(getEl('ocrDownPayment')?.value || '').trim(),
+    monthly_amount: String(getEl('ocrMonthlyAmount')?.value || '').trim(),
+    duration_months: String(getEl('ocrDurationMonths')?.value || '').trim(),
+    is_hot_offer: String(getEl('ocrHotOffer')?.value || '0').trim()
+  };
+}
+
+function updateProductJsonPreview() {
+  const preview = getEl('productJsonPreview');
+  if (!preview) return;
+
+  const data = buildProductJsonPreviewObject();
+  preview.value = JSON.stringify(data, null, 2);
+}
+
+function applyOcrFinancialsToMainFields(fields) {
+  if (!fields) return;
+
+  if (fields.downPayment !== '') {
+    setInputValue('ocrDownPayment', fields.downPayment);
+  }
+  if (fields.monthlyAmount !== '') {
+    setInputValue('ocrMonthlyAmount', fields.monthlyAmount);
+  }
+  if (fields.durationMonths !== '') {
+    setInputValue('ocrDurationMonths', fields.durationMonths);
+  }
+
+  updateProductJsonPreview();
+}
+
+function fillOCRFieldsFromAnalysis(analysis) {
+  setInputValue('ocrFileName', analysis.fileName || '');
+  setInputValue('ocrTitle', analysis.title || '');
+  setInputValue('ocrStockDisplayName', analysis.stockDisplayName || '');
+  setInputValue('ocrDevicesCount', analysis.devicesCount || 1);
+  setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
+
+  const categorySelect = getEl('ocrCategory');
+  if (categorySelect && analysis.categorySlugGuess) {
+    selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
+  }
+
+  updateProductJsonPreview();
+}
+
+function bindOcrManualConfirmButton() {
+  const btn = getEl('ocrConfirmManualEditBtn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function () {
+    if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
+
+    updateProductJsonPreview();
+    adminSetStatus('dashboardStatus', 'success', 'تم تأكيد التعديل اليدوي وسيتم الاعتماد على القيم الحالية في JSON.');
   });
 }
+
+function bindOcrPreviewAutoUpdate() {
+  [
+    'ocrCategory',
+    'ocrTitle',
+    'ocrStockDisplayName',
+    'ocrDownPayment',
+    'ocrMonthlyAmount',
+    'ocrDurationMonths',
+    'ocrHotOffer'
+  ].forEach(id => {
+    const el = getEl(id);
+    if (!el) return;
+    el.addEventListener('input', updateProductJsonPreview);
+    el.addEventListener('change', updateProductJsonPreview);
+  });
+}
+
+/* =========================
+   OCR CORE
+========================= */
 
 function clearOCRData(fullReset = false) {
   currentOCRFile = fullReset ? null : currentOCRFile;
@@ -428,27 +731,27 @@ function clearOCRData(fullReset = false) {
     'ocrBrandFromFilename',
     'ocrDownPayment',
     'ocrMonthlyAmount',
-    'ocrDurationMonths'
+    'ocrDurationMonths',
+    'ocrMatchedStockModel',
+    'productJsonPreview'
   ];
 
   ids.forEach(id => {
-    const el = document.getElementById(id);
+    const el = getEl(id);
     if (el) el.value = '';
   });
 
-  const hotOffer = document.getElementById('ocrHotOffer');
+  const hotOffer = getEl('ocrHotOffer');
   if (hotOffer) hotOffer.value = '0';
 
   if (fullReset) {
-    const category = document.getElementById('ocrCategory');
-    const brand = document.getElementById('ocrBrand');
+    const category = getEl('ocrCategory');
     if (category) category.value = '';
-    if (brand) populateBrandSelect('ocrBrand', '');
   }
 
-  const image = document.getElementById('ocrPreviewImage');
-  const placeholder = document.getElementById('ocrPreviewPlaceholder');
-  const input = document.getElementById('ocrImageInput');
+  const image = getEl('ocrPreviewImage');
+  const placeholder = getEl('ocrPreviewPlaceholder');
+  const input = getEl('ocrImageInput');
 
   if (fullReset) {
     if (image) {
@@ -461,15 +764,16 @@ function clearOCRData(fullReset = false) {
     currentOCRFile = null;
   }
 
+  updateProductJsonPreview();
   adminClearStatus('dashboardStatus');
 }
 
 function bindOCRUploadButton() {
-  const uploadBtn = document.getElementById('ocrUploadBtn');
-  const input = document.getElementById('ocrImageInput');
-  const image = document.getElementById('ocrPreviewImage');
-  const placeholder = document.getElementById('ocrPreviewPlaceholder');
-  const fileNameField = document.getElementById('ocrFileName');
+  const uploadBtn = getEl('ocrUploadBtn');
+  const input = getEl('ocrImageInput');
+  const image = getEl('ocrPreviewImage');
+  const placeholder = getEl('ocrPreviewPlaceholder');
+  const fileNameField = getEl('ocrFileName');
 
   if (!uploadBtn || !input || !image) return;
 
@@ -491,6 +795,9 @@ function bindOCRUploadButton() {
 
     if (fileNameField) fileNameField.value = file.name;
 
+    const analysis = analyzeFilenameForOCR(file.name);
+    fillOCRFieldsFromAnalysis(analysis);
+
     const reader = new FileReader();
     reader.onload = function (e) {
       image.src = e.target.result;
@@ -499,43 +806,18 @@ function bindOCRUploadButton() {
       if (placeholder) placeholder.classList.add('hidden');
     };
     reader.readAsDataURL(file);
+
+    updateProductJsonPreview();
+    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة. اضغط Analyze (OCR) لإكمال القراءة.');
   });
 }
 
-function fillOCRFieldsFromAnalysis(analysis) {
-  const fileName = document.getElementById('ocrFileName');
-  const title = document.getElementById('ocrTitle');
-  const stockDisplayName = document.getElementById('ocrStockDisplayName');
-  const devicesCount = document.getElementById('ocrDevicesCount');
-  const brandFromFilename = document.getElementById('ocrBrandFromFilename');
-
-  if (fileName) fileName.value = analysis.fileName || '';
-  if (title) title.value = analysis.title || '';
-  if (stockDisplayName) stockDisplayName.value = analysis.stockDisplayName || '';
-  if (devicesCount) devicesCount.value = analysis.devicesCount || 1;
-  if (brandFromFilename) brandFromFilename.value = analysis.brandFromFilename || '';
-
- const brandSelect = document.getElementById('ocrBrand');
- const brandAuto = document.getElementById('ocrBrandAuto');
-
- if (brandSelect && analysis.brandFromFilename) {
-  const option = [...brandSelect.options].find(
-    opt => opt.textContent.toLowerCase() === analysis.brandFromFilename.toLowerCase()
-  );
-
-  if (option) {
-    brandSelect.value = option.value;
-    if (brandAuto) brandAuto.value = option.textContent;
-  }
- }
-}
-
 function bindOCRAnalyzeButton() {
-  const analyzeBtn = document.getElementById('ocrAnalyzeBtn');
+  const analyzeBtn = getEl('ocrAnalyzeBtn');
   if (!analyzeBtn) return;
 
   analyzeBtn.onclick = null;
-  analyzeBtn.addEventListener('click', function () {
+  analyzeBtn.addEventListener('click', async function () {
     if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية لاستخدام OCR.')) return;
 
     if (!currentOCRFile) {
@@ -546,14 +828,88 @@ function bindOCRAnalyzeButton() {
     const analysis = analyzeFilenameForOCR(currentOCRFile.name);
     fillOCRFieldsFromAnalysis(analysis);
 
-    adminSetStatus('dashboardStatus', 'success', 'تم التحليل الأولي من اسم الملف.');
+    adminSetStatus('dashboardStatus', 'info', 'جاري تحليل اسم الملف ومحاولة قراءة القيم من الصورة...');
+
+    try {
+      const ocrData = await runServerSideOcr(currentOCRFile, ocrBoxes);
+
+      if (!ocrData?.ok) {
+        updateProductJsonPreview();
+        adminSetStatus(
+          'dashboardStatus',
+          'info',
+          ocrData?.message || 'تم تحليل اسم الملف فقط. لم يتم العثور على OCR backend صالح.'
+        );
+        return;
+      }
+
+      const rawText = [
+        ocrData.text || '',
+        ...(Array.isArray(ocrData.lines) ? ocrData.lines : [])
+      ].join('\n');
+
+      let fields = {
+        downPayment: '',
+        monthlyAmount: '',
+        durationMonths: ''
+      };
+
+      if (ocrData.fields && typeof ocrData.fields === 'object') {
+        fields.downPayment = String(ocrData.fields.down_payment ?? '');
+        fields.monthlyAmount = String(ocrData.fields.monthly_amount ?? '');
+        fields.durationMonths = String(ocrData.fields.duration_months ?? '');
+      }
+
+      const parsed = parseOcrFinancials(rawText);
+
+      if (!fields.downPayment) fields.downPayment = parsed.downPayment || '';
+      if (!fields.monthlyAmount) fields.monthlyAmount = parsed.monthlyAmount || '';
+      if (!fields.durationMonths) fields.durationMonths = parsed.durationMonths || '';
+
+      if (ocrData.matched_stock_model) {
+        setInputValue('ocrMatchedStockModel', String(ocrData.matched_stock_model));
+      } else if (ocrData.stock_model) {
+        setInputValue('ocrMatchedStockModel', String(ocrData.stock_model));
+      } else if (ocrData.product_model) {
+        setInputValue('ocrMatchedStockModel', String(ocrData.product_model));
+      }
+
+      applyOcrFinancialsToMainFields(fields);
+      updateProductJsonPreview();
+
+      const gotAny =
+        String(fields.downPayment || '').trim() !== '' ||
+        String(fields.monthlyAmount || '').trim() !== '' ||
+        String(fields.durationMonths || '').trim() !== '';
+
+      if (gotAny) {
+        adminSetStatus('dashboardStatus', 'success', 'تم تحليل الصورة وتعبئة القيم المستخرجة بنجاح.');
+      } else {
+        adminSetStatus(
+          'dashboardStatus',
+          'info',
+          'تم تحليل اسم الملف، لكن OCR لم يستخرج المقدم أو القسط أو عدد الشهور من الصورة.'
+        );
+      }
+    } catch (e) {
+      updateProductJsonPreview();
+      adminSetStatus(
+        'dashboardStatus',
+        'info',
+        'تم تحليل اسم الملف فقط. OCR backend غير متاح أو أعاد استجابة غير صالحة.'
+      );
+    }
   });
 }
 
+/* =========================
+   EDIT IMAGE
+========================= */
+
 function bindEditImageButton() {
-  const btn = document.getElementById('editChangeImageBtn');
-  const input = document.getElementById('editImageInput');
-  const image = document.getElementById('editPreviewImage');
+  const btn = getEl('editChangeImageBtn');
+  const input = getEl('editImageInput');
+  const image = getEl('editPreviewImage');
 
   if (!btn || !input || !image) return;
 
@@ -579,6 +935,10 @@ function bindEditImageButton() {
   });
 }
 
+/* =========================
+   TABS
+========================= */
+
 function bindTabSwitching() {
   document.querySelectorAll('.admin-tab-btn').forEach(btn => {
     btn.addEventListener('click', function () {
@@ -589,7 +949,7 @@ function bindTabSwitching() {
         return;
       }
 
-      const target = document.getElementById(tabId);
+      const target = getEl(tabId);
       if (target && !isElementAllowedByPermissionAttr(target, 'data-panel-permission')) {
         adminSetStatus('dashboardStatus', 'error', 'ليس لديك صلاحية لعرض هذا القسم.');
         return;
@@ -609,9 +969,13 @@ function bindTabSwitching() {
   });
 }
 
+/* =========================
+   BOXES
+========================= */
+
 function renderBoxes() {
-  const layer = document.getElementById('ocrBoxesLayer');
-  const list = document.getElementById('ocrBoxesList');
+  const layer = getEl('ocrBoxesLayer');
+  const list = getEl('ocrBoxesList');
   if (!layer || !list) return;
 
   layer.innerHTML = '';
@@ -652,7 +1016,7 @@ function renderBoxes() {
       <div class="box-item-grid">
         <div>
           <label>Box</label>
-          <input type="text" value="${box.label}">
+          <input type="text" value="${escapeHtml(box.label)}">
         </div>
         <div>
           <label>Type</label>
@@ -716,7 +1080,7 @@ function clamp(value, min, max) {
 }
 
 function getLayerRect() {
-  const layer = document.getElementById('ocrBoxesLayer');
+  const layer = getEl('ocrBoxesLayer');
   return layer ? layer.getBoundingClientRect() : null;
 }
 
@@ -779,8 +1143,8 @@ function bindBoxInteractions() {
     }
 
     if (dragState.mode === 'resize') {
-      box.w = clamp(dragState.boxW + dxPercent, 8, 100 - box.x);
-      box.h = clamp(dragState.boxH + dyPercent, 8, 100 - box.y);
+      box.w = clamp(dragState.boxW + dxPercent, 4, 100 - box.x);
+      box.h = clamp(dragState.boxH + dyPercent, 2, 100 - box.y);
     }
 
     renderBoxes();
@@ -792,14 +1156,15 @@ function bindBoxInteractions() {
 }
 
 function bindBoxButtons() {
-  const insertBtn = document.getElementById('ocrInsertBoxBtn');
-  const clearBoxesBtn = document.getElementById('ocrClearBoxesBtn');
-  const clearDataBtn = document.getElementById('ocrClearDataBtn');
+  const insertBtn = getEl('ocrInsertBoxBtn');
+  const clearBoxesBtn = getEl('ocrClearBoxesBtn');
+  const clearDataBtn = getEl('ocrClearDataBtn');
 
   if (insertBtn) {
     insertBtn.addEventListener('click', function () {
       if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
       addNewBox();
+      adminSetStatus('dashboardStatus', 'info', 'تمت إضافة مربع جديد.');
     });
   }
 
@@ -809,6 +1174,7 @@ function bindBoxButtons() {
       ocrBoxes = [];
       selectedBoxId = null;
       renderBoxes();
+      adminSetStatus('dashboardStatus', 'info', 'تم حذف جميع المربعات.');
     });
   }
 
@@ -819,6 +1185,102 @@ function bindBoxButtons() {
       adminSetStatus('dashboardStatus', 'info', 'تم تفريغ البيانات مع الإبقاء على أماكن المربعات.');
     });
   }
+}
+
+/* =========================
+   SAVE OCR PRODUCT
+========================= */
+
+async function saveOcrProduct() {
+  if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية إضافة منتج عبر OCR.')) return;
+
+  if (!currentOCRFile) {
+    adminSetStatus('dashboardStatus', 'error', 'ارفع صورة أولًا.');
+    return;
+  }
+
+  const title = String(getEl('ocrTitle')?.value || '').trim();
+  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
+  const downPayment = String(getEl('ocrDownPayment')?.value || '0').trim();
+  const monthlyAmount = String(getEl('ocrMonthlyAmount')?.value || '0').trim();
+  const durationMonths = String(getEl('ocrDurationMonths')?.value || '12').trim();
+  const hotOffer = String(getEl('ocrHotOffer')?.value || '0').trim();
+  const devicesCount = String(getEl('ocrDevicesCount')?.value || '1').trim();
+  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
+
+  if (!title) {
+    adminSetStatus('dashboardStatus', 'error', 'حقل Title مطلوب.');
+    return;
+  }
+
+  if (!categoryId) {
+    adminSetStatus('dashboardStatus', 'error', 'اختر Category أولًا.');
+    return;
+  }
+
+  if (!brandName) {
+    adminSetStatus('dashboardStatus', 'error', 'Brand لم يتم استخراجه من اسم الصورة.');
+    return;
+  }
+
+  const brandRecord = getBootstrapBrands().find(
+    brand =>
+      String(brand.category_id) === String(categoryId) &&
+      String(brand.name || '').trim().toLowerCase() === brandName.toLowerCase()
+  );
+
+  if (!brandRecord) {
+    adminSetStatus('dashboardStatus', 'error', 'لا يوجد Brand مطابق داخل قاعدة البيانات لهذه الفئة.');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('title', title);
+  fd.append('sku', slugToTitle(currentOCRFile.name).replace(/\s+/g, '-').toUpperCase());
+  fd.append('category_id', categoryId);
+  fd.append('brand_id', String(brandRecord.id));
+  fd.append('devices_count', devicesCount);
+  fd.append('duration_months', durationMonths);
+  fd.append('down_payment', downPayment);
+  fd.append('monthly_amount', monthlyAmount);
+  fd.append('is_hot_offer', hotOffer === '1' ? '1' : '');
+  fd.append('is_available', '1');
+  fd.append('image', currentOCRFile);
+
+  adminSetStatus('dashboardStatus', 'info', 'جاري حفظ المنتج...');
+
+  try {
+    const res = await fetch('/admin/api/save-product.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: fd
+    });
+
+    const raw = await res.text();
+    let data = null;
+
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      throw new Error(raw || 'Unexpected server response.');
+    }
+
+    if (!data.ok) {
+      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل حفظ المنتج.');
+      return;
+    }
+
+    updateProductJsonPreview();
+    adminSetStatus('dashboardStatus', 'success', data.message || 'تم حفظ المنتج بنجاح.');
+  } catch (e) {
+    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء حفظ المنتج.');
+  }
+}
+
+function bindOcrSaveButton() {
+  const btn = getEl('ocrSaveBtn');
+  if (!btn) return;
+  btn.addEventListener('click', saveOcrProduct);
 }
 
 /* =========================
@@ -894,8 +1356,8 @@ function groupOrderItems(items) {
 }
 
 function renderAdminOrdersTable(orders) {
-  const tbody = document.getElementById('adminOrdersTableBody');
-  const emptyBox = document.getElementById('ordersEmptyBox');
+  const tbody = getEl('adminOrdersTableBody');
+  const emptyBox = getEl('ordersEmptyBox');
   const perms = getOrderActionPermissions();
 
   if (!tbody) return;
@@ -934,8 +1396,8 @@ function renderAdminOrdersTable(orders) {
 
       return `
         <span>
-          • ${item.title} × ${item.quantity}
-          ${details ? `<br><small style="color:#8fa6c9;">${details}</small>` : ''}
+          • ${escapeHtml(item.title)} × ${item.quantity}
+          ${details ? `<br><small style="color:#8fa6c9;">${escapeHtml(details)}</small>` : ''}
         </span>
       `;
     }).join('');
@@ -953,14 +1415,14 @@ function renderAdminOrdersTable(orders) {
 
     return `
       <tr>
-        <td>${order.order_number || ''}</td>
-        <td>${order.customer_name || ''}</td>
-        <td>${order.customer_email || ''}</td>
-        <td>${order.customer_whatsapp || ''}</td>
-        <td>${order.created_at || ''}</td>
+        <td>${escapeHtml(order.order_number || '')}</td>
+        <td>${escapeHtml(order.customer_name || '')}</td>
+        <td>${escapeHtml(order.customer_email || '')}</td>
+        <td>${escapeHtml(order.customer_whatsapp || '')}</td>
+        <td>${escapeHtml(order.created_at || '')}</td>
         <td>
           <span class="status-chip ${statusClass}">
-            ${statusLabel}
+            ${escapeHtml(statusLabel)}
           </span>
         </td>
         <td>
@@ -968,15 +1430,15 @@ function renderAdminOrdersTable(orders) {
             ${itemsHtml || '<span>-</span>'}
           </div>
         </td>
-        <td>${Number(order.total_amount || 0).toFixed(3)} ${order.currency_code || 'KWD'}</td>
+        <td>${Number(order.total_amount || 0).toFixed(3)} ${escapeHtml(order.currency_code || 'KWD')}</td>
         <td>
           <div class="order-actions-cell">
-            ${canApprove ? `<button class="btn btn-primary secondary-btn" type="button" onclick="approveAdminOrder('${order.order_number}')">Approve</button>` : ''}
-            ${canOnTheWay ? `<button class="btn btn-primary secondary-btn" type="button" onclick="markOrderOnTheWay('${order.order_number}')">On The Way</button>` : ''}
-            ${canPending ? `<button class="btn btn-primary secondary-btn" type="button" onclick="setOrderPending('${order.order_number}')">Pending</button>` : ''}
-            ${canDeliver ? `<button class="btn success-btn" type="button" onclick="markOrderDelivered('${order.order_number}')">Delivered</button>` : ''}
-            ${canReject ? `<button class="btn warning-btn" type="button" onclick="rejectAdminOrder('${order.order_number}')">Reject</button>` : ''}
-            ${canHistory ? `<button class="btn btn-primary secondary-btn" type="button" onclick="openOrderHistory('${order.order_number}')">History</button>` : ''}
+            ${canApprove ? `<button class="btn btn-primary secondary-btn" type="button" onclick="approveAdminOrder('${String(order.order_number || '').replace(/'/g, "\\'")}')">Approve</button>` : ''}
+            ${canOnTheWay ? `<button class="btn btn-primary secondary-btn" type="button" onclick="markOrderOnTheWay('${String(order.order_number || '').replace(/'/g, "\\'")}')">On The Way</button>` : ''}
+            ${canPending ? `<button class="btn btn-primary secondary-btn" type="button" onclick="setOrderPending('${String(order.order_number || '').replace(/'/g, "\\'")}')">Pending</button>` : ''}
+            ${canDeliver ? `<button class="btn success-btn" type="button" onclick="markOrderDelivered('${String(order.order_number || '').replace(/'/g, "\\'")}')">Delivered</button>` : ''}
+            ${canReject ? `<button class="btn warning-btn" type="button" onclick="rejectAdminOrder('${String(order.order_number || '').replace(/'/g, "\\'")}')">Reject</button>` : ''}
+            ${canHistory ? `<button class="btn btn-primary secondary-btn" type="button" onclick="openOrderHistory('${String(order.order_number || '').replace(/'/g, "\\'")}')">History</button>` : ''}
           </div>
         </td>
       </tr>
@@ -985,10 +1447,10 @@ function renderAdminOrdersTable(orders) {
 }
 
 function renderOrdersSummary(summary) {
-  const all = document.getElementById('ordersCountAll');
-  const pending = document.getElementById('ordersCountPending');
-  const delivered = document.getElementById('ordersCountDelivered');
-  const rejected = document.getElementById('ordersCountRejected');
+  const all = getEl('ordersCountAll');
+  const pending = getEl('ordersCountPending');
+  const delivered = getEl('ordersCountDelivered');
+  const rejected = getEl('ordersCountRejected');
 
   if (all) all.textContent = String(summary?.all ?? 0);
   if (pending) pending.textContent = String(summary?.pending ?? 0);
@@ -998,7 +1460,7 @@ function renderOrdersSummary(summary) {
 
 async function loadOrdersManagement() {
   if (!requireFrontendPermissionOrWarn('orders_view', 'ليس لديك صلاحية لعرض الطلبات.')) {
-    const tbody = document.getElementById('adminOrdersTableBody');
+    const tbody = getEl('adminOrdersTableBody');
     if (tbody) {
       tbody.innerHTML = `
         <tr>
@@ -1010,9 +1472,9 @@ async function loadOrdersManagement() {
     return;
   }
 
-  const search = document.getElementById('ordersSearchInput')?.value.trim() || '';
-  const status = document.getElementById('ordersStatusFilter')?.value.trim() || '';
-  const date = document.getElementById('ordersDateFilter')?.value.trim() || '';
+  const search = getEl('ordersSearchInput')?.value.trim() || '';
+  const status = getEl('ordersStatusFilter')?.value.trim() || '';
+  const date = getEl('ordersDateFilter')?.value.trim() || '';
 
   const params = new URLSearchParams();
   if (search) params.set('search', search);
@@ -1089,8 +1551,12 @@ window.setOrderPending = async function (orderNumber) {
   await updateOrderStatus(orderNumber, '/admin/api/mark-order-pending.php', 'orders_mark_pending', 'تم تحويل الطلب إلى Pending بنجاح.');
 };
 
+/* =========================
+   ORDER HISTORY
+========================= */
+
 function renderOrderHistory(history) {
-  const content = document.getElementById('orderHistoryContent');
+  const content = getEl('orderHistoryContent');
   if (!content) return;
 
   if (!Array.isArray(history) || history.length === 0) {
@@ -1109,13 +1575,13 @@ function renderOrderHistory(history) {
     return `
       <div class="history-item ${isAdminOverride ? 'admin-override-item' : ''}">
         <div class="history-row">
-          <strong>From:</strong> <span>${oldStatus}</span>
-          <strong>To:</strong> <span>${newStatus}</span>
+          <strong>From:</strong> <span>${escapeHtml(oldStatus)}</span>
+          <strong>To:</strong> <span>${escapeHtml(newStatus)}</span>
         </div>
         <div class="history-meta">
-          <div><strong>By:</strong> ${actor}</div>
-          <div><strong>Notes:</strong> ${notes}</div>
-          <div><strong>Date:</strong> ${createdAt}</div>
+          <div><strong>By:</strong> ${escapeHtml(actor)}</div>
+          <div><strong>Notes:</strong> ${escapeHtml(notes)}</div>
+          <div><strong>Date:</strong> ${escapeHtml(createdAt)}</div>
           ${isAdminOverride ? `<div><strong>Override:</strong> Admin Override</div>` : ''}
         </div>
       </div>
@@ -1126,9 +1592,9 @@ function renderOrderHistory(history) {
 window.openOrderHistory = async function (orderNumber) {
   if (!requireFrontendPermissionOrWarn('orders_history_view', 'ليس لديك صلاحية لعرض سجل الطلب.')) return;
 
-  const modal = document.getElementById('orderHistoryModal');
-  const title = document.getElementById('orderHistoryTitle');
-  const content = document.getElementById('orderHistoryContent');
+  const modal = getEl('orderHistoryModal');
+  const title = getEl('orderHistoryTitle');
+  const content = getEl('orderHistoryContent');
 
   if (!modal || !title || !content) return;
 
@@ -1141,24 +1607,24 @@ window.openOrderHistory = async function (orderNumber) {
     const { data } = await adminFetchJson(`/admin/api/get-order-history.php?${params.toString()}`);
 
     if (!data.ok) {
-      content.innerHTML = `<div class="empty-box">${data.message || 'فشل تحميل السجل.'}</div>`;
+      content.innerHTML = `<div class="empty-box">${escapeHtml(data.message || 'فشل تحميل السجل.')}</div>`;
       return;
     }
 
     renderOrderHistory(data.history || []);
   } catch (e) {
-    content.innerHTML = `<div class="empty-box">${e.message || 'حدث خطأ أثناء تحميل السجل.'}</div>`;
+    content.innerHTML = `<div class="empty-box">${escapeHtml(e.message || 'حدث خطأ أثناء تحميل السجل.')}</div>`;
   }
 };
 
 window.closeOrderHistory = function () {
-  const modal = document.getElementById('orderHistoryModal');
+  const modal = getEl('orderHistoryModal');
   if (modal) modal.classList.remove('active');
 };
 
 function bindOrderHistoryModal() {
-  const modal = document.getElementById('orderHistoryModal');
-  const closeBtn = document.getElementById('orderHistoryCloseBtn');
+  const modal = getEl('orderHistoryModal');
+  const closeBtn = getEl('orderHistoryCloseBtn');
 
   if (closeBtn) {
     closeBtn.addEventListener('click', closeOrderHistory);
@@ -1180,11 +1646,11 @@ function bindOrderHistoryModal() {
 }
 
 function bindOrdersManagementButtons() {
-  const loadBtn = document.getElementById('loadOrdersBtn');
-  const refreshBtn = document.getElementById('refreshOrdersBtn');
-  const searchInput = document.getElementById('ordersSearchInput');
-  const statusFilter = document.getElementById('ordersStatusFilter');
-  const dateFilter = document.getElementById('ordersDateFilter');
+  const loadBtn = getEl('loadOrdersBtn');
+  const refreshBtn = getEl('refreshOrdersBtn');
+  const searchInput = getEl('ordersSearchInput');
+  const statusFilter = getEl('ordersStatusFilter');
+  const dateFilter = getEl('ordersDateFilter');
 
   if (loadBtn) {
     loadBtn.addEventListener('click', loadOrdersManagement);
@@ -1239,15 +1705,15 @@ async function checkAuth() {
 }
 
 function showDashboard(user) {
-  const loginPage = document.getElementById('loginPage');
-  const dashboardPage = document.getElementById('dashboardPage');
+  const loginPage = getEl('loginPage');
+  const dashboardPage = getEl('dashboardPage');
 
   if (loginPage) loginPage.classList.add('hidden');
   if (dashboardPage) dashboardPage.classList.remove('hidden');
 
-  const fullName = document.getElementById('viewerFullName');
-  const username = document.getElementById('viewerUsername');
-  const role = document.getElementById('viewerRole');
+  const fullName = getEl('viewerFullName');
+  const username = getEl('viewerUsername');
+  const role = getEl('viewerRole');
 
   if (fullName) fullName.textContent = user?.full_name || '-';
   if (username) username.textContent = user?.username || '-';
@@ -1255,8 +1721,8 @@ function showDashboard(user) {
 }
 
 function showLogin() {
-  const loginPage = document.getElementById('loginPage');
-  const dashboardPage = document.getElementById('dashboardPage');
+  const loginPage = getEl('loginPage');
+  const dashboardPage = getEl('dashboardPage');
 
   if (dashboardPage) dashboardPage.classList.add('hidden');
   if (loginPage) loginPage.classList.remove('hidden');
@@ -1265,8 +1731,8 @@ function showLogin() {
 async function doLogin() {
   adminSetStatus('loginStatus', 'info', 'جاري تسجيل الدخول...');
 
-  const username = document.getElementById('username')?.value.trim() || '';
-  const password = document.getElementById('password')?.value || '';
+  const username = getEl('username')?.value.trim() || '';
+  const password = getEl('password')?.value || '';
 
   if (!username || !password) {
     adminSetStatus('loginStatus', 'error', 'اكتب اسم المستخدم وكلمة المرور.');
@@ -1311,7 +1777,7 @@ async function doLogout() {
       return;
     }
 
-    const password = document.getElementById('password');
+    const password = getEl('password');
     if (password) password.value = '';
 
     setAdminAuthState(null, []);
@@ -1323,9 +1789,9 @@ async function doLogout() {
 }
 
 function bindAuthButtons() {
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const passwordInput = document.getElementById('password');
+  const loginBtn = getEl('loginBtn');
+  const logoutBtn = getEl('logoutBtn');
+  const passwordInput = getEl('password');
 
   if (loginBtn) loginBtn.addEventListener('click', doLogin);
   if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
@@ -1339,23 +1805,31 @@ function bindAuthButtons() {
   }
 }
 
+/* =========================
+   INIT
+========================= */
+
 function initializeAdminUI() {
   bindAuthButtons();
   bindTabSwitching();
 
-  bindCategoryBrandFilter('ocrCategory', 'ocrBrand', 'ocrBrandAuto');
-  bindCategoryBrandFilter('editCategory', 'editBrand');
+  bindOcrCategoryOnly('ocrCategory');
+  bindEditCategoryBrandFilter('editCategory', 'editBrand');
 
   bindOCRUploadButton();
   bindOCRAnalyzeButton();
+  bindOcrManualConfirmButton();
+  bindOcrPreviewAutoUpdate();
+  bindOcrSaveButton();
   bindEditImageButton();
 
   bindBoxButtons();
   bindBoxInteractions();
   bindOrdersManagementButtons();
   bindOrderHistoryModal();
-  renderBoxes();
 
+  renderBoxes();
+  updateProductJsonPreview();
   checkAuth();
 }
 
