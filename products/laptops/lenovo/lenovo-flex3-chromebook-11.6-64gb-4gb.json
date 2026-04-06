@@ -1,1 +1,14 @@
-
+{
+  "title": "Lenovo Flex3 Chromebook 11.6 64GB 4GB",
+  "category": "laptops",
+  "brand": "Lenovo",
+  "devices_count": 1,
+  "image": "/images/laptops/lenovo/lenovo-flex3-chromebook-11.6-64gb-4gb.webp",
+  "down_payment": 0,
+  "monthly": 10,
+  "duration": 12,
+  "available": true,
+  "hot_offer": true,
+  "brand_priority": 2,
+  "priority": 1
+}
