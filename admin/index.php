@@ -721,9 +721,16 @@ $brands = $pdo->query("
                   </div>
 
                   <div class="form-group">
-                    <label for="ocrBrandAuto">Brand (Auto)</label>
-                    <input id="ocrBrandAuto" type="text" class="readonly-input" readonly placeholder="Auto from first device in filename">
-                  </div>
+                    <label for="ocrBrand">Brand</label>
+                    <select id="ocrBrand">
+                      <option value="">Select Brand</option>
+                    </select>
+                 </div>
+
+                 <div class="form-group">
+                   <label for="ocrBrandAuto">Brand (Auto)</label>
+                   <input id="ocrBrandAuto" type="text" class="readonly-input" readonly placeholder="Auto from filename">
+                </div>
 
                   <div class="form-group full-col">
                     <label for="ocrFileName">File Name</label>
