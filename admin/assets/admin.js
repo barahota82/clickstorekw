@@ -395,9 +395,10 @@ function populateBrandSelect(selectId, categoryId = '') {
   });
 }
 
-function bindCategoryBrandFilter(categoryId, brandId) {
+function bindCategoryBrandFilter(categoryId, brandId, autoFieldId = null) {
   const category = document.getElementById(categoryId);
   const brand = document.getElementById(brandId);
+  const autoField = autoFieldId ? document.getElementById(autoFieldId) : null;
 
   if (!category || !brand) return;
 
@@ -406,6 +407,13 @@ function bindCategoryBrandFilter(categoryId, brandId) {
 
   category.addEventListener('change', function () {
     populateBrandSelect(brandId, this.value);
+  });
+
+  brand.addEventListener('change', function () {
+    if (autoField) {
+      const selected = this.options[this.selectedIndex];
+      autoField.value = selected ? selected.textContent : '';
+    }
   });
 }
 
@@ -506,6 +514,20 @@ function fillOCRFieldsFromAnalysis(analysis) {
   if (stockDisplayName) stockDisplayName.value = analysis.stockDisplayName || '';
   if (devicesCount) devicesCount.value = analysis.devicesCount || 1;
   if (brandFromFilename) brandFromFilename.value = analysis.brandFromFilename || '';
+
+ const brandSelect = document.getElementById('ocrBrand');
+ const brandAuto = document.getElementById('ocrBrandAuto');
+
+ if (brandSelect && analysis.brandFromFilename) {
+  const option = [...brandSelect.options].find(
+    opt => opt.textContent.toLowerCase() === analysis.brandFromFilename.toLowerCase()
+  );
+
+  if (option) {
+    brandSelect.value = option.value;
+    if (brandAuto) brandAuto.value = option.textContent;
+  }
+ }
 }
 
 function bindOCRAnalyzeButton() {
@@ -1321,7 +1343,7 @@ function initializeAdminUI() {
   bindAuthButtons();
   bindTabSwitching();
 
-  bindCategoryBrandFilter('ocrCategory', 'ocrBrand');
+  bindCategoryBrandFilter('ocrCategory', 'ocrBrand', 'ocrBrandAuto');
   bindCategoryBrandFilter('editCategory', 'editBrand');
 
   bindOCRUploadButton();
