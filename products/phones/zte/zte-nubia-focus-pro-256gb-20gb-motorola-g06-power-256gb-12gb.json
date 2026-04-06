@@ -3,12 +3,12 @@
   "category": "phones",
   "brand": "Zte",
   "devices_count": 2,
-  "image": "/images/phones/realme/realme-c63-256gb-16gb-motorola-g06-power-256gb-12gb.webp",
+  "image": "/images/phones/zte/zte-nubia-focus-pro-256gb-20gb-motorola-g06-power-256gb-12gb.webp",
   "down_payment": 0,
   "monthly": 10,
   "duration": 15,
-  "available": false,
-  "hot_offer": false,
-  "brand_priority": 6,
-  "priority": 11
+  "available": true,
+  "hot_offer": true,
+  "brand_priority": 9,
+  "priority": 3
 }
