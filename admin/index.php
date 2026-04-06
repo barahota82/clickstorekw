@@ -168,8 +168,8 @@ $brands = $pdo->query("
       border: 2px solid #60a5fa;
       background: rgba(96,165,250,0.10);
       border-radius: 10px;
-      min-width: 60px;
-      min-height: 40px;
+      min-width: 40px;
+      min-height: 20px;
       cursor: move;
       user-select: none;
       touch-action: none;
@@ -537,6 +537,22 @@ $brands = $pdo->query("
       line-height: 1.8;
     }
 
+    .json-preview-box {
+      width: 100%;
+      min-height: 220px;
+      background: #0a1120;
+      color: #22c55e;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 13px;
+      font-family: Consolas, Monaco, monospace;
+      line-height: 1.8;
+      resize: vertical;
+      direction: ltr;
+      text-align: left;
+    }
+
     @media (max-width: 1200px) {
       .admin-main-tabs {
         grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -701,10 +717,6 @@ $brands = $pdo->query("
                 <button class="btn danger-btn" type="button" id="ocrClearBoxesBtn" data-permission="ocr_view">Clear Boxes</button>
               </div>
 
-              <div class="mini-note">
-                عند رفع صورة جديدة أو تفريغ البيانات، تبقى آخر أماكن المربعات محفوظة كما هي.
-              </div>
-
               <div class="box-list" id="ocrBoxesList"></div>
             </div>
 
@@ -721,16 +733,9 @@ $brands = $pdo->query("
                   </div>
 
                   <div class="form-group">
-                    <label for="ocrBrand">Brand</label>
-                    <select id="ocrBrand">
-                      <option value="">Select Brand</option>
-                    </select>
-                 </div>
-
-                 <div class="form-group">
-                   <label for="ocrBrandAuto">Brand (Auto)</label>
-                   <input id="ocrBrandAuto" type="text" class="readonly-input" readonly placeholder="Auto from filename">
-                </div>
+                    <label for="ocrBrandFromFilename">Brand</label>
+                    <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto from first device in filename">
+                  </div>
 
                   <div class="form-group full-col">
                     <label for="ocrFileName">File Name</label>
@@ -747,9 +752,9 @@ $brands = $pdo->query("
                     <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
                   </div>
 
-                  <div class="form-group full-col">
-                    <label for="ocrMatchedStockModel">Matched Stock / Card Model</label>
-                    <input id="ocrMatchedStockModel" type="text" class="readonly-input" readonly placeholder="Will appear here for review after OCR / stock matching">
+                  <div class="form-group">
+                    <label for="ocrDevicesCount">Device Count</label>
+                    <input id="ocrDevicesCount" type="number" min="1" class="readonly-input" readonly placeholder="Auto">
                   </div>
                 </div>
               </div>
@@ -781,41 +786,24 @@ $brands = $pdo->query("
                     </select>
                   </div>
                 </div>
+
+                <div class="action-row">
+                  <button class="btn btn-primary secondary-btn" type="button" id="ocrConfirmManualEditBtn" data-permission="ocr_view">Confirm Manual Edit</button>
+                </div>
               </div>
 
               <div class="sub-card">
-                <h4 class="sub-title">OCR Summary</h4>
+                <h4 class="sub-title">Matched Stock / Card Model</h4>
 
-                <div class="form-grid-2">
-                  <div class="form-group">
-                    <label for="ocrDevicesCount">Device Count</label>
-                    <input id="ocrDevicesCount" type="number" min="1" class="readonly-input" readonly placeholder="Auto">
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrBrandFromFilename">Brand from Filename</label>
-                    <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="From first device only">
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrExtractedDownPayment">OCR Extracted Down Payment</label>
-                    <input id="ocrExtractedDownPayment" type="text" class="readonly-input" readonly placeholder="From image OCR">
-                  </div>
-
-                  <div class="form-group">
-                    <label for="ocrExtractedMonthly">OCR Extracted Monthly</label>
-                    <input id="ocrExtractedMonthly" type="text" class="readonly-input" readonly placeholder="From image OCR">
-                  </div>
-
-                  <div class="form-group full-col">
-                    <label for="ocrExtractedDuration">OCR Extracted Duration</label>
-                    <input id="ocrExtractedDuration" type="text" class="readonly-input" readonly placeholder="From image OCR">
-                  </div>
+                <div class="form-group">
+                  <input id="ocrMatchedStockModel" type="text" class="readonly-input" readonly placeholder="Will appear here for review after OCR / stock matching">
                 </div>
+              </div>
 
-                <div class="mini-note">
-                  Brand يتم تحديده تلقائيًا من أول جهاز في اسم الصورة. كما يجب لاحقًا عرض الموديل/كارت الصنف المطابق هنا للمراجعة قبل الحفظ.
-                </div>
+              <div class="sub-card">
+                <h4 class="sub-title">Product JSON Preview</h4>
+
+                <textarea id="productJsonPreview" class="json-preview-box" readonly placeholder="سيظهر هنا JSON المنتج للمراجعة قبل الحفظ..."></textarea>
               </div>
 
               <div class="action-row">
