@@ -673,11 +673,10 @@ $brands = $pdo->query("
 
       <div class="admin-tab-panels">
 
-        <!-- ADD PRODUCT OCR -->
         <div id="tab-add-ocr" class="admin-panel active" data-panel-permission="ocr_view">
           <h3 class="panel-title">Add Product (OCR)</h3>
           <p class="panel-desc">
-            هذا القسم لإضافة منتج جديد. اسم الملف هو الأساس، والـ OCR مساعد للتحقق أو قراءة مناطق محددة من الصورة.
+            هذا القسم لإضافة منتج جديد. اسم الملف هو الأساس، والـ OCR مساعد للتحقق أو قراءة مناطق محددة من الصورة، مع عرض بيانات المراجعة قبل الحفظ.
           </p>
 
           <div class="top-grid">
@@ -722,10 +721,8 @@ $brands = $pdo->query("
                   </div>
 
                   <div class="form-group">
-                    <label for="ocrBrand">Brand</label>
-                    <select id="ocrBrand">
-                      <option value="">Select Brand</option>
-                    </select>
+                    <label for="ocrBrandAuto">Brand (Auto)</label>
+                    <input id="ocrBrandAuto" type="text" class="readonly-input" readonly placeholder="Auto from first device in filename">
                   </div>
 
                   <div class="form-group full-col">
@@ -741,6 +738,11 @@ $brands = $pdo->query("
                   <div class="form-group full-col">
                     <label for="ocrStockDisplayName">Stock Display Name</label>
                     <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
+                  </div>
+
+                  <div class="form-group full-col">
+                    <label for="ocrMatchedStockModel">Matched Stock / Card Model</label>
+                    <input id="ocrMatchedStockModel" type="text" class="readonly-input" readonly placeholder="Will appear here for review after OCR / stock matching">
                   </div>
                 </div>
               </div>
@@ -787,10 +789,25 @@ $brands = $pdo->query("
                     <label for="ocrBrandFromFilename">Brand from Filename</label>
                     <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="From first device only">
                   </div>
+
+                  <div class="form-group">
+                    <label for="ocrExtractedDownPayment">OCR Extracted Down Payment</label>
+                    <input id="ocrExtractedDownPayment" type="text" class="readonly-input" readonly placeholder="From image OCR">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ocrExtractedMonthly">OCR Extracted Monthly</label>
+                    <input id="ocrExtractedMonthly" type="text" class="readonly-input" readonly placeholder="From image OCR">
+                  </div>
+
+                  <div class="form-group full-col">
+                    <label for="ocrExtractedDuration">OCR Extracted Duration</label>
+                    <input id="ocrExtractedDuration" type="text" class="readonly-input" readonly placeholder="From image OCR">
+                  </div>
                 </div>
 
                 <div class="mini-note">
-                  Brand from Filename يعتمد على أول جهاز فقط. لو العرض Combo وكان أول جهاز Samsung، يتم اعتماد Samsung.
+                  Brand يتم تحديده تلقائيًا من أول جهاز في اسم الصورة. كما يجب لاحقًا عرض الموديل/كارت الصنف المطابق هنا للمراجعة قبل الحفظ.
                 </div>
               </div>
 
@@ -801,7 +818,6 @@ $brands = $pdo->query("
           </div>
         </div>
 
-        <!-- EDIT DELETE -->
         <div id="tab-edit-delete" class="admin-panel" data-panel-permission="products_edit">
           <h3 class="panel-title">Edit / Delete Product</h3>
           <p class="panel-desc">
@@ -924,7 +940,6 @@ $brands = $pdo->query("
           </div>
         </div>
 
-        <!-- PLACEHOLDERS -->
         <div id="tab-hot-offers" class="admin-panel" data-panel-permission="hot_offers_order">
           <h3 class="panel-title">Hot Offers</h3>
           <div class="placeholder-panels">
@@ -970,7 +985,6 @@ $brands = $pdo->query("
           </div>
         </div>
 
-        <!-- ORDERS MANAGEMENT -->
         <div id="tab-stats" class="admin-panel" data-panel-permission="orders_view">
           <h3 class="panel-title">Statistics / Orders</h3>
           <p class="panel-desc">
