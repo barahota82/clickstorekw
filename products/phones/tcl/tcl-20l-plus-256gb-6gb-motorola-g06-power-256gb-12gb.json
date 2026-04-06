@@ -1,14 +1,14 @@
 {
-  "title": "Tcl 20L Plus 256GB 6GB + Honor X5c Plus 128GB 8GB",
+  "title": "Tcl 20L Plus 256GB 6GB + Motorola G06 Power 256GB 12GB",
   "category": "phones",
   "brand": "Tcl",
   "devices_count": 2,
-  "image": "/images/phones/tcl/tcl-20l-plus-256gb-6gb-honor-x5c-plus-128gb-8gb.webp",
+  "image": "/images/phones/tcl/tcl-20l-plus-256gb-6gb-motorola-g06-power-256gb-12gb.webp",
   "down_payment": 0,
   "monthly": 10,
   "duration": 14,
   "available": false,
   "hot_offer": false,
   "brand_priority": 8,
-  "priority": 2
+  "priority": 3
 }
