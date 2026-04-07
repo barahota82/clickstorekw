@@ -247,20 +247,17 @@ if (!function_exists('save_product_json_payload')) {
     {
         return [
             'title' => $data['title'],
-            'slug' => $data['slug'],
-            'sku' => $data['sku'],
             'category' => $data['category_slug'],
-            'category_name' => $data['category_name'],
-            'brand' => $data['brand_slug'],
-            'brand_name' => $data['brand_name'],
-            'stock_display_name' => $data['stock_display_name'],
+            'brand' => $data['brand_name'],
             'devices_count' => (int)$data['devices_count'],
-            'down_payment' => (float)$data['down_payment'],
-            'monthly_amount' => (float)$data['monthly_amount'],
-            'duration_months' => (int)$data['duration_months'],
-            'is_available' => (bool)$data['is_available'],
-            'is_hot_offer' => (bool)$data['is_hot_offer'],
             'image' => $data['image_path'],
+            'down_payment' => (float)$data['down_payment'],
+            'monthly' => (float)$data['monthly_amount'],
+            'duration' => (int)$data['duration_months'],
+            'available' => (bool)$data['is_available'],
+            'hot_offer' => (bool)$data['is_hot_offer'],
+            'brand_priority' => 1,
+            'priority' => 1
         ];
     }
 }
