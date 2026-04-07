@@ -496,39 +496,9 @@ function bindEditCategoryBrandFilter(categoryId, brandId) {
 
 function bindOcrCategoryOnly(selectId) {
   const category = getEl(selectId);
-  const brand = getEl('ocrBrand');
-
   if (!category) return;
 
   populateCategorySelect(selectId);
-
-  category.addEventListener('change', () => {
-    const selectedCategory = category.value;
-
-    // مسح البراندات
-    if (brand) {
-      brand.innerHTML = '<option value="">Select Brand</option>';
-    }
-
-    if (!selectedCategory) return;
-
-    const products = window.productsData || [];
-    const brands = new Set();
-
-    products.forEach(p => {
-      if (p.category === selectedCategory && p.brand) {
-        brands.add(p.brand);
-      }
-    });
-
-    // إضافة البراندات
-    brands.forEach(b => {
-      const option = document.createElement('option');
-      option.value = b;
-      option.textContent = b;
-      brand.appendChild(option);
-    });
-  });
 }
 
 function selectCategoryBySlug(selectId, slugGuess) {
