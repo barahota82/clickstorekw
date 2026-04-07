@@ -671,13 +671,6 @@ function applyOcrFinancialsToMainFields(fields) {
   updateProductJsonPreview();
 }
 
-function fillOCRFieldsFromAnalysis(analysis) {
-  setInputValue('ocrFileName', analysis.fileName || '');
-  setInputValue('ocrTitle', analysis.title || '');
-  setInputValue('ocrStockDisplayName', analysis.stockDisplayName || '');
-  setInputValue('ocrDevicesCount', analysis.devicesCount || 1);
-  setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
-
   function fillOCRFieldsFromAnalysis(analysis) {
   setInputValue('ocrFileName', analysis.fileName || '');
   setInputValue('ocrTitle', analysis.title || '');
