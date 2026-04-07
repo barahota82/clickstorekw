@@ -297,6 +297,16 @@ function normalizeStockText(text) {
     .trim();
 }
 
+function toSlug(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_\s]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/[^a-z0-9\-+.]/g, '')
+    .replace(/^-+|-+$/g, '');
+}
+
 function safeNum(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
@@ -351,7 +361,7 @@ function detectCategoryFromFilename(text) {
   const rules = [
     {
       category: 'laptops',
-      keys: ['laptop', 'notebook', 'chromebook', 'macbook', 'lenovo', 'hp', 'dell', 'asus', 'acer']
+      keys: ['laptop', 'notebook', 'chromebook', 'macbook']
     },
     {
       category: 'tablets',
@@ -517,7 +527,7 @@ function selectCategoryBySlug(selectId, slugGuess) {
   select.dispatchEvent(new Event('change'));
   return true;
 }
-                  
+
 /* =========================
    OCR VALUE PARSING
 ========================= */
@@ -637,9 +647,9 @@ function buildProductJsonPreviewObject() {
   return {
     title: String(getEl('ocrTitle')?.value || '').trim(),
     category_id: String(getEl('ocrCategory')?.value || '').trim(),
-    brand: String(getEl('ocrBrandFromFilename')?.value || '').trim(),
-    file_name: String(getEl('ocrFileName')?.value || '').trim(),
-    stock_display_name: String(getEl('ocrStockDisplayName')?.value || '').trim(),
+    brand: toSlug(getEl('ocrBrandFromFilename')?.value),
+    file_name: toSlug(getEl('ocrFileName')?.value),
+    stock_display_name: toSlug(getEl('ocrStockDisplayName')?.value),
     devices_count: String(getEl('ocrDevicesCount')?.value || '').trim(),
     down_payment: String(getEl('ocrDownPayment')?.value || '').trim(),
     monthly_amount: String(getEl('ocrMonthlyAmount')?.value || '').trim(),
@@ -672,7 +682,7 @@ function applyOcrFinancialsToMainFields(fields) {
   updateProductJsonPreview();
 }
 
-  function fillOCRFieldsFromAnalysis(analysis) {
+function fillOCRFieldsFromAnalysis(analysis) {
   setInputValue('ocrFileName', analysis.fileName || '');
   setInputValue('ocrTitle', analysis.title || '');
   setInputValue('ocrStockDisplayName', analysis.stockDisplayName || '');
@@ -792,10 +802,6 @@ function bindOCRUploadButton() {
     const analysis = analyzeFilenameForOCR(file.name);
     fillOCRFieldsFromAnalysis(analysis);
 
-   if (analysis.categorySlugGuess) {
-     selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
-   }
-
     const reader = new FileReader();
     reader.onload = function (e) {
       image.src = e.target.result;
@@ -825,10 +831,6 @@ function bindOCRAnalyzeButton() {
 
     const analysis = analyzeFilenameForOCR(currentOCRFile.name);
     fillOCRFieldsFromAnalysis(analysis);
-
-   if (analysis.categorySlugGuess) {
-     selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
-   }
 
     adminSetStatus('dashboardStatus', 'info', 'جاري تحليل اسم الملف ومحاولة قراءة القيم من الصورة...');
 
