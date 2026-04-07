@@ -791,15 +791,7 @@ $brands = $pdo->query("
                   <button class="btn btn-primary secondary-btn" type="button" id="ocrConfirmManualEditBtn" data-permission="ocr_view">Confirm Manual Edit</button>
                 </div>
               </div>
-
-              <div class="sub-card">
-                <h4 class="sub-title">Matched Stock / Card Model</h4>
-
-                <div class="form-group">
-                  <input id="ocrMatchedStockModel" type="text" class="readonly-input" readonly placeholder="Will appear here for review after OCR / stock matching">
-                </div>
-              </div>
-
+              
               <div class="sub-card">
                 <h4 class="sub-title">Product JSON Preview</h4>
 
