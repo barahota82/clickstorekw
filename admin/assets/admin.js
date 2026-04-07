@@ -639,7 +639,6 @@ function buildProductJsonPreviewObject() {
     brand: String(getEl('ocrBrandFromFilename')?.value || '').trim(),
     file_name: String(getEl('ocrFileName')?.value || '').trim(),
     stock_display_name: String(getEl('ocrStockDisplayName')?.value || '').trim(),
-    matched_stock_model: String(getEl('ocrMatchedStockModel')?.value || '').trim(),
     devices_count: String(getEl('ocrDevicesCount')?.value || '').trim(),
     down_payment: String(getEl('ocrDownPayment')?.value || '').trim(),
     monthly_amount: String(getEl('ocrMonthlyAmount')?.value || '').trim(),
@@ -679,10 +678,15 @@ function fillOCRFieldsFromAnalysis(analysis) {
   setInputValue('ocrDevicesCount', analysis.devicesCount || 1);
   setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
 
-  const categorySelect = getEl('ocrCategory');
-  if (categorySelect && analysis.categorySlugGuess) {
-    selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
-  }
+  function fillOCRFieldsFromAnalysis(analysis) {
+  setInputValue('ocrFileName', analysis.fileName || '');
+  setInputValue('ocrTitle', analysis.title || '');
+  setInputValue('ocrStockDisplayName', analysis.stockDisplayName || '');
+  setInputValue('ocrDevicesCount', analysis.devicesCount || 1);
+  setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
+
+  updateProductJsonPreview();
+}
 
   updateProductJsonPreview();
 }
@@ -732,7 +736,6 @@ function clearOCRData(fullReset = false) {
     'ocrDownPayment',
     'ocrMonthlyAmount',
     'ocrDurationMonths',
-    'ocrMatchedStockModel',
     'productJsonPreview'
   ];
 
@@ -865,14 +868,6 @@ function bindOCRAnalyzeButton() {
       if (!fields.downPayment) fields.downPayment = parsed.downPayment || '';
       if (!fields.monthlyAmount) fields.monthlyAmount = parsed.monthlyAmount || '';
       if (!fields.durationMonths) fields.durationMonths = parsed.durationMonths || '';
-
-      if (ocrData.matched_stock_model) {
-        setInputValue('ocrMatchedStockModel', String(ocrData.matched_stock_model));
-      } else if (ocrData.stock_model) {
-        setInputValue('ocrMatchedStockModel', String(ocrData.stock_model));
-      } else if (ocrData.product_model) {
-        setInputValue('ocrMatchedStockModel', String(ocrData.product_model));
-      }
 
       applyOcrFinancialsToMainFields(fields);
       updateProductJsonPreview();
@@ -1200,6 +1195,7 @@ async function saveOcrProduct() {
   }
 
   const title = String(getEl('ocrTitle')?.value || '').trim();
+  const stockDisplayName = String(getEl('ocrStockDisplayName')?.value || '').trim();
   const categoryId = String(getEl('ocrCategory')?.value || '').trim();
   const downPayment = String(getEl('ocrDownPayment')?.value || '0').trim();
   const monthlyAmount = String(getEl('ocrMonthlyAmount')?.value || '0').trim();
@@ -1210,6 +1206,11 @@ async function saveOcrProduct() {
 
   if (!title) {
     adminSetStatus('dashboardStatus', 'error', 'حقل Title مطلوب.');
+    return;
+  }
+
+  if (!stockDisplayName) {
+    adminSetStatus('dashboardStatus', 'error', 'حقل Stock Display Name مطلوب.');
     return;
   }
 
@@ -1236,14 +1237,14 @@ async function saveOcrProduct() {
 
   const fd = new FormData();
   fd.append('title', title);
-  fd.append('sku', slugToTitle(currentOCRFile.name).replace(/\s+/g, '-').toUpperCase());
+  fd.append('stock_display_name', stockDisplayName);
   fd.append('category_id', categoryId);
   fd.append('brand_id', String(brandRecord.id));
   fd.append('devices_count', devicesCount);
   fd.append('duration_months', durationMonths);
   fd.append('down_payment', downPayment);
   fd.append('monthly_amount', monthlyAmount);
-  fd.append('is_hot_offer', hotOffer === '1' ? '1' : '');
+  fd.append('is_hot_offer', hotOffer === '1' ? '1' : '0');
   fd.append('is_available', '1');
   fd.append('image', currentOCRFile);
 
@@ -1271,7 +1272,12 @@ async function saveOcrProduct() {
     }
 
     updateProductJsonPreview();
-    adminSetStatus('dashboardStatus', 'success', data.message || 'تم حفظ المنتج بنجاح.');
+    adminSetStatus(
+      'dashboardStatus',
+      'success',
+      (data.message || 'تم حفظ المنتج بنجاح.') +
+      (data.slug ? ` | slug: ${data.slug}` : '')
+    );
   } catch (e) {
     adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء حفظ المنتج.');
   }
