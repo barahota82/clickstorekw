@@ -794,6 +794,10 @@ function bindOCRUploadButton() {
     const analysis = analyzeFilenameForOCR(file.name);
     fillOCRFieldsFromAnalysis(analysis);
 
+   if (analysis.categorySlugGuess) {
+  selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
+}
+
     const reader = new FileReader();
     reader.onload = function (e) {
       image.src = e.target.result;
@@ -823,6 +827,10 @@ function bindOCRAnalyzeButton() {
 
     const analysis = analyzeFilenameForOCR(currentOCRFile.name);
     fillOCRFieldsFromAnalysis(analysis);
+
+   if (analysis.categorySlugGuess) {
+  selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
+}
 
     adminSetStatus('dashboardStatus', 'info', 'جاري تحليل اسم الملف ومحاولة قراءة القيم من الصورة...');
 
