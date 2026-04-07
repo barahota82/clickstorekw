@@ -7,16 +7,16 @@ $pdo = db();
 $categories = $pdo->query("
     SELECT id, display_name, slug
     FROM categories
-    WHERE is_active = 1
+    WHERE is_active = 1 OR is_active IS NULL
     ORDER BY sort_order ASC, id ASC
-")->fetchAll();
+")->fetchAll(PDO::FETCH_ASSOC);
 
 $brands = $pdo->query("
     SELECT id, category_id, name, slug
     FROM brands
-    WHERE is_active = 1
+    WHERE is_active = 1 OR is_active IS NULL
     ORDER BY sort_order ASC, id ASC
-")->fetchAll();
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -735,7 +735,7 @@ $brands = $pdo->query("
                   <div class="form-group">
                     <label for="ocrBrandFromFilename">Brand</label>
                     <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto from first device in filename">
-                </div>
+                  </div>
 
                   <div class="form-group full-col">
                     <label for="ocrFileName">File Name</label>
@@ -791,7 +791,7 @@ $brands = $pdo->query("
                   <button class="btn btn-primary secondary-btn" type="button" id="ocrConfirmManualEditBtn" data-permission="ocr_view">Confirm Manual Edit</button>
                 </div>
               </div>
-              
+
               <div class="sub-card">
                 <h4 class="sub-title">Product JSON Preview</h4>
 
