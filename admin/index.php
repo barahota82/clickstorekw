@@ -4,19 +4,21 @@ require_once dirname(__DIR__) . '/config.php';
 
 $pdo = db();
 
-$categories = $pdo->query("
+$categoriesStmt = $pdo->query("
     SELECT id, display_name, slug
     FROM categories
-    WHERE is_active = 1 OR is_active IS NULL
+    WHERE (is_active = 1 OR is_active IS NULL)
     ORDER BY sort_order ASC, id ASC
-")->fetchAll(PDO::FETCH_ASSOC);
+");
+$categories = $categoriesStmt ? $categoriesStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
-$brands = $pdo->query("
+$brandsStmt = $pdo->query("
     SELECT id, category_id, name, slug
     FROM brands
-    WHERE is_active = 1 OR is_active IS NULL
+    WHERE (is_active = 1 OR is_active IS NULL)
     ORDER BY sort_order ASC, id ASC
-")->fetchAll(PDO::FETCH_ASSOC);
+");
+$brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -24,7 +26,7 @@ $brands = $pdo->query("
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>لوحة التحكم - Click Company</title>
-  <link rel="stylesheet" href="/admin/assets/admin.css">
+  <link rel="stylesheet" href="/admin/assets/admin.css?v=20260407-1">
   <style>
     .admin-main-tabs {
       display: grid;
@@ -1094,7 +1096,12 @@ $brands = $pdo->query("
     categories: <?= json_encode($categories, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
     brands: <?= json_encode($brands, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
   };
+
+  console.log('ADMIN_BOOTSTRAP categories count:', Array.isArray(window.ADMIN_BOOTSTRAP.categories) ? window.ADMIN_BOOTSTRAP.categories.length : 'invalid');
+  console.log('ADMIN_BOOTSTRAP brands count:', Array.isArray(window.ADMIN_BOOTSTRAP.brands) ? window.ADMIN_BOOTSTRAP.brands.length : 'invalid');
+  console.log('ADMIN_BOOTSTRAP categories data:', window.ADMIN_BOOTSTRAP.categories);
+  console.log('ADMIN_BOOTSTRAP brands data:', window.ADMIN_BOOTSTRAP.brands);
 </script>
-<script src="/admin/assets/admin.js"></script>
+<script src="/admin/assets/admin.js?v=20260407-99"></script>
 </body>
 </html>
