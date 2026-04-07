@@ -517,27 +517,7 @@ function selectCategoryBySlug(selectId, slugGuess) {
   select.dispatchEvent(new Event('change'));
   return true;
 }
-function selectBrandByName(selectId, brandNameGuess) {
-  if (!brandNameGuess) return false;
-
-  const select = getEl(selectId);
-  if (!select) return false;
-
-  const options = Array.from(select.options);
-
-  const found = options.find(opt =>
-    String(opt.textContent || '').toLowerCase().trim() ===
-    String(brandNameGuess).toLowerCase().trim()
-  );
-
-  if (!found) return false;
-
-  select.value = found.value;
-  select.dispatchEvent(new Event('change'));
-  return true;
-}
-                      
-
+                  
 /* =========================
    OCR VALUE PARSING
 ========================= */
@@ -702,9 +682,6 @@ function applyOcrFinancialsToMainFields(fields) {
   updateProductJsonPreview();
 }
 
-  updateProductJsonPreview();
-}
-
 function bindOcrManualConfirmButton() {
   const btn = getEl('ocrConfirmManualEditBtn');
   if (!btn) return;
@@ -819,10 +796,6 @@ function bindOCRUploadButton() {
      selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
    }
 
-   if (analysis.brandFromFilename) {
-     selectBrandByName('ocrBrand', analysis.brandFromFilename);
-   }
-
     const reader = new FileReader();
     reader.onload = function (e) {
       image.src = e.target.result;
@@ -855,10 +828,6 @@ function bindOCRAnalyzeButton() {
 
    if (analysis.categorySlugGuess) {
      selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
-   }
-
-   if (analysis.brandFromFilename) {
-     selectBrandByName('ocrBrand', analysis.brandFromFilename);
    }
 
     adminSetStatus('dashboardStatus', 'info', 'جاري تحليل اسم الملف ومحاولة قراءة القيم من الصورة...');
