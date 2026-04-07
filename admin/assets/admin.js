@@ -301,9 +301,10 @@ function toSlug(text) {
   return String(text || '')
     .toLowerCase()
     .replace(/\.[^.]+$/, '')
-    .replace(/[_\s]+/g, '-')
+    .replace(/[+_]/g, ' ')
+    .replace(/[^a-z0-9.\-\s]/g, ' ')
+    .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .replace(/[^a-z0-9\-+.]/g, '')
     .replace(/^-+|-+$/g, '');
 }
 
@@ -355,47 +356,23 @@ function detectBrandFromFilename(text) {
   return '';
 }
 
-function detectCategoryFromFilename(text) {
-  const source = normalizeStockText(text);
-
-  const rules = [
-    {
-      category: 'laptops',
-      keys: ['laptop', 'notebook', 'chromebook', 'macbook']
-    },
-    {
-      category: 'tablets',
-      keys: ['tablet', 'ipad', 'tab']
-    },
-    {
-      category: 'phones',
-      keys: ['iphone', 'samsung', 'honor', 'xiaomi', 'redmi', 'oppo', 'vivo', 'realme', 'huawei', 'tecno', 'infinix', 'pixel', 'phone', 'mobile']
-    },
-    {
-      category: 'accessories',
-      keys: ['watch', 'buds', 'earbuds', 'airpods', 'headphone', 'charger', 'case', 'cover', 'keyboard', 'mouse', 'speaker']
-    }
-  ];
-
-  for (const rule of rules) {
-    if (rule.keys.some(key => source.includes(key))) {
-      return rule.category;
-    }
-  }
-
-  return '';
-}
-
 function buildDisplayNameFromFilename(part) {
-  const cleaned = slugToTitle(part);
+  const cleaned = String(part || '')
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   return cleaned
     .split(' ')
     .filter(Boolean)
     .map(word => {
-      if (/^\d+(gb|tb)$/i.test(word)) return word.toUpperCase();
+      if (/^\d+(\.\d+)?$/.test(word)) return word;
+      if (/^\d+(\.\d+)?(gb|tb)$/i.test(word)) return word.toUpperCase();
       if (/^(4g|5g)$/i.test(word)) return word.toUpperCase();
       if (/^ram$/i.test(word)) return 'RAM';
+      if (/^tb$/i.test(word)) return 'TB';
+      if (/^gb$/i.test(word)) return 'GB';
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
     .join(' ');
@@ -405,15 +382,21 @@ function analyzeFilenameForOCR(filename) {
   const devices = splitDevicesFromFilename(filename);
   const firstDevice = devices[0] || '';
   const brand = detectBrandFromFilename(firstDevice);
-  const title = buildDisplayNameFromFilename(firstDevice);
+
+  const fullOfferTitle = devices
+    .map(device => buildDisplayNameFromFilename(device))
+    .filter(Boolean)
+    .join(' + ');
+
+  const firstStockName = buildDisplayNameFromFilename(firstDevice);
 
   return {
     fileName: filename || '',
     devicesCount: devices.length || 1,
     brandFromFilename: brand,
-    title,
-    stockDisplayName: title,
-    categorySlugGuess: detectCategoryFromFilename(firstDevice)
+    title: fullOfferTitle || firstStockName,
+    stockDisplayName: firstStockName,
+    categorySlugGuess: ''
   };
 }
 
@@ -509,23 +492,6 @@ function bindOcrCategoryOnly(selectId) {
   if (!category) return;
 
   populateCategorySelect(selectId);
-}
-
-function selectCategoryBySlug(selectId, slugGuess) {
-  if (!slugGuess) return false;
-
-  const select = getEl(selectId);
-  if (!select) return false;
-
-  const options = Array.from(select.options);
-  const found = options.find(
-    opt => String(opt.dataset.slug || '').toLowerCase() === String(slugGuess).toLowerCase()
-  );
-
-  if (!found) return false;
-  select.value = found.value;
-  select.dispatchEvent(new Event('change'));
-  return true;
 }
 
 /* =========================
@@ -643,18 +609,52 @@ async function runServerSideOcr(file, boxes = []) {
    JSON PREVIEW / OCR HELPERS
 ========================= */
 
+function resolveSelectedCategoryRow() {
+  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
+  return getBootstrapCategories().find(cat => String(cat.id) === categoryId) || null;
+}
+
+function resolveBrandRowForSelectedCategory() {
+  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
+  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim().toLowerCase();
+
+  if (!categoryId || !brandName) return null;
+
+  return getBootstrapBrands().find(brand =>
+    String(brand.category_id) === categoryId &&
+    String(brand.name || '').trim().toLowerCase() === brandName
+  ) || null;
+}
+
+function buildPreviewImagePath() {
+  const categoryRow = resolveSelectedCategoryRow();
+  const brandRow = resolveBrandRowForSelectedCategory();
+  if (!categoryRow || !brandRow || !currentOCRFile) return '';
+
+  const ext = String(currentOCRFile.name || '').split('.').pop().toLowerCase();
+  const slug = toSlug(currentOCRFile.name);
+  if (!slug || !ext) return '';
+
+  return `/images/products/${String(categoryRow.slug || '').toLowerCase()}/${String(brandRow.slug || '').toLowerCase()}/${slug}.${ext}`;
+}
+
 function buildProductJsonPreviewObject() {
+  const categoryRow = resolveSelectedCategoryRow();
+  const previewImage = buildPreviewImagePath();
+
   return {
     title: String(getEl('ocrTitle')?.value || '').trim(),
-    category_id: String(getEl('ocrCategory')?.value || '').trim(),
-    brand: toSlug(getEl('ocrBrandFromFilename')?.value),
-    file_name: toSlug(getEl('ocrFileName')?.value),
-    stock_display_name: toSlug(getEl('ocrStockDisplayName')?.value),
-    devices_count: String(getEl('ocrDevicesCount')?.value || '').trim(),
-    down_payment: String(getEl('ocrDownPayment')?.value || '').trim(),
-    monthly_amount: String(getEl('ocrMonthlyAmount')?.value || '').trim(),
-    duration_months: String(getEl('ocrDurationMonths')?.value || '').trim(),
-    is_hot_offer: String(getEl('ocrHotOffer')?.value || '0').trim()
+    category: categoryRow ? String(categoryRow.slug || '').toLowerCase() : '',
+    brand: String(getEl('ocrBrandFromFilename')?.value || '').trim(),
+    devices_count: safeNum(getEl('ocrDevicesCount')?.value || 1, 1),
+    image: previewImage,
+    down_payment: safeNum(getEl('ocrDownPayment')?.value || 0, 0),
+    monthly: safeNum(getEl('ocrMonthlyAmount')?.value || 0, 0),
+    duration: safeNum(getEl('ocrDurationMonths')?.value || 0, 0),
+    available: true,
+    hot_offer: String(getEl('ocrHotOffer')?.value || '0') === '1',
+    brand_priority: 1,
+    priority: 1
   };
 }
 
@@ -812,7 +812,7 @@ function bindOCRUploadButton() {
     reader.readAsDataURL(file);
 
     updateProductJsonPreview();
-    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة. اضغط Analyze (OCR) لإكمال القراءة.');
+    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة. اختر الفئة يدويًا ثم راجع الاسم قبل الحفظ.');
   });
 }
 
@@ -832,18 +832,13 @@ function bindOCRAnalyzeButton() {
     const analysis = analyzeFilenameForOCR(currentOCRFile.name);
     fillOCRFieldsFromAnalysis(analysis);
 
-    adminSetStatus('dashboardStatus', 'info', 'جاري تحليل اسم الملف ومحاولة قراءة القيم من الصورة...');
+    adminSetStatus('dashboardStatus', 'info', 'تم تحليل اسم الملف. الـ OCR المالي اختياري ويمكنك إدخال القيم يدويًا.');
 
     try {
       const ocrData = await runServerSideOcr(currentOCRFile, ocrBoxes);
 
       if (!ocrData?.ok) {
         updateProductJsonPreview();
-        adminSetStatus(
-          'dashboardStatus',
-          'info',
-          ocrData?.message || 'تم تحليل اسم الملف فقط. لم يتم العثور على OCR backend صالح.'
-        );
         return;
       }
 
@@ -871,29 +866,8 @@ function bindOCRAnalyzeButton() {
       if (!fields.durationMonths) fields.durationMonths = parsed.durationMonths || '';
 
       applyOcrFinancialsToMainFields(fields);
-      updateProductJsonPreview();
-
-      const gotAny =
-        String(fields.downPayment || '').trim() !== '' ||
-        String(fields.monthlyAmount || '').trim() !== '' ||
-        String(fields.durationMonths || '').trim() !== '';
-
-      if (gotAny) {
-        adminSetStatus('dashboardStatus', 'success', 'تم تحليل الصورة وتعبئة القيم المستخرجة بنجاح.');
-      } else {
-        adminSetStatus(
-          'dashboardStatus',
-          'info',
-          'تم تحليل اسم الملف، لكن OCR لم يستخرج المقدم أو القسط أو عدد الشهور من الصورة.'
-        );
-      }
     } catch (e) {
       updateProductJsonPreview();
-      adminSetStatus(
-        'dashboardStatus',
-        'info',
-        'تم تحليل اسم الملف فقط. OCR backend غير متاح أو أعاد استجابة غير صالحة.'
-      );
     }
   });
 }
