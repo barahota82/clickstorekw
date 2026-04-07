@@ -492,6 +492,10 @@ function bindOcrCategoryOnly(selectId) {
   if (!category) return;
 
   populateCategorySelect(selectId);
+
+  category.addEventListener('change', function () {
+    updateProductJsonPreview();
+  });
 }
 
 /* =========================
@@ -1675,6 +1679,9 @@ async function checkAuth() {
       setAdminAuthState(data.user || null, data.permissions || []);
       showDashboard(data.user);
       applyPermissionDrivenUI();
+      bindOcrCategoryOnly('ocrCategory');
+      bindEditCategoryBrandFilter('editCategory', 'editBrand');
+      updateProductJsonPreview();
     } else {
       setAdminAuthState(null, []);
       showLogin();
@@ -1793,9 +1800,6 @@ function bindAuthButtons() {
 function initializeAdminUI() {
   bindAuthButtons();
   bindTabSwitching();
-
-  bindOcrCategoryOnly('ocrCategory');
-  bindEditCategoryBrandFilter('editCategory', 'editBrand');
 
   bindOCRUploadButton();
   bindOCRAnalyzeButton();
