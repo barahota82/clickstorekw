@@ -496,8 +496,39 @@ function bindEditCategoryBrandFilter(categoryId, brandId) {
 
 function bindOcrCategoryOnly(selectId) {
   const category = getEl(selectId);
+  const brand = getEl('ocrBrand');
+
   if (!category) return;
+
   populateCategorySelect(selectId);
+
+  category.addEventListener('change', () => {
+    const selectedCategory = category.value;
+
+    // مسح البراندات
+    if (brand) {
+      brand.innerHTML = '<option value="">Select Brand</option>';
+    }
+
+    if (!selectedCategory) return;
+
+    const products = window.productsData || [];
+    const brands = new Set();
+
+    products.forEach(p => {
+      if (p.category === selectedCategory && p.brand) {
+        brands.add(p.brand);
+      }
+    });
+
+    // إضافة البراندات
+    brands.forEach(b => {
+      const option = document.createElement('option');
+      option.value = b;
+      option.textContent = b;
+      brand.appendChild(option);
+    });
+  });
 }
 
 function selectCategoryBySlug(selectId, slugGuess) {
@@ -516,6 +547,26 @@ function selectCategoryBySlug(selectId, slugGuess) {
   select.dispatchEvent(new Event('change'));
   return true;
 }
+function selectBrandByName(selectId, brandNameGuess) {
+  if (!brandNameGuess) return false;
+
+  const select = getEl(selectId);
+  if (!select) return false;
+
+  const options = Array.from(select.options);
+
+  const found = options.find(opt =>
+    String(opt.textContent || '').toLowerCase().trim() ===
+    String(brandNameGuess).toLowerCase().trim()
+  );
+
+  if (!found) return false;
+
+  select.value = found.value;
+  select.dispatchEvent(new Event('change'));
+  return true;
+}
+                      
 
 /* =========================
    OCR VALUE PARSING
@@ -795,8 +846,12 @@ function bindOCRUploadButton() {
     fillOCRFieldsFromAnalysis(analysis);
 
    if (analysis.categorySlugGuess) {
-  selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
-}
+     selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
+   }
+
+   if (analysis.brandFromFilename) {
+     selectBrandByName('ocrBrand', analysis.brandFromFilename);
+   }
 
     const reader = new FileReader();
     reader.onload = function (e) {
@@ -829,8 +884,12 @@ function bindOCRAnalyzeButton() {
     fillOCRFieldsFromAnalysis(analysis);
 
    if (analysis.categorySlugGuess) {
-  selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
-}
+     selectCategoryBySlug('ocrCategory', analysis.categorySlugGuess);
+   }
+
+   if (analysis.brandFromFilename) {
+     selectBrandByName('ocrBrand', analysis.brandFromFilename);
+   }
 
     adminSetStatus('dashboardStatus', 'info', 'جاري تحليل اسم الملف ومحاولة قراءة القيم من الصورة...');
 
