@@ -290,7 +290,7 @@ $monthly_amount = (float)($_POST['monthly_amount'] ?? 0);
 $is_available = isset($_POST['is_available']) ? (int)((string)$_POST['is_available'] === '1') : 1;
 $is_hot_offer = isset($_POST['is_hot_offer']) ? (int)((string)$_POST['is_hot_offer'] === '1') : 0;
 
-if ($title === '' || $category_id <= 0 || $brand_id <= 0) {
+if ($title === '' || $stock_display_name === '' || $category_id <= 0 || $brand_id <= 0) {
     json_response(false, ['message' => 'Missing required fields'], 422);
 }
 
@@ -374,13 +374,10 @@ try {
 
     $jsonPayload = save_product_json_payload([
         'title' => $title,
-        'slug' => $slug,
-        'sku' => $sku,
         'category_slug' => $category_slug,
         'category_name' => $category_name,
         'brand_slug' => $brand_slug,
         'brand_name' => $brand_name,
-        'stock_display_name' => $stock_display_name !== '' ? $stock_display_name : $title,
         'devices_count' => $devices_count,
         'down_payment' => $down_payment,
         'monthly_amount' => $monthly_amount,
