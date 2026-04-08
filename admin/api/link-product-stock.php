@@ -35,36 +35,6 @@ function link_product_to_stock(PDO $pdo, int $productId, int $brandId, int $cate
     $linked = [];
     $missing = [];
 
-    $brandName = '';
-    if ($brandId > 0) {
-        $brandStmt = $pdo->prepare("
-            SELECT id, name
-            FROM brands
-            WHERE id = :id
-            LIMIT 1
-        ");
-        $brandStmt->execute(['id' => $brandId]);
-        $brandRow = $brandStmt->fetch(PDO::FETCH_ASSOC);
-        if ($brandRow) {
-            $brandName = (string)($brandRow['name'] ?? '');
-        }
-    }
-
-    $categoryName = '';
-    if ($categoryId > 0) {
-        $categoryStmt = $pdo->prepare("
-            SELECT id, display_name
-            FROM categories
-            WHERE id = :id
-            LIMIT 1
-        ");
-        $categoryStmt->execute(['id' => $categoryId]);
-        $categoryRow = $categoryStmt->fetch(PDO::FETCH_ASSOC);
-        if ($categoryRow) {
-            $categoryName = (string)($categoryRow['display_name'] ?? '');
-        }
-    }
-
     foreach ($devices as $device) {
         $deviceIndex = (int)($device['device_index'] ?? 0);
         $rawTitle = trim((string)($device['raw_title'] ?? ''));
@@ -129,9 +99,9 @@ function link_product_to_stock(PDO $pdo, int $productId, int $brandId, int $cate
                 'stock_catalog_id' => (int)$stockRow['id'],
                 'stock_title' => (string)($stockRow['title'] ?? ''),
                 'category_id' => (int)($stockRow['category_id'] ?? 0),
-                'category_name' => $categoryName !== '' ? $categoryName : '',
+                'category_name' => (string)($stockRow['category_name'] ?? ''),
                 'brand_id' => (int)($stockRow['brand_id'] ?? 0),
-                'brand_name' => $brandName !== '' ? $brandName : '',
+                'brand_name' => (string)($stockRow['brand_name'] ?? ''),
                 'is_added' => true,
             ];
         } else {
@@ -143,7 +113,6 @@ function link_product_to_stock(PDO $pdo, int $productId, int $brandId, int $cate
                 'ram_value' => $ramValue,
                 'network_value' => $networkValue,
                 'expected_brand_id' => $brandId > 0 ? $brandId : null,
-                'expected_brand_name' => $brandName !== '' ? $brandName : '',
                 'expected_category_id' => $categoryId > 0 ? $categoryId : null,
                 'is_added' => false,
             ];
