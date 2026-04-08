@@ -1144,7 +1144,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div id="tab-stats" class="admin-panel" data-panel-permission="orders_view">
           <h3 class="panel-title">Statistics / Orders</h3>
           <p class="panel-desc">
-            قسم متابعة الطلبات المرسلة من العملاء .
+
           </p>
 
           <div class="summary-cards">
