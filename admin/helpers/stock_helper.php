@@ -4,7 +4,6 @@ declare(strict_types=1);
 function normalize_stock_title(string $text): string
 {
     $text = strtolower($text);
-    $text = preg_replace('/\.[^.]+$/', '', $text);
     $text = str_replace(['_', '-'], ' ', $text);
     $text = preg_replace('/\s+/', ' ', (string)$text);
     return trim((string)$text);
@@ -13,8 +12,8 @@ function normalize_stock_title(string $text): string
 function make_stock_slug(string $title): string
 {
     $slug = strtolower($title);
-    $slug = preg_replace('/\.[^.]+$/', '', $slug);
     $slug = str_replace(['_', '+'], ' ', $slug);
+    $slug = str_replace('.', ' ', $slug);
     $slug = preg_replace('/[^a-z0-9\-\s]+/i', '', (string)$slug);
     $slug = preg_replace('/\s+/', '-', (string)$slug);
     $slug = preg_replace('/-+/', '-', (string)$slug);
