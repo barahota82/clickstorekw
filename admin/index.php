@@ -799,10 +799,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
                 <button class="btn btn-primary secondary-btn" type="button" id="ocrClearDataBtn" data-permission="products_create">Clear Form</button>
               </div>
 
-              <div class="mini-note">
-                ملاحظة: لا يوجد OCR في هذا القسم. النظام يعتمد على اسم الملف فقط في تحليل الأجهزة والبراند واسم العرض.
-              </div>
-
               <div class="stock-review-wrap">
                 <div class="stock-review-head">
                   <h4 class="sub-title" style="margin:0;">Stock Review From File Name</h4>
