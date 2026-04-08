@@ -776,9 +776,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div id="tab-add-product" class="admin-panel active" data-panel-permission="products_create">
           <h3 class="panel-title">Add Product</h3>
           <p class="panel-desc">
-            هذا القسم لإضافة منتج جديد. الاعتماد الأساسي يكون على اسم الملف والصورة.  
-            أقصى عدد أجهزة داخل الصورة الواحدة هو <strong>4</strong> أجهزة فقط.  
-            الأجهزة المضافة بالمخزن تظهر <strong>أخضر</strong>، وغير المضافة تظهر <strong>أحمر</strong> مع إمكانية اختيار الفئة وإضافتها مباشرة.
+            هذا القسم لإضافة منتج جديد . واضافة اسماء الاصناف الي المخزن .
           </p>
 
           <div class="top-grid">
