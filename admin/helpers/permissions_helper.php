@@ -53,31 +53,174 @@ function admin_current_user_row(): ?array
 function admin_permission_alias_map(): array
 {
     return [
-        // Frontend tab/action aliases used in admin/index.php
-        'ocr_view'            => ['view_ocr', 'manage_ocr'],
-        'products_edit'       => ['edit_products', 'manage_hot_offers', 'create_products'],
-        'products_delete'     => ['delete_products'],
-        'hot_offers_order'    => ['view_hot_offers', 'manage_hot_offers'],
-        'brands_order'        => ['view_brand_ordering', 'manage_brand_ordering'],
-        'products_order'      => ['view_product_ordering', 'manage_product_ordering'],
-        'stock_manage'        => ['view_stock', 'manage_stock', 'manage_stock_movements'],
-        'orders_view'         => ['view_orders', 'manage_orders', 'change_order_status', 'view_analytics'],
-        'orders_manage'       => ['manage_orders', 'change_order_status'],
-        'users_view'          => ['view_users', 'manage_users', 'view_roles', 'manage_roles', 'view_permissions', 'manage_permissions'],
-        'users_manage'        => ['manage_users', 'manage_roles', 'manage_permissions'],
-        'admin.full_access'   => ['*'],
+        // Frontend aliases
+        'ocr_view' => [
+            'view_ocr',
+            'manage_ocr',
+            '*'
+        ],
 
-        // Optional direct action aliases
-        'order.approve'       => ['change_order_status', 'manage_orders'],
-        'order.reject'        => ['change_order_status', 'manage_orders'],
-        'order.on_the_way'    => ['change_order_status', 'manage_orders'],
-        'order.deliver'       => ['change_order_status', 'manage_orders'],
-        'order.pending'       => ['change_order_status', 'manage_orders'],
-        'order.cancel'        => ['change_order_status', 'manage_orders'],
+        'products_edit' => [
+            'edit_products',
+            'create_products',
+            'manage_hot_offers',
+            '*'
+        ],
 
-        'reports_view'        => ['view_analytics'],
-        'settings_view'       => ['view_settings', 'manage_settings'],
-        'settings_manage'     => ['manage_settings'],
+        'products_delete' => [
+            'delete_products',
+            '*'
+        ],
+
+        'hot_offers_order' => [
+            'view_hot_offers',
+            'manage_hot_offers',
+            '*'
+        ],
+
+        'brands_order' => [
+            'view_brand_ordering',
+            'manage_brand_ordering',
+            '*'
+        ],
+
+        'products_order' => [
+            'view_product_ordering',
+            'manage_product_ordering',
+            '*'
+        ],
+
+        'stock_manage' => [
+            'view_stock',
+            'manage_stock',
+            'manage_stock_movements',
+            '*'
+        ],
+
+        'orders_view' => [
+            'view_orders',
+            'manage_orders',
+            'change_order_status',
+            'view_analytics',
+            '*'
+        ],
+
+        'orders_manage' => [
+            'manage_orders',
+            'change_order_status',
+            '*'
+        ],
+
+        'orders_history_view' => [
+            'view_orders',
+            'manage_orders',
+            'change_order_status',
+            '*'
+        ],
+
+        'orders_approve' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'orders_reject' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'orders_mark_on_the_way' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'orders_mark_delivered' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'orders_mark_pending' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'users_view' => [
+            'view_users',
+            'manage_users',
+            'view_roles',
+            'manage_roles',
+            'view_permissions',
+            'manage_permissions',
+            '*'
+        ],
+
+        'users_manage' => [
+            'manage_users',
+            'manage_roles',
+            'manage_permissions',
+            '*'
+        ],
+
+        'reports_view' => [
+            'view_analytics',
+            '*'
+        ],
+
+        'settings_view' => [
+            'view_settings',
+            'manage_settings',
+            '*'
+        ],
+
+        'settings_manage' => [
+            'manage_settings',
+            '*'
+        ],
+
+        'admin.full_access' => [
+            '*'
+        ],
+
+        // Direct action aliases used by APIs
+        'order.approve' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'order.reject' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'order.on_the_way' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'order.deliver' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'order.return_to_pending' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
+
+        'order.cancel' => [
+            'change_order_status',
+            'manage_orders',
+            '*'
+        ],
     ];
 }
 
@@ -157,56 +300,6 @@ function admin_user_permission_overrides(int $userId): array
     return $cache[$userId];
 }
 
-function admin_effective_permission_codes(?array $user = null): array
-{
-    static $cache = null;
-
-    if ($user === null && $cache !== null) {
-        return $cache;
-    }
-
-    $user = $user ?? admin_current_user_row();
-    if (!$user) {
-        return [];
-    }
-
-    $roleCode = trim((string)($user['role_code'] ?? ''));
-    if ($roleCode === 'super_admin') {
-        $all = admin_all_permission_codes();
-        $all[] = '*';
-        if ($user === admin_current_user_row()) {
-            $cache = $all;
-        }
-        return $all;
-    }
-
-    $roleId = (int)($user['role_id'] ?? 0);
-    $userId = (int)($user['id'] ?? 0);
-
-    $effective = [];
-    foreach (admin_role_permission_codes($roleId) as $code) {
-        $effective[$code] = true;
-    }
-
-    $overrides = admin_user_permission_overrides($userId);
-
-    foreach ($overrides['allowed'] as $code) {
-        $effective[$code] = true;
-    }
-
-    foreach ($overrides['denied'] as $code) {
-        unset($effective[$code]);
-    }
-
-    $result = array_keys($effective);
-
-    if ($user === admin_current_user_row()) {
-        $cache = $result;
-    }
-
-    return $result;
-}
-
 function admin_all_permission_codes(): array
 {
     static $cache = null;
@@ -228,6 +321,61 @@ function admin_all_permission_codes(): array
 
     $cache = $codes;
     return $cache;
+}
+
+function admin_effective_permission_codes(?array $user = null): array
+{
+    static $cache = null;
+
+    if ($user === null && $cache !== null) {
+        return $cache;
+    }
+
+    $user = $user ?? admin_current_user_row();
+    if (!$user) {
+        return [];
+    }
+
+    $roleCode = trim((string)($user['role_code'] ?? ''));
+
+    if ($roleCode === 'super_admin') {
+        $all = admin_all_permission_codes();
+        $all[] = '*';
+        $all = array_values(array_unique($all));
+
+        if ($user === admin_current_user_row()) {
+            $cache = $all;
+        }
+
+        return $all;
+    }
+
+    $roleId = (int)($user['role_id'] ?? 0);
+    $userId = (int)($user['id'] ?? 0);
+
+    $effective = [];
+
+    foreach (admin_role_permission_codes($roleId) as $code) {
+        $effective[$code] = true;
+    }
+
+    $overrides = admin_user_permission_overrides($userId);
+
+    foreach ($overrides['allowed'] as $code) {
+        $effective[$code] = true;
+    }
+
+    foreach ($overrides['denied'] as $code) {
+        unset($effective[$code]);
+    }
+
+    $result = array_keys($effective);
+
+    if ($user === admin_current_user_row()) {
+        $cache = $result;
+    }
+
+    return $result;
 }
 
 function admin_has_permission(string $permissionCode): bool
@@ -259,6 +407,7 @@ function admin_has_permission(string $permissionCode): bool
             if ($mappedCode === '*') {
                 return true;
             }
+
             if (isset($effectiveMap[$mappedCode])) {
                 return true;
             }
@@ -338,6 +487,6 @@ function admin_activity_log(
             'ip_address'     => $_SERVER['REMOTE_ADDR'] ?? null,
         ]);
     } catch (Throwable $e) {
-        // Ignore logging failures to avoid breaking core actions
+        // ignore logging errors
     }
 }
