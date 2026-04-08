@@ -32,9 +32,17 @@ if (!$devices) {
     ]];
 }
 
-$devices = array_slice($devices, 0, 4);
+$devices = stock_catalog_limit_devices($devices, 4);
 
 $pdo = db();
+
+$brandsStmt = $pdo->query("
+    SELECT id, category_id, name, slug
+    FROM brands
+    WHERE (is_active = 1 OR is_active IS NULL)
+    ORDER BY LENGTH(name) DESC, id ASC
+");
+$brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
 $linked = [];
 $missing = [];
@@ -67,81 +75,52 @@ foreach ($devices as $device) {
 
     $brandGuess = '';
     $brandIdGuess = 0;
+    $expectedCategoryId = null;
 
-    $brandMap = [
-        'samsung'  => 'Samsung',
-        'apple'    => 'Apple',
-        'iphone'   => 'Apple',
-        'honor'    => 'Honor',
-        'xiaomi'   => 'Xiaomi',
-        'redmi'    => 'Redmi',
-        'oppo'     => 'Oppo',
-        'vivo'     => 'Vivo',
-        'realme'   => 'Realme',
-        'huawei'   => 'Huawei',
-        'oneplus'  => 'OnePlus',
-        'nokia'    => 'Nokia',
-        'google'   => 'Google',
-        'pixel'    => 'Google',
-        'motorola' => 'Motorola',
-        'tecno'    => 'Tecno',
-        'infinix'  => 'Infinix',
-        'lenovo'   => 'Lenovo',
-        'asus'     => 'Asus',
-        'acer'     => 'Acer',
-        'hp'       => 'HP',
-        'dell'     => 'Dell',
-    ];
+    $lookupSource = normalize_filename_text($rawTitle . ' ' . $normalizedTitle);
 
-    $lookupSource = strtolower($rawTitle . ' ' . $normalizedTitle);
+    foreach ($brands as $brandRow) {
+        $brandNameNormalized = normalize_filename_text((string)($brandRow['name'] ?? ''));
+        $brandSlugNormalized = normalize_filename_text((string)($brandRow['slug'] ?? ''));
 
-    foreach ($brandMap as $needle => $brandName) {
-        if (str_contains($lookupSource, $needle)) {
-            $brandGuess = $brandName;
+        if ($brandNameNormalized !== '' && str_starts_with($lookupSource, $brandNameNormalized . ' ')) {
+            $brandGuess = (string)$brandRow['name'];
+            $brandIdGuess = (int)$brandRow['id'];
+            $expectedCategoryId = (int)$brandRow['category_id'];
+            break;
+        }
+
+        if ($brandNameNormalized !== '' && $lookupSource === $brandNameNormalized) {
+            $brandGuess = (string)$brandRow['name'];
+            $brandIdGuess = (int)$brandRow['id'];
+            $expectedCategoryId = (int)$brandRow['category_id'];
+            break;
+        }
+
+        if ($brandSlugNormalized !== '' && str_starts_with($lookupSource, $brandSlugNormalized . ' ')) {
+            $brandGuess = (string)$brandRow['name'];
+            $brandIdGuess = (int)$brandRow['id'];
+            $expectedCategoryId = (int)$brandRow['category_id'];
+            break;
+        }
+
+        if ($brandSlugNormalized !== '' && $lookupSource === $brandSlugNormalized) {
+            $brandGuess = (string)$brandRow['name'];
+            $brandIdGuess = (int)$brandRow['id'];
+            $expectedCategoryId = (int)$brandRow['category_id'];
             break;
         }
     }
 
-    if ($brandGuess !== '') {
-        $brandStmt = $pdo->prepare("
-            SELECT id, category_id, name
-            FROM brands
-            WHERE LOWER(name) = LOWER(:name)
-            ORDER BY id ASC
-            LIMIT 1
-        ");
-        $brandStmt->execute(['name' => $brandGuess]);
-        $brandRow = $brandStmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($brandRow) {
-            $brandIdGuess = (int)$brandRow['id'];
-        }
-    }
-
-    $stmt = $pdo->prepare("
-        SELECT
-            sc.id,
-            sc.category_id,
-            sc.brand_id,
-            sc.title,
-            sc.slug,
-            sc.normalized_title,
-            sc.storage_value,
-            sc.ram_value,
-            sc.network_value,
-            c.display_name AS category_name,
-            b.name AS brand_name
-        FROM stock_catalog sc
-        LEFT JOIN categories c ON c.id = sc.category_id
-        LEFT JOIN brands b ON b.id = sc.brand_id
-        WHERE sc.normalized_title = :normalized_title
-        LIMIT 1
-    ");
-    $stmt->execute([
-        'normalized_title' => $normalizedTitle
-    ]);
-
-    $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+    $existing = find_stock_catalog(
+        $pdo,
+        $normalizedTitle,
+        $brandIdGuess > 0 ? $brandIdGuess : null,
+        $expectedCategoryId,
+        $storageValue,
+        $ramValue,
+        $networkValue
+    );
 
     $row = [
         'device_index' => $deviceIndex,
@@ -152,7 +131,7 @@ foreach ($devices as $device) {
         'network_value' => $networkValue,
         'brand_guess' => $brandGuess,
         'expected_brand_name' => $brandGuess,
-        'expected_brand_id' => $brandIdGuess,
+        'expected_brand_id' => $brandIdGuess > 0 ? $brandIdGuess : null,
     ];
 
     if ($existing) {
@@ -171,7 +150,7 @@ foreach ($devices as $device) {
     } else {
         $missingRow = array_merge($row, [
             'exists' => false,
-            'expected_category_id' => null,
+            'expected_category_id' => $expectedCategoryId,
         ]);
 
         $missing[] = $missingRow;
