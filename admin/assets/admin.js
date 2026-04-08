@@ -804,23 +804,12 @@ function buildCategoryOptionsHtml(selectedValue = '') {
   ].join('');
 }
 
-function getSelectedTopCategoryText() {
-  const categorySelect = getEl('ocrCategory');
-  if (!categorySelect) return '';
-
-  const value = String(categorySelect.value || '').trim();
-  if (!value) return '';
-
-  return categorySelect.options[categorySelect.selectedIndex]?.textContent || '';
-}
-
 function buildMissingCardBrandGuess(item) {
   const explicit = String(item.expected_brand_name || item.brand_guess || '').trim();
   if (explicit) return explicit;
 
-  const selectedCategoryId = String(getEl('ocrCategory')?.value || '').trim();
-  const detected = detectBrandFromFilename(String(item.raw_title || ''), selectedCategoryId) ||
-                   detectBrandFromFilename(String(item.raw_title || ''), '');
+  const detected = detectBrandFromFilename(String(item.raw_title || ''), '') ||
+                   detectBrandFromFilename(String(item.stock_title || ''), '');
 
   return detected || '-';
 }
@@ -860,8 +849,6 @@ function renderStockReview(review) {
   const linked = Array.isArray(review?.linked) ? review.linked : [];
   const missing = Array.isArray(review?.missing) ? review.missing : [];
   const devicesCount = Math.min(Number(review?.devices_count || linked.length + missing.length || 0), 4);
-  const selectedTopCategoryText = getSelectedTopCategoryText();
-  const selectedTopCategoryId = String(getEl('ocrCategory')?.value || '').trim();
 
   CURRENT_STOCK_REVIEW = {
     productId: review?.product_id ?? CURRENT_STOCK_REVIEW.productId,
@@ -877,8 +864,6 @@ function renderStockReview(review) {
       String(item.brand_name || '').trim() ||
       String(item.expected_brand_name || '').trim() ||
       String(item.brand_guess || '').trim() ||
-      detectBrandFromFilename(String(item.raw_title || ''), selectedTopCategoryId) ||
-      detectBrandFromFilename(String(item.stock_title || ''), selectedTopCategoryId) ||
       detectBrandFromFilename(String(item.raw_title || ''), '') ||
       detectBrandFromFilename(String(item.stock_title || ''), '') ||
       '-';
@@ -914,7 +899,7 @@ function renderStockReview(review) {
 
   missing.forEach(item => {
     const selectId = `missingCategory_${item.device_index}`;
-    const effectiveCategoryId = String(item.expected_category_id || selectedTopCategoryId || '').trim();
+    const effectiveCategoryId = String(item.expected_category_id || '').trim();
     const effectiveBrandGuess = buildMissingCardBrandGuess(item);
 
     cards.push(`
@@ -944,7 +929,9 @@ function renderStockReview(review) {
           ${effectiveCategoryId ? `
             <div class="mini-box js-selected-category-live">
               <strong>Selected Category</strong>
-              <span>${escapeHtml(selectedTopCategoryText || 'Select Category')}</span>
+              <span>${escapeHtml(
+                getBootstrapCategories().find(cat => String(cat.id) === effectiveCategoryId)?.display_name || 'Select Category'
+              )}</span>
             </div>
           ` : ''}
         </div>
@@ -996,15 +983,12 @@ async function refreshStockReviewFromFilename(filename) {
     return;
   }
 
-  const selectedCategoryId = String(getEl('ocrCategory')?.value || '').trim();
-
   try {
     const { data } = await adminFetchJson('/admin/api/check-stock-from-filename.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        filename,
-        category_id: selectedCategoryId ? Number(selectedCategoryId) : 0
+        filename
       })
     });
 
