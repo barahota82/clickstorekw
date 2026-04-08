@@ -10,8 +10,19 @@ require_post();
 require_admin_auth_json();
 admin_require_permission_json('stock_manage', 'ليس لديك صلاحية لفحص المخزن');
 
+if (!function_exists('stock_review_normalize_brand_text')) {
+    function stock_review_normalize_brand_text(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = str_replace(['_', '-'], ' ', $value);
+        $value = preg_replace('/\s+/', ' ', (string)$value);
+        return trim((string)$value);
+    }
+}
+
 $data = get_request_json();
 $filename = trim((string)($data['filename'] ?? ''));
+$selectedCategoryId = (int)($data['category_id'] ?? 0);
 
 if ($filename === '') {
     json_response(false, ['message' => 'Filename is required'], 422);
@@ -77,39 +88,39 @@ foreach ($devices as $device) {
     $brandIdGuess = 0;
     $expectedCategoryId = null;
 
-    $lookupSource = normalize_filename_text($rawTitle . ' ' . $normalizedTitle);
+    $lookupSource = stock_review_normalize_brand_text($rawTitle . ' ' . $normalizedTitle);
 
     foreach ($brands as $brandRow) {
-        $brandNameNormalized = normalize_filename_text((string)($brandRow['name'] ?? ''));
-        $brandSlugNormalized = normalize_filename_text((string)($brandRow['slug'] ?? ''));
+        $brandName = trim((string)($brandRow['name'] ?? ''));
+        $brandSlug = trim((string)($brandRow['slug'] ?? ''));
 
-        if ($brandNameNormalized !== '' && str_starts_with($lookupSource, $brandNameNormalized . ' ')) {
-            $brandGuess = (string)$brandRow['name'];
+        $brandNameNormalized = stock_review_normalize_brand_text($brandName);
+        $brandSlugNormalized = stock_review_normalize_brand_text($brandSlug);
+
+        $matched = false;
+
+        if ($brandNameNormalized !== '') {
+            if ($lookupSource === $brandNameNormalized || str_starts_with($lookupSource, $brandNameNormalized . ' ')) {
+                $matched = true;
+            }
+        }
+
+        if (!$matched && $brandSlugNormalized !== '') {
+            if ($lookupSource === $brandSlugNormalized || str_starts_with($lookupSource, $brandSlugNormalized . ' ')) {
+                $matched = true;
+            }
+        }
+
+        if ($matched) {
+            $brandGuess = $brandName;
             $brandIdGuess = (int)$brandRow['id'];
             $expectedCategoryId = (int)$brandRow['category_id'];
             break;
         }
+    }
 
-        if ($brandNameNormalized !== '' && $lookupSource === $brandNameNormalized) {
-            $brandGuess = (string)$brandRow['name'];
-            $brandIdGuess = (int)$brandRow['id'];
-            $expectedCategoryId = (int)$brandRow['category_id'];
-            break;
-        }
-
-        if ($brandSlugNormalized !== '' && str_starts_with($lookupSource, $brandSlugNormalized . ' ')) {
-            $brandGuess = (string)$brandRow['name'];
-            $brandIdGuess = (int)$brandRow['id'];
-            $expectedCategoryId = (int)$brandRow['category_id'];
-            break;
-        }
-
-        if ($brandSlugNormalized !== '' && $lookupSource === $brandSlugNormalized) {
-            $brandGuess = (string)$brandRow['name'];
-            $brandIdGuess = (int)$brandRow['id'];
-            $expectedCategoryId = (int)$brandRow['category_id'];
-            break;
-        }
+    if ($expectedCategoryId === null && $selectedCategoryId > 0) {
+        $expectedCategoryId = $selectedCategoryId;
     }
 
     $existing = find_stock_catalog(
