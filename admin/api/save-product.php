@@ -11,9 +11,10 @@ if (!function_exists('save_product_slugify')) {
     function save_product_slugify(string $value): string
     {
         $value = strtolower(trim($value));
-        $value = str_replace(['_', '+'], ' ', $value);
         $value = preg_replace('/\.[^.]+$/', '', $value);
-        $value = preg_replace('/[^a-z0-9.\-\s]+/', ' ', (string)$value);
+        $value = str_replace(['_', '+'], ' ', $value);
+        $value = str_replace('.', ' ', $value);
+        $value = preg_replace('/[^a-z0-9\-\s]+/', ' ', (string)$value);
         $value = preg_replace('/\s+/', '-', (string)$value);
         $value = preg_replace('/-+/', '-', (string)$value);
         $value = trim((string)$value, '-');
@@ -76,9 +77,7 @@ if (!function_exists('save_product_json_payload')) {
             'monthly' => (float)$data['monthly_amount'],
             'duration' => (int)$data['duration_months'],
             'available' => (bool)$data['is_available'],
-            'hot_offer' => (bool)$data['is_hot_offer'],
-            'brand_priority' => 1,
-            'priority' => 1
+            'hot_offer' => (bool)$data['is_hot_offer']
         ];
     }
 }
@@ -265,7 +264,7 @@ try {
             :duration_months,
             :is_available,
             :is_hot_offer,
-            9999,
+            NULL,
             :json_file_path,
             1,
             :created_by,
@@ -331,7 +330,7 @@ try {
                     updated_at
                 ) VALUES (
                     :product_id,
-                    9999,
+                    NULL,
                     1,
                     NOW(),
                     NOW()
