@@ -366,7 +366,7 @@ function adminClearStatus(id) {
 function normalizeStockText(text) {
   return String(text || '')
     .toLowerCase()
-    .replace(/[_\-]+/g, ' ')
+    .replace(/[_.\-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -374,7 +374,7 @@ function normalizeStockText(text) {
 function normalizeBrandComparable(text) {
   return String(text || '')
     .toLowerCase()
-    .replace(/[_\-]+/g, ' ')
+    .replace(/[_.\-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -423,6 +423,7 @@ function findBootstrapBrandByNameAndCategory(brandName, categoryId = '') {
 
 function detectBrandFromFilename(text, categoryId = '') {
   const source = normalizeBrandComparable(text);
+
   const brands = getBootstrapBrands()
     .filter(brand => {
       if (!categoryId) return true;
@@ -443,11 +444,24 @@ function detectBrandFromFilename(text, categoryId = '') {
     });
 
   for (const brand of brands) {
-    if (brand.normalizedName && (source === brand.normalizedName || source.startsWith(brand.normalizedName + ' '))) {
-      return brand.name;
+    if (brand.normalizedName) {
+      if (
+        source === brand.normalizedName ||
+        source.startsWith(brand.normalizedName + ' ') ||
+        source.includes(' ' + brand.normalizedName + ' ')
+      ) {
+        return brand.name;
+      }
     }
-    if (brand.normalizedSlug && (source === brand.normalizedSlug || source.startsWith(brand.normalizedSlug + ' '))) {
-      return brand.name;
+
+    if (brand.normalizedSlug) {
+      if (
+        source === brand.normalizedSlug ||
+        source.startsWith(brand.normalizedSlug + ' ') ||
+        source.includes(' ' + brand.normalizedSlug + ' ')
+      ) {
+        return brand.name;
+      }
     }
   }
 
@@ -859,8 +873,14 @@ function renderStockReview(review) {
   const cards = [];
 
   linked.forEach(item => {
-    const linkedBrand = String(item.brand_name || '').trim() ||
+    const linkedBrand =
+      String(item.brand_name || '').trim() ||
+      String(item.expected_brand_name || '').trim() ||
+      String(item.brand_guess || '').trim() ||
       detectBrandFromFilename(String(item.raw_title || ''), selectedTopCategoryId) ||
+      detectBrandFromFilename(String(item.stock_title || ''), selectedTopCategoryId) ||
+      detectBrandFromFilename(String(item.raw_title || ''), '') ||
+      detectBrandFromFilename(String(item.stock_title || ''), '') ||
       '-';
 
     cards.push(`
@@ -1291,6 +1311,7 @@ window.addMissingStockItem = async function (deviceIndex) {
       category_name: stockItem.category_name || selectedCategoryText || '',
       brand_id: Number(stockItem.brand_id || item.expected_brand_id || 0),
       brand_name: stockItem.brand_name || item.expected_brand_name || buildMissingCardBrandGuess(item) || '',
+      expected_brand_name: item.expected_brand_name || buildMissingCardBrandGuess(item) || '',
       is_added: true
     });
 
