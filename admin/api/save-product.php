@@ -4,188 +4,8 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config.php';
 require_once dirname(__DIR__) . '/helpers/filename_parser.php';
 require_once dirname(__DIR__) . '/helpers/stock_helper.php';
+require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once __DIR__ . '/link-product-stock.php';
-
-if (!function_exists('admin_normalize_permission_key')) {
-    function admin_normalize_permission_key(string $value): string
-    {
-        return strtolower(trim($value));
-    }
-}
-
-if (!function_exists('admin_permissions_from_session')) {
-    function admin_permissions_from_session(): array
-    {
-        $sessionCandidates = [
-            $_SESSION['admin_permissions'] ?? null,
-            $_SESSION['permissions'] ?? null,
-            $_SESSION['admin_user_permissions'] ?? null,
-        ];
-
-        foreach ($sessionCandidates as $candidate) {
-            if (is_array($candidate)) {
-                return array_values(array_unique(array_filter(array_map(
-                    static fn($item) => admin_normalize_permission_key((string)$item),
-                    $candidate
-                ))));
-            }
-        }
-
-        return [];
-    }
-}
-
-if (!function_exists('admin_is_full_access_role')) {
-    function admin_is_full_access_role(string $roleName): bool
-    {
-        $roleName = strtolower(trim($roleName));
-        return in_array($roleName, ['admin', 'super_admin', 'super admin'], true);
-    }
-}
-
-if (!function_exists('admin_table_exists')) {
-    function admin_table_exists(PDO $pdo, string $tableName): bool
-    {
-        $stmt = $pdo->prepare("
-            SELECT COUNT(*)
-            FROM information_schema.tables
-            WHERE table_schema = DATABASE()
-              AND table_name = :table_name
-        ");
-        $stmt->execute(['table_name' => $tableName]);
-        return (int)$stmt->fetchColumn() > 0;
-    }
-}
-
-if (!function_exists('admin_get_table_columns')) {
-    function admin_get_table_columns(PDO $pdo, string $tableName): array
-    {
-        $stmt = $pdo->prepare("
-            SELECT COLUMN_NAME
-            FROM information_schema.columns
-            WHERE table_schema = DATABASE()
-              AND table_name = :table_name
-        ");
-        $stmt->execute(['table_name' => $tableName]);
-
-        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        return is_array($columns) ? $columns : [];
-    }
-}
-
-if (!function_exists('admin_pick_existing_column')) {
-    function admin_pick_existing_column(array $columns, array $candidates): ?string
-    {
-        foreach ($candidates as $candidate) {
-            if (in_array($candidate, $columns, true)) {
-                return $candidate;
-            }
-        }
-        return null;
-    }
-}
-
-if (!function_exists('admin_permissions_from_database')) {
-    function admin_permissions_from_database(int $roleId): array
-    {
-        if ($roleId <= 0) {
-            return [];
-        }
-
-        try {
-            $pdo = db();
-
-            if (
-                !admin_table_exists($pdo, 'permissions') ||
-                !admin_table_exists($pdo, 'role_permissions')
-            ) {
-                return [];
-            }
-
-            $permissionsColumns = admin_get_table_columns($pdo, 'permissions');
-            $rolePermissionsColumns = admin_get_table_columns($pdo, 'role_permissions');
-
-            $permissionIdColumn = admin_pick_existing_column($permissionsColumns, ['id', 'permission_id']);
-            $permissionKeyColumn = admin_pick_existing_column($permissionsColumns, ['permission_key', 'slug', 'code', 'name']);
-
-            $rpRoleIdColumn = admin_pick_existing_column($rolePermissionsColumns, ['role_id', 'roles_id']);
-            $rpPermissionIdColumn = admin_pick_existing_column($rolePermissionsColumns, ['permission_id', 'permissions_id']);
-
-            if (!$permissionIdColumn || !$permissionKeyColumn || !$rpRoleIdColumn || !$rpPermissionIdColumn) {
-                return [];
-            }
-
-            $sql = "
-                SELECT p.`{$permissionKeyColumn}` AS permission_key
-                FROM `role_permissions` rp
-                INNER JOIN `permissions` p
-                    ON p.`{$permissionIdColumn}` = rp.`{$rpPermissionIdColumn}`
-                WHERE rp.`{$rpRoleIdColumn}` = :role_id
-            ";
-
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute(['role_id' => $roleId]);
-
-            $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-            return array_values(array_unique(array_filter(array_map(
-                static fn($item) => admin_normalize_permission_key((string)$item),
-                is_array($rows) ? $rows : []
-            ))));
-        } catch (Throwable $e) {
-            return [];
-        }
-    }
-}
-
-if (!function_exists('admin_resolve_permissions')) {
-    function admin_resolve_permissions(): array
-    {
-        $roleName = (string)($_SESSION['admin_role_name'] ?? '');
-        $roleId = (int)($_SESSION['admin_role_id'] ?? 0);
-
-        $permissions = admin_permissions_from_session();
-
-        if (!empty($permissions)) {
-            return $permissions;
-        }
-
-        if (admin_is_full_access_role($roleName)) {
-            return ['admin.full_access'];
-        }
-
-        if ($roleId > 0) {
-            $permissions = admin_permissions_from_database($roleId);
-            if (!empty($permissions)) {
-                return $permissions;
-            }
-        }
-
-        return [];
-    }
-}
-
-if (!function_exists('admin_has_any_permission')) {
-    function admin_has_any_permission(array $requiredPermissions): bool
-    {
-        $granted = admin_resolve_permissions();
-
-        if (in_array('admin.full_access', $granted, true)) {
-            return true;
-        }
-
-        $grantedMap = array_fill_keys($granted, true);
-
-        foreach ($requiredPermissions as $permission) {
-            $permission = admin_normalize_permission_key((string)$permission);
-            if ($permission !== '' && isset($grantedMap[$permission])) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-}
 
 if (!function_exists('save_product_slugify')) {
     function save_product_slugify(string $value): string
@@ -262,35 +82,22 @@ if (!function_exists('save_product_json_payload')) {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    json_response(false, ['message' => 'Invalid request method'], 405);
-}
-
+require_post();
 require_admin_auth_json();
-
-$requiredPermissions = [
-    'products.edit',
-    'edit_products',
-    'manage_products',
-    'admin.full_access'
-];
-
-if (!admin_has_any_permission($requiredPermissions)) {
-    json_response(false, ['message' => 'ليس لديك صلاحية لحفظ المنتج'], 403);
-}
+admin_require_permission_json('products_edit', 'ليس لديك صلاحية لحفظ المنتج');
 
 $title = trim((string)($_POST['title'] ?? ''));
-$stock_display_name = trim((string)($_POST['stock_display_name'] ?? $_POST['ocrStockDisplayName'] ?? $title));
-$category_id = (int)($_POST['category_id'] ?? 0);
-$brand_id = (int)($_POST['brand_id'] ?? 0);
-$devices_count = max(1, (int)($_POST['devices_count'] ?? 1));
-$duration_months = max(1, (int)($_POST['duration_months'] ?? 1));
-$down_payment = (float)($_POST['down_payment'] ?? 0);
-$monthly_amount = (float)($_POST['monthly_amount'] ?? 0);
-$is_available = isset($_POST['is_available']) ? (int)((string)$_POST['is_available'] === '1') : 1;
-$is_hot_offer = isset($_POST['is_hot_offer']) ? (int)((string)$_POST['is_hot_offer'] === '1') : 0;
+$stockDisplayName = trim((string)($_POST['stock_display_name'] ?? $title));
+$categoryId = (int)($_POST['category_id'] ?? 0);
+$brandId = (int)($_POST['brand_id'] ?? 0);
+$devicesCount = max(1, (int)($_POST['devices_count'] ?? 1));
+$durationMonths = max(1, (int)($_POST['duration_months'] ?? 1));
+$downPayment = (float)($_POST['down_payment'] ?? 0);
+$monthlyAmount = (float)($_POST['monthly_amount'] ?? 0);
+$isAvailable = isset($_POST['is_available']) ? (int)((string)$_POST['is_available'] === '1') : 1;
+$isHotOffer = isset($_POST['is_hot_offer']) ? (int)((string)$_POST['is_hot_offer'] === '1') : 0;
 
-if ($title === '' || $stock_display_name === '' || $category_id <= 0 || $brand_id <= 0) {
+if ($title === '' || $stockDisplayName === '' || $categoryId <= 0 || $brandId <= 0) {
     json_response(false, ['message' => 'Missing required fields'], 422);
 }
 
@@ -324,31 +131,31 @@ $absoluteImagePath = '';
 $absoluteJsonPath = '';
 
 try {
-    $categoryBrand = save_product_fetch_category_brand($pdo, $category_id, $brand_id);
+    $categoryBrand = save_product_fetch_category_brand($pdo, $categoryId, $brandId);
 
-    $category_slug = save_product_slugify((string)$categoryBrand['category_slug']);
-    $brand_slug = save_product_slugify((string)$categoryBrand['brand_slug']);
-    $category_name = (string)$categoryBrand['category_name'];
-    $brand_name = (string)$categoryBrand['brand_name'];
+    $categorySlug = save_product_slugify((string)$categoryBrand['category_slug']);
+    $brandSlug = save_product_slugify((string)$categoryBrand['brand_slug']);
+    $categoryName = (string)$categoryBrand['category_name'];
+    $brandName = (string)$categoryBrand['brand_name'];
 
-    if ($category_slug === '' || $brand_slug === '') {
+    if ($categorySlug === '' || $brandSlug === '') {
         throw new RuntimeException('Invalid category slug or brand slug');
     }
 
     $slug = $slugBase;
     $sku = strtoupper(str_replace('-', '_', $slug));
 
-    $imageDir = dirname(__DIR__, 2) . '/images/products/' . $category_slug . '/' . $brand_slug . '/';
-    $jsonDir = dirname(__DIR__, 2) . '/products/' . $category_slug . '/' . $brand_slug . '/';
+    $imageDir = dirname(__DIR__, 2) . '/images/products/' . $categorySlug . '/' . $brandSlug . '/';
+    $jsonDir = dirname(__DIR__, 2) . '/products/' . $categorySlug . '/' . $brandSlug . '/';
 
     save_product_make_dir($imageDir);
     save_product_make_dir($jsonDir);
 
     $absoluteImagePath = $imageDir . $slug . '.' . $ext;
-    $relativeImagePath = '/images/products/' . $category_slug . '/' . $brand_slug . '/' . $slug . '.' . $ext;
+    $relativeImagePath = '/images/products/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.' . $ext;
 
     $absoluteJsonPath = $jsonDir . $slug . '.json';
-    $relativeJsonPath = '/products/' . $category_slug . '/' . $brand_slug . '/' . $slug . '.json';
+    $relativeJsonPath = '/products/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.json';
 
     if (file_exists($absoluteImagePath) || file_exists($absoluteJsonPath)) {
         json_response(false, ['message' => 'A product file with the same slug already exists'], 409);
@@ -374,16 +181,16 @@ try {
 
     $jsonPayload = save_product_json_payload([
         'title' => $title,
-        'category_slug' => $category_slug,
-        'category_name' => $category_name,
-        'brand_slug' => $brand_slug,
-        'brand_name' => $brand_name,
-        'devices_count' => $devices_count,
-        'down_payment' => $down_payment,
-        'monthly_amount' => $monthly_amount,
-        'duration_months' => $duration_months,
-        'is_available' => $is_available,
-        'is_hot_offer' => $is_hot_offer,
+        'category_slug' => $categorySlug,
+        'category_name' => $categoryName,
+        'brand_slug' => $brandSlug,
+        'brand_name' => $brandName,
+        'devices_count' => $devicesCount,
+        'down_payment' => $downPayment,
+        'monthly_amount' => $monthlyAmount,
+        'duration_months' => $durationMonths,
+        'is_available' => $isAvailable,
+        'is_hot_offer' => $isHotOffer,
         'image_path' => $relativeImagePath,
     ]);
 
@@ -448,22 +255,24 @@ try {
         )
     ");
 
+    $adminUserId = admin_current_user_id() > 0 ? admin_current_user_id() : null;
+
     $insertProduct->execute([
-        'category_id' => $category_id,
-        'brand_id' => $brand_id,
+        'category_id' => $categoryId,
+        'brand_id' => $brandId,
         'title' => $title,
         'slug' => $slug,
         'sku' => $sku,
-        'devices_count' => $devices_count,
+        'devices_count' => $devicesCount,
         'image_path' => $relativeImagePath,
-        'down_payment' => $down_payment,
-        'monthly_amount' => $monthly_amount,
-        'duration_months' => $duration_months,
-        'is_available' => $is_available,
-        'is_hot_offer' => $is_hot_offer,
+        'down_payment' => $downPayment,
+        'monthly_amount' => $monthlyAmount,
+        'duration_months' => $durationMonths,
+        'is_available' => $isAvailable,
+        'is_hot_offer' => $isHotOffer,
         'json_file_path' => $relativeJsonPath,
-        'created_by' => (int)($_SESSION['admin_user_id'] ?? 0),
-        'updated_by' => (int)($_SESSION['admin_user_id'] ?? 0),
+        'created_by' => $adminUserId,
+        'updated_by' => $adminUserId,
     ]);
 
     $productId = (int)$pdo->lastInsertId();
@@ -488,28 +297,41 @@ try {
         'file_path' => $relativeImagePath,
     ]);
 
-    if ($is_hot_offer === 1) {
-        $insertHot = $pdo->prepare("
-            INSERT INTO hot_offers (
-                product_id,
-                sort_order,
-                is_active,
-                created_at,
-                updated_at
-            ) VALUES (
-                :product_id,
-                9999,
-                1,
-                NOW(),
-                NOW()
-            )
-        ");
-        $insertHot->execute(['product_id' => $productId]);
+    if ($isHotOffer === 1) {
+        $checkHot = $pdo->prepare("SELECT id FROM hot_offers WHERE product_id = :product_id LIMIT 1");
+        $checkHot->execute(['product_id' => $productId]);
+
+        if (!$checkHot->fetch()) {
+            $insertHot = $pdo->prepare("
+                INSERT INTO hot_offers (
+                    product_id,
+                    sort_order,
+                    is_active,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    :product_id,
+                    9999,
+                    1,
+                    NOW(),
+                    NOW()
+                )
+            ");
+            $insertHot->execute(['product_id' => $productId]);
+        }
     }
 
-    link_product_to_stock($pdo, $productId, $brand_id, $category_id, $originalImageName);
+    link_product_to_stock($pdo, $productId, $brandId, $categoryId, $originalImageName);
 
     $pdo->commit();
+
+    admin_activity_log(
+        'create_product',
+        'products',
+        'product',
+        $productId,
+        'Created product | title: ' . $title . ' | slug: ' . $slug . ' | sku: ' . $sku
+    );
 
     json_response(true, [
         'message' => 'تم حفظ المنتج بنجاح وربطه بالمخزن',
