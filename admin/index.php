@@ -815,11 +815,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
                   </div>
                 </div>
 
-                <div class="mini-note">
-                  سيتم هنا عرض الأجهزة المستخرجة من اسم الملف. الحد الأقصى 4 أجهزة في الصورة الواحدة.  
-                  إذا كان الجهاز موجودًا بالمخزن يظهر أخضر، وإذا لم يكن موجودًا يظهر أحمر ويمكنك اختيار الفئة ثم الضغط على زر الإضافة.
-                </div>
-
                 <div id="stockReviewGrid" class="stock-review-grid">
                   <div class="stock-review-card is-linked">
                     <div class="stock-review-card-head">
