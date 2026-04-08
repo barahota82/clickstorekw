@@ -87,7 +87,6 @@ require_admin_auth_json();
 admin_require_permission_json('products_edit', 'ليس لديك صلاحية لحفظ المنتج');
 
 $title = trim((string)($_POST['title'] ?? ''));
-$stockDisplayName = trim((string)($_POST['stock_display_name'] ?? $title));
 $categoryId = (int)($_POST['category_id'] ?? 0);
 $brandId = (int)($_POST['brand_id'] ?? 0);
 $devicesCount = max(1, min(4, (int)($_POST['devices_count'] ?? 1)));
@@ -97,7 +96,7 @@ $monthlyAmount = (float)($_POST['monthly_amount'] ?? 0);
 $isAvailable = isset($_POST['is_available']) ? (int)((string)$_POST['is_available'] === '1') : 1;
 $isHotOffer = isset($_POST['is_hot_offer']) ? (int)((string)$_POST['is_hot_offer'] === '1') : 0;
 
-if ($title === '' || $stockDisplayName === '' || $categoryId <= 0 || $brandId <= 0) {
+if ($title === '' || $categoryId <= 0 || $brandId <= 0) {
     json_response(false, ['message' => 'Missing required fields'], 422);
 }
 
