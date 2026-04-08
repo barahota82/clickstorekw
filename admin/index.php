@@ -160,55 +160,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       text-align: center;
     }
 
-    .ocr-boxes-layer {
-      position: absolute;
-      inset: 16px;
-      pointer-events: auto;
-    }
-
-    .ocr-box {
-      position: absolute;
-      border: 2px solid #60a5fa;
-      background: rgba(96,165,250,0.10);
-      border-radius: 10px;
-      min-width: 40px;
-      min-height: 20px;
-      cursor: move;
-      user-select: none;
-      touch-action: none;
-    }
-
-    .ocr-box.selected {
-      border-color: #22c55e;
-      background: rgba(34,197,94,0.10);
-    }
-
-    .ocr-box-label {
-      position: absolute;
-      top: -28px;
-      right: 0;
-      background: rgba(15,23,42,0.92);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      white-space: nowrap;
-    }
-
-    .ocr-box-handle {
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      left: -1px;
-      bottom: -1px;
-      background: #60a5fa;
-      border-radius: 50%;
-      border: 2px solid #fff;
-      cursor: nwse-resize;
-    }
-
     .action-row {
       display: flex;
       gap: 12px;
@@ -225,6 +176,8 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
     .danger-btn {
       background: linear-gradient(135deg, #ef4444, #dc2626);
       box-shadow: 0 12px 24px rgba(239,68,68,0.22);
+      border: none;
+      color: #fff;
     }
 
     .success-btn {
@@ -250,32 +203,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       color: #c8d4ea;
       line-height: 1.8;
       font-size: 14px;
-    }
-
-    .box-list {
-      margin-top: 16px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .box-item {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    .box-item-grid {
-      display: grid;
-      grid-template-columns: 120px 1fr 180px auto;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .box-item small {
-      color: #c8d4ea;
-      display: block;
-      margin-top: 6px;
     }
 
     .filter-row {
@@ -556,6 +483,162 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       text-align: left;
     }
 
+    .stock-review-wrap {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .stock-review-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stock-review-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .legend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .legend-dot.green {
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.18);
+    }
+
+    .legend-dot.red {
+      background: #ef4444;
+      box-shadow: 0 0 0 4px rgba(239,68,68,0.18);
+    }
+
+    .stock-review-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .stock-review-card {
+      border-radius: 18px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .stock-review-card.is-linked {
+      border-color: rgba(34,197,94,0.35);
+      background: rgba(34,197,94,0.08);
+    }
+
+    .stock-review-card.is-missing {
+      border-color: rgba(239,68,68,0.35);
+      background: rgba(239,68,68,0.08);
+    }
+
+    .stock-review-card-head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .stock-review-title {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      margin: 0;
+      line-height: 1.7;
+    }
+
+    .stock-state-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 90px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .stock-state-badge.linked {
+      background: rgba(34,197,94,0.18);
+      border: 1px solid rgba(34,197,94,0.30);
+    }
+
+    .stock-state-badge.missing {
+      background: rgba(239,68,68,0.18);
+      border: 1px solid rgba(239,68,68,0.30);
+    }
+
+    .stock-review-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .stock-review-meta .mini-box {
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 12px;
+    }
+
+    .stock-review-meta .mini-box strong {
+      display: block;
+      color: #fff;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .stock-review-meta .mini-box span {
+      color: #c8d4ea;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .stock-review-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .stock-review-select {
+      min-width: 180px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     @media (max-width: 1200px) {
       .admin-main-tabs {
         grid-template-columns: repeat(2, minmax(180px, 1fr));
@@ -564,11 +647,8 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       .top-grid,
       .edit-layout,
       .placeholder-panels,
-      .summary-cards {
-        grid-template-columns: 1fr;
-      }
-
-      .box-item-grid {
+      .summary-cards,
+      .stock-review-grid {
         grid-template-columns: 1fr;
       }
 
@@ -579,7 +659,8 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
     @media (max-width: 820px) {
       .form-grid-2,
-      .filter-row {
+      .filter-row,
+      .stock-review-meta {
         grid-template-columns: 1fr;
       }
     }
@@ -601,7 +682,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <h1 class="page-title">لوحة تحكم احترافية لإدارة المنتجات والطلبات والمخزون</h1>
         <p class="page-desc">
           هذه النسخة مخصصة لإدارة نظام Click Company بشكل احترافي، وتشمل تسجيل الدخول الآمن،
-          إدارة الصلاحيات، وتتوسع لاحقًا إلى OCR والمنتجات والمخزون والطلبات والإحصائيات.
+          إدارة الصلاحيات، وإدارة المنتجات والمخزون والطلبات داخل لوحة واحدة.
         </p>
 
         <div class="feature-grid">
@@ -615,7 +696,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
           </div>
           <div class="feature-box">
             <strong>إدارة متقدمة</strong>
-            <span>تمهيد لربط المنتجات والمخزون والطلبات داخل لوحة واحدة.</span>
+            <span>ربط المنتجات بالمخزون والتحكم في الطلبات من نفس اللوحة.</span>
           </div>
           <div class="feature-box">
             <strong>بنية قوية</strong>
@@ -655,7 +736,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div>
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
           <p class="section-desc no-margin">
-            الواجهة الحالية مركزة أولًا على: إضافة المنتج عبر OCR، واستدعاء المنتج وتعديله أو حذفه بشكل منفصل.
+            الواجهة الحالية مركزة على: إضافة المنتج من الصورة واسم الملف، ومراجعة ربط أجهزة الصورة بالمخزن، وإدارة الطلبات.
           </p>
         </div>
 
@@ -680,7 +761,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       </div>
 
       <div class="admin-main-tabs">
-        <button class="admin-tab-btn active" data-tab="tab-add-ocr" data-permission="ocr_view" id="tabBtnAddOcr" type="button">Add Product (OCR)</button>
+        <button class="admin-tab-btn active" data-tab="tab-add-product" data-permission="products_create" id="tabBtnAddProduct" type="button">Add Product</button>
         <button class="admin-tab-btn" data-tab="tab-edit-delete" data-permission="products_edit" id="tabBtnEditDelete" type="button">Edit / Delete Product</button>
         <button class="admin-tab-btn" data-tab="tab-hot-offers" data-permission="hot_offers_order" id="tabBtnHotOffers" type="button">Hot Offers</button>
         <button class="admin-tab-btn" data-tab="tab-brand-order" data-permission="brands_order" id="tabBtnBrandOrder" type="button">Brand Ordering</button>
@@ -692,10 +773,12 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
       <div class="admin-tab-panels">
 
-        <div id="tab-add-ocr" class="admin-panel active" data-panel-permission="ocr_view">
-          <h3 class="panel-title">Add Product (OCR)</h3>
+        <div id="tab-add-product" class="admin-panel active" data-panel-permission="products_create">
+          <h3 class="panel-title">Add Product</h3>
           <p class="panel-desc">
-            هذا القسم لإضافة منتج جديد. اسم الملف هو الأساس، والـ OCR مساعد للتحقق أو قراءة مناطق محددة من الصورة، مع عرض بيانات المراجعة قبل الحفظ.
+            هذا القسم لإضافة منتج جديد. الاعتماد الأساسي يكون على اسم الملف والصورة.  
+            أقصى عدد أجهزة داخل الصورة الواحدة هو <strong>4</strong> أجهزة فقط.  
+            الأجهزة المضافة بالمخزن تظهر <strong>أخضر</strong>، وغير المضافة تظهر <strong>أحمر</strong> مع إمكانية اختيار الفئة وإضافتها مباشرة.
           </p>
 
           <div class="top-grid">
@@ -707,20 +790,114 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
                 <div id="ocrPreviewPlaceholder" class="image-placeholder">
                   ارفع صورة للمنتج لتظهر هنا كاملة وواضحة داخل المربع.
                 </div>
-                <div id="ocrBoxesLayer" class="ocr-boxes-layer"></div>
               </div>
 
               <input id="ocrImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
 
               <div class="action-row">
-                <button class="btn btn-primary" type="button" id="ocrUploadBtn" data-permission="ocr_view">Upload Image</button>
-                <button class="btn btn-primary secondary-btn" type="button" id="ocrInsertBoxBtn" data-permission="ocr_view">Insert Box</button>
-                <button class="btn btn-primary secondary-btn" type="button" id="ocrAnalyzeBtn" data-permission="ocr_view">Analyze (OCR)</button>
-                <button class="btn btn-primary secondary-btn" type="button" id="ocrClearDataBtn" data-permission="ocr_view">Clear Form</button>
-                <button class="btn danger-btn" type="button" id="ocrClearBoxesBtn" data-permission="ocr_view">Clear Boxes</button>
+                <button class="btn btn-primary" type="button" id="ocrUploadBtn" data-permission="products_create">Upload Image</button>
+                <button class="btn btn-primary secondary-btn" type="button" id="ocrClearDataBtn" data-permission="products_create">Clear Form</button>
               </div>
 
-              <div class="box-list" id="ocrBoxesList"></div>
+              <div class="mini-note">
+                ملاحظة: لا يوجد OCR في هذا القسم. النظام يعتمد على اسم الملف فقط في تحليل الأجهزة والبراند واسم العرض.
+              </div>
+
+              <div class="stock-review-wrap">
+                <div class="stock-review-head">
+                  <h4 class="sub-title" style="margin:0;">Stock Review From File Name</h4>
+
+                  <div class="stock-review-legend">
+                    <span class="legend-chip">
+                      <span class="legend-dot green"></span>
+                      Added To Stock
+                    </span>
+                    <span class="legend-chip">
+                      <span class="legend-dot red"></span>
+                      Not Added
+                    </span>
+                  </div>
+                </div>
+
+                <div class="mini-note">
+                  سيتم هنا عرض الأجهزة المستخرجة من اسم الملف. الحد الأقصى 4 أجهزة في الصورة الواحدة.  
+                  إذا كان الجهاز موجودًا بالمخزن يظهر أخضر، وإذا لم يكن موجودًا يظهر أحمر ويمكنك اختيار الفئة ثم الضغط على زر الإضافة.
+                </div>
+
+                <div id="stockReviewGrid" class="stock-review-grid">
+                  <div class="stock-review-card is-linked">
+                    <div class="stock-review-card-head">
+                      <h5 class="stock-review-title">Sample Device 1 256GB 8GB RAM</h5>
+                      <span class="stock-state-badge linked">Added</span>
+                    </div>
+
+                    <div class="stock-review-meta">
+                      <div class="mini-box">
+                        <strong>Brand</strong>
+                        <span>Samsung</span>
+                      </div>
+                      <div class="mini-box">
+                        <strong>Category</strong>
+                        <span>Phones</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="stock-review-card is-missing">
+                    <div class="stock-review-card-head">
+                      <h5 class="stock-review-title">Sample Device 2 512GB 12GB RAM</h5>
+                      <span class="stock-state-badge missing">Not Added</span>
+                    </div>
+
+                    <div class="stock-review-meta">
+                      <div class="mini-box">
+                        <strong>Brand</strong>
+                        <span>Unknown</span>
+                      </div>
+                      <div class="mini-box">
+                        <strong>Status</strong>
+                        <span>Needs category selection</span>
+                      </div>
+                    </div>
+
+                    <div class="stock-review-actions">
+                      <div class="form-group stock-review-select">
+                        <label>Choose Category</label>
+                        <select>
+                          <option value="">Select Category</option>
+                          <?php foreach ($categories as $cat): ?>
+                            <option value="<?= (int)$cat['id'] ?>"><?= htmlspecialchars((string)$cat['display_name'], ENT_QUOTES, 'UTF-8') ?></option>
+                          <?php endforeach; ?>
+                        </select>
+                      </div>
+
+                      <button class="btn success-btn" type="button" data-permission="stock_manage">Add To Stock</button>
+                    </div>
+                  </div>
+
+                  <div class="stock-review-card is-missing">
+                    <div class="stock-review-card-head">
+                      <h5 class="stock-review-title">Slot 3</h5>
+                      <span class="stock-state-badge missing">Empty</span>
+                    </div>
+
+                    <div class="mini-note" style="margin-top:0;">
+                      سيتم استخدام هذا المكان تلقائيًا إذا احتوى اسم الملف على جهاز ثالث.
+                    </div>
+                  </div>
+
+                  <div class="stock-review-card is-missing">
+                    <div class="stock-review-card-head">
+                      <h5 class="stock-review-title">Slot 4</h5>
+                      <span class="stock-state-badge missing">Empty</span>
+                    </div>
+
+                    <div class="mini-note" style="margin-top:0;">
+                      هذا هو آخر حد مدعوم داخل الصورة الواحدة.
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="stack-gap">
@@ -737,7 +914,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
                   <div class="form-group">
                     <label for="ocrBrandFromFilename">Brand</label>
-                    <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto from first device in filename">
+                    <input id="ocrBrandFromFilename" type="text" class="readonly-input" readonly placeholder="Auto from first device in file name">
                   </div>
 
                   <div class="form-group full-col">
@@ -757,7 +934,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
                   <div class="form-group">
                     <label for="ocrDevicesCount">Device Count</label>
-                    <input id="ocrDevicesCount" type="number" min="1" class="readonly-input" readonly placeholder="Auto">
+                    <input id="ocrDevicesCount" type="number" min="1" max="4" class="readonly-input" readonly placeholder="Auto">
                   </div>
                 </div>
               </div>
@@ -791,7 +968,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
                 </div>
 
                 <div class="action-row">
-                  <button class="btn btn-primary secondary-btn" type="button" id="ocrConfirmManualEditBtn" data-permission="ocr_view">Confirm Manual Edit</button>
+                  <button class="btn btn-primary secondary-btn" type="button" id="ocrConfirmManualEditBtn" data-permission="products_create">Confirm Manual Edit</button>
                 </div>
               </div>
 
@@ -802,7 +979,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
               </div>
 
               <div class="action-row">
-                <button class="btn btn-primary" type="button" id="ocrSaveBtn" data-permission="ocr_view">Save Product</button>
+                <button class="btn btn-primary" type="button" id="ocrSaveBtn" data-permission="products_create">Save Product</button>
               </div>
             </div>
           </div>
@@ -811,7 +988,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div id="tab-edit-delete" class="admin-panel" data-panel-permission="products_edit">
           <h3 class="panel-title">Edit / Delete Product</h3>
           <p class="panel-desc">
-            هذا القسم مخصص لاستدعاء منتج موجود حسب الفئة والبراند، ثم تعديله أو حذفه. تغيير الصورة هنا يتم يدويًا فقط بدون OCR.
+            هذا القسم مخصص لاستدعاء منتج موجود حسب الفئة والبراند، ثم تعديله أو حذفه. تغيير الصورة هنا يتم يدويًا فقط.
           </p>
 
           <div class="sub-card">
@@ -1098,6 +1275,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
     brands: <?= json_encode($brands, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
   };
 </script>
-<script src="/admin/assets/admin.js?v=20260408-1"></script>
+<script src="/admin/assets/admin.js?v=20260408-2"></script>
 </body>
 </html>
