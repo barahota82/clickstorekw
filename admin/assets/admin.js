@@ -797,30 +797,25 @@ function buildMissingCardBrandGuess(item) {
   return detected || '-';
 }
 
+function updateMissingCardStatus(card, selectedText = '') {
+  if (!card) return;
+
+  const statusValue = card.querySelector('.js-status-value');
+  if (!statusValue) return;
+
+  if (selectedText && selectedText !== 'Select Category') {
+    statusValue.innerHTML = `Category Selected<br>${escapeHtml(selectedText)}`;
+  } else {
+    statusValue.innerHTML = 'Needs<br>category<br>selection';
+  }
+}
+
 function bindStockReviewSelects() {
   document.querySelectorAll('.stock-review-select select').forEach(select => {
     select.addEventListener('change', function () {
       const card = this.closest('.stock-review-card');
       const selectedText = this.options[this.selectedIndex]?.textContent || 'Select Category';
-
-      let liveBox = card?.querySelector('.js-selected-category-live');
-      if (!liveBox && card) {
-        const meta = card.querySelector('.stock-review-meta');
-        if (meta) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'mini-box js-selected-category-live';
-          wrapper.innerHTML = `
-            <strong>Selected Category</strong>
-            <span>${escapeHtml(selectedText)}</span>
-          `;
-          meta.appendChild(wrapper);
-        }
-      } else if (liveBox) {
-        const span = liveBox.querySelector('span');
-        if (span) {
-          span.textContent = selectedText;
-        }
-      }
+      updateMissingCardStatus(card, selectedText);
     });
   });
 }
@@ -884,6 +879,8 @@ function renderStockReview(review) {
     const selectId = `missingCategory_${item.device_index}`;
     const effectiveCategoryId = String(item.expected_category_id || '').trim();
     const effectiveBrandGuess = buildMissingCardBrandGuess(item);
+    const effectiveCategoryText =
+      getBootstrapCategories().find(cat => String(cat.id) === effectiveCategoryId)?.display_name || '';
 
     cards.push(`
       <div class="stock-review-card is-missing">
@@ -894,12 +891,16 @@ function renderStockReview(review) {
 
         <div class="stock-review-meta">
           <div class="mini-box">
-            <strong>Brand Guess</strong>
-            <span>${escapeHtml(effectiveBrandGuess)}</span>
+            <strong>Status</strong>
+            <span class="js-status-value">${
+              effectiveCategoryText
+                ? `Category Selected<br>${escapeHtml(effectiveCategoryText)}`
+                : 'Needs<br>category<br>selection'
+            }</span>
           </div>
           <div class="mini-box">
-            <strong>Status</strong>
-            <span>Needs category selection</span>
+            <strong>Brand Guess</strong>
+            <span>${escapeHtml(effectiveBrandGuess)}</span>
           </div>
           <div class="mini-box">
             <strong>Storage</strong>
@@ -909,14 +910,6 @@ function renderStockReview(review) {
             <strong>RAM</strong>
             <span>${escapeHtml(item.ram_value || '-')}</span>
           </div>
-          ${effectiveCategoryId ? `
-            <div class="mini-box js-selected-category-live">
-              <strong>Selected Category</strong>
-              <span>${escapeHtml(
-                getBootstrapCategories().find(cat => String(cat.id) === effectiveCategoryId)?.display_name || 'Select Category'
-              )}</span>
-            </div>
-          ` : ''}
         </div>
 
         <div class="stock-review-actions">
