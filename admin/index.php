@@ -977,7 +977,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div id="tab-edit-delete" class="admin-panel" data-panel-permission="products_edit">
           <h3 class="panel-title">Edit / Delete Product</h3>
           <p class="panel-desc">
-            هذا القسم مخصص لاستدعاء منتج موجود حسب الفئة والبراند، ثم تعديله أو حذفه. تغيير الصورة هنا يتم يدويًا فقط.
+              
           </p>
 
           <div class="sub-card">
