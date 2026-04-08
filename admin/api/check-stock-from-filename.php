@@ -14,9 +14,42 @@ if (!function_exists('stock_review_normalize_brand_text')) {
     function stock_review_normalize_brand_text(string $value): string
     {
         $value = strtolower(trim($value));
-        $value = str_replace(['_', '-'], ' ', $value);
+        $value = str_replace(['_', '-', '.'], ' ', $value);
         $value = preg_replace('/\s+/', ' ', (string)$value);
         return trim((string)$value);
+    }
+}
+
+if (!function_exists('stock_review_brand_match_score')) {
+    function stock_review_brand_match_score(string $lookupSource, string $brandNameNormalized, string $brandSlugNormalized, int $brandCategoryId, int $selectedCategoryId): int
+    {
+        $score = 0;
+
+        if ($brandNameNormalized !== '') {
+            if ($lookupSource === $brandNameNormalized) {
+                $score += 3000 + strlen($brandNameNormalized);
+            } elseif (str_starts_with($lookupSource, $brandNameNormalized . ' ')) {
+                $score += 2000 + strlen($brandNameNormalized);
+            } elseif (str_contains($lookupSource, ' ' . $brandNameNormalized . ' ')) {
+                $score += 1000 + strlen($brandNameNormalized);
+            }
+        }
+
+        if ($brandSlugNormalized !== '') {
+            if ($lookupSource === $brandSlugNormalized) {
+                $score = max($score, 2900 + strlen($brandSlugNormalized));
+            } elseif (str_starts_with($lookupSource, $brandSlugNormalized . ' ')) {
+                $score = max($score, 1900 + strlen($brandSlugNormalized));
+            } elseif (str_contains($lookupSource, ' ' . $brandSlugNormalized . ' ')) {
+                $score = max($score, 900 + strlen($brandSlugNormalized));
+            }
+        }
+
+        if ($score > 0 && $selectedCategoryId > 0 && $brandCategoryId === $selectedCategoryId) {
+            $score += 5000;
+        }
+
+        return $score;
     }
 }
 
@@ -51,7 +84,7 @@ $brandsStmt = $pdo->query("
     SELECT id, category_id, name, slug
     FROM brands
     WHERE (is_active = 1 OR is_active IS NULL)
-    ORDER BY LENGTH(name) DESC, id ASC
+    ORDER BY id ASC
 ");
 $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
@@ -90,36 +123,38 @@ foreach ($devices as $device) {
 
     $lookupSource = stock_review_normalize_brand_text($rawTitle . ' ' . $normalizedTitle);
 
+    $bestBrandRow = null;
+    $bestScore = 0;
+
     foreach ($brands as $brandRow) {
         $brandName = trim((string)($brandRow['name'] ?? ''));
         $brandSlug = trim((string)($brandRow['slug'] ?? ''));
 
         $brandNameNormalized = stock_review_normalize_brand_text($brandName);
         $brandSlugNormalized = stock_review_normalize_brand_text($brandSlug);
+        $brandCategoryId = (int)($brandRow['category_id'] ?? 0);
 
-        $matched = false;
+        $score = stock_review_brand_match_score(
+            $lookupSource,
+            $brandNameNormalized,
+            $brandSlugNormalized,
+            $brandCategoryId,
+            $selectedCategoryId
+        );
 
-        if ($brandNameNormalized !== '') {
-            if ($lookupSource === $brandNameNormalized || str_starts_with($lookupSource, $brandNameNormalized . ' ')) {
-                $matched = true;
-            }
-        }
-
-        if (!$matched && $brandSlugNormalized !== '') {
-            if ($lookupSource === $brandSlugNormalized || str_starts_with($lookupSource, $brandSlugNormalized . ' ')) {
-                $matched = true;
-            }
-        }
-
-        if ($matched) {
-            $brandGuess = $brandName;
-            $brandIdGuess = (int)$brandRow['id'];
-            $expectedCategoryId = (int)$brandRow['category_id'];
-            break;
+        if ($score > $bestScore) {
+            $bestScore = $score;
+            $bestBrandRow = $brandRow;
         }
     }
 
-    if ($expectedCategoryId === null && $selectedCategoryId > 0) {
+    if ($bestBrandRow) {
+        $brandGuess = (string)($bestBrandRow['name'] ?? '');
+        $brandIdGuess = (int)($bestBrandRow['id'] ?? 0);
+        $expectedCategoryId = (int)($bestBrandRow['category_id'] ?? 0);
+    }
+
+    if ($selectedCategoryId > 0) {
         $expectedCategoryId = $selectedCategoryId;
     }
 
@@ -132,6 +167,42 @@ foreach ($devices as $device) {
         $ramValue,
         $networkValue
     );
+
+    if (!$existing) {
+        $existing = find_stock_catalog(
+            $pdo,
+            $normalizedTitle,
+            $brandIdGuess > 0 ? $brandIdGuess : null,
+            null,
+            $storageValue,
+            $ramValue,
+            $networkValue
+        );
+    }
+
+    if (!$existing && $selectedCategoryId > 0) {
+        $existing = find_stock_catalog(
+            $pdo,
+            $normalizedTitle,
+            null,
+            $selectedCategoryId,
+            $storageValue,
+            $ramValue,
+            $networkValue
+        );
+    }
+
+    if (!$existing) {
+        $existing = find_stock_catalog(
+            $pdo,
+            $normalizedTitle,
+            null,
+            null,
+            $storageValue,
+            $ramValue,
+            $networkValue
+        );
+    }
 
     $row = [
         'device_index' => $deviceIndex,
