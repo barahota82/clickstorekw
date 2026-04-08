@@ -13,7 +13,7 @@ if (!function_exists('save_product_slugify')) {
         $value = strtolower(trim($value));
         $value = str_replace(['_', '+'], ' ', $value);
         $value = preg_replace('/\.[^.]+$/', '', $value);
-        $value = preg_replace('/[^a-z0-9.\-\s]+/', ' ', $value);
+        $value = preg_replace('/[^a-z0-9.\-\s]+/', ' ', (string)$value);
         $value = preg_replace('/\s+/', '-', (string)$value);
         $value = preg_replace('/-+/', '-', (string)$value);
         $value = trim((string)$value, '-');
@@ -54,6 +54,7 @@ if (!function_exists('save_product_fetch_category_brand')) {
         ]);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
         if (!$row) {
             throw new RuntimeException('Invalid category or brand');
         }
@@ -90,7 +91,7 @@ $title = trim((string)($_POST['title'] ?? ''));
 $stockDisplayName = trim((string)($_POST['stock_display_name'] ?? $title));
 $categoryId = (int)($_POST['category_id'] ?? 0);
 $brandId = (int)($_POST['brand_id'] ?? 0);
-$devicesCount = max(1, (int)($_POST['devices_count'] ?? 1));
+$devicesCount = max(1, min(4, (int)($_POST['devices_count'] ?? 1)));
 $durationMonths = max(1, (int)($_POST['duration_months'] ?? 1));
 $downPayment = (float)($_POST['down_payment'] ?? 0);
 $monthlyAmount = (float)($_POST['monthly_amount'] ?? 0);
@@ -124,6 +125,23 @@ $slugBase = save_product_slugify($originalImageName);
 if ($slugBase === '') {
     $slugBase = 'product-' . time();
 }
+
+$parsedDevices = parse_devices_from_filename($originalImageName);
+$parsedDevices = stock_catalog_limit_devices(is_array($parsedDevices) ? $parsedDevices : [], 4);
+
+if (empty($parsedDevices)) {
+    $fallbackTitle = pathinfo($originalImageName, PATHINFO_FILENAME);
+    $parsedDevices = [[
+        'device_index' => 1,
+        'raw_title' => $fallbackTitle,
+        'normalized_title' => normalize_stock_title($fallbackTitle),
+        'storage_value' => null,
+        'ram_value' => null,
+        'network_value' => null,
+    ]];
+}
+
+$devicesCount = min(4, max(1, count($parsedDevices)));
 
 $pdo = db();
 
@@ -167,6 +185,7 @@ try {
 
     $checkSku = $pdo->prepare("SELECT id FROM products WHERE sku = :sku LIMIT 1");
     $checkSku->execute(['sku' => $sku]);
+
     if ($checkSku->fetch()) {
         @unlink($absoluteImagePath);
         json_response(false, ['message' => 'SKU already exists'], 409);
@@ -174,6 +193,7 @@ try {
 
     $checkSlug = $pdo->prepare("SELECT id FROM products WHERE slug = :slug LIMIT 1");
     $checkSlug->execute(['slug' => $slug]);
+
     if ($checkSlug->fetch()) {
         @unlink($absoluteImagePath);
         json_response(false, ['message' => 'Slug already exists'], 409);
@@ -321,7 +341,7 @@ try {
         }
     }
 
-    link_product_to_stock($pdo, $productId, $brandId, $categoryId, $originalImageName);
+    $stockLinkResult = link_product_to_stock($pdo, $productId, $brandId, $categoryId, $originalImageName);
 
     $pdo->commit();
 
@@ -333,13 +353,33 @@ try {
         'Created product | title: ' . $title . ' | slug: ' . $slug . ' | sku: ' . $sku
     );
 
+    $linkedCount = is_array($stockLinkResult['linked'] ?? null) ? count($stockLinkResult['linked']) : 0;
+    $missingCount = is_array($stockLinkResult['missing'] ?? null) ? count($stockLinkResult['missing']) : 0;
+
+    $message = 'تم حفظ المنتج بنجاح';
+
+    if ($linkedCount > 0 && $missingCount === 0) {
+        $message = 'تم حفظ المنتج بنجاح وربط جميع الأجهزة الموجودة بالمخزن';
+    } elseif ($linkedCount > 0 && $missingCount > 0) {
+        $message = 'تم حفظ المنتج وربط الأجهزة الموجودة، ويوجد أجهزة غير مضافة بالمخزن تحتاج إضافة يدوية';
+    } elseif ($linkedCount === 0 && $missingCount > 0) {
+        $message = 'تم حفظ المنتج، لكن لم يتم ربطه بالمخزن بعد لأن الأجهزة غير مضافة';
+    }
+
     json_response(true, [
-        'message' => 'تم حفظ المنتج بنجاح وربطه بالمخزن',
+        'message' => $message,
         'product_id' => $productId,
         'slug' => $slug,
         'sku' => $sku,
         'image_path' => $relativeImagePath,
-        'json_file_path' => $relativeJsonPath
+        'json_file_path' => $relativeJsonPath,
+        'stock_review' => [
+            'devices_count' => (int)($stockLinkResult['devices_count'] ?? $devicesCount),
+            'linked' => $stockLinkResult['linked'] ?? [],
+            'missing' => $stockLinkResult['missing'] ?? [],
+            'linked_count' => $linkedCount,
+            'missing_count' => $missingCount,
+        ]
     ]);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
