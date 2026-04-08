@@ -366,18 +366,18 @@ function adminClearStatus(id) {
 function normalizeStockText(text) {
   return String(text || '')
     .toLowerCase()
-    .replace(/\.[^.]+$/, '')
     .replace(/[_\-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 function toSlug(text) {
-  return String(text || '')
+  const withoutExt = String(text || '').replace(/\.[^.]+$/, '');
+  return withoutExt
     .toLowerCase()
-    .replace(/\.[^.]+$/, '')
     .replace(/[+_]/g, ' ')
-    .replace(/[^a-z0-9.\-\s]/g, ' ')
+    .replace(/\./g, ' ')
+    .replace(/[^a-z0-9\-\s]/g, ' ')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
@@ -399,6 +399,28 @@ function splitDevicesFromFilename(filename) {
 
 function detectBrandFromFilename(text) {
   const source = normalizeStockText(text);
+  const brands = getBootstrapBrands()
+    .map(brand => ({
+      id: String(brand.id || ''),
+      name: String(brand.name || '').trim(),
+      normalizedName: normalizeStockText(String(brand.name || '')),
+      normalizedSlug: normalizeStockText(String(brand.slug || ''))
+    }))
+    .filter(brand => brand.name && (brand.normalizedName || brand.normalizedSlug))
+    .sort((a, b) => {
+      const lenA = Math.max(a.normalizedName.length, a.normalizedSlug.length);
+      const lenB = Math.max(b.normalizedName.length, b.normalizedSlug.length);
+      return lenB - lenA;
+    });
+
+  for (const brand of brands) {
+    if (brand.normalizedName && (source === brand.normalizedName || source.startsWith(brand.normalizedName + ' '))) {
+      return brand.name;
+    }
+    if (brand.normalizedSlug && (source === brand.normalizedSlug || source.startsWith(brand.normalizedSlug + ' '))) {
+      return brand.name;
+    }
+  }
 
   const knownBrands = [
     { keys: ['samsung'], value: 'Samsung' },
@@ -434,7 +456,6 @@ function detectBrandFromFilename(text) {
 
 function buildDisplayNameFromFilename(part) {
   const cleaned = String(part || '')
-    .replace(/\.[^.]+$/, '')
     .replace(/[_\-]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -622,9 +643,7 @@ function buildProductJsonPreviewObject() {
     monthly: safeNum(getEl('ocrMonthlyAmount')?.value || 0, 0),
     duration: safeNum(getEl('ocrDurationMonths')?.value || 0, 0),
     available: true,
-    hot_offer: String(getEl('ocrHotOffer')?.value || '0') === '1',
-    brand_priority: 1,
-    priority: 1
+    hot_offer: String(getEl('ocrHotOffer')?.value || '0') === '1'
   };
 }
 
@@ -760,12 +779,12 @@ function renderStockReview(review) {
             <span>${escapeHtml(item.category_name || item.category_id || '-')}</span>
           </div>
           <div class="mini-box">
-            <strong>Stock Item</strong>
-            <span>${escapeHtml(item.stock_title || item.raw_title || '')}</span>
+            <strong>Storage</strong>
+            <span>${escapeHtml(item.storage_value || '-')}</span>
           </div>
           <div class="mini-box">
-            <strong>Device Index</strong>
-            <span>${escapeHtml(item.device_index ?? '')}</span>
+            <strong>RAM</strong>
+            <span>${escapeHtml(item.ram_value || '-')}</span>
           </div>
         </div>
       </div>
