@@ -14,89 +14,161 @@ const ADMIN_STATE = {
 
 const ADMIN_PERMISSION_ALIASES = {
   orders_view: [
+    'orders_view',
     'orders.view',
     'view_orders',
     'manage_orders',
     'orders_manage',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   orders_history_view: [
+    'orders_history_view',
     'orders.history.view',
     'view_order_history',
+    'orders_view',
     'orders.view',
     'view_orders',
     'manage_orders',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   orders_approve: [
+    'orders_approve',
+    'order.approve',
     'orders.approve',
     'approve_orders',
+    'change_order_status',
     'manage_orders',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   orders_reject: [
+    'orders_reject',
+    'order.reject',
     'orders.reject',
     'reject_orders',
+    'change_order_status',
     'manage_orders',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   orders_mark_on_the_way: [
+    'orders_mark_on_the_way',
+    'order.on_the_way',
     'orders.on_the_way',
     'mark_orders_on_the_way',
+    'change_order_status',
     'manage_orders',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   orders_mark_delivered: [
+    'orders_mark_delivered',
+    'order.deliver',
     'orders.deliver',
     'mark_orders_delivered',
+    'change_order_status',
     'manage_orders',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   orders_mark_pending: [
+    'orders_mark_pending',
+    'order.return_to_pending',
+    'order.pending',
     'orders.pending',
     'return_orders_to_pending',
+    'change_order_status',
     'manage_orders',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   ocr_view: [
-    'ocr.view',
+    'ocr_view',
+    'view_ocr',
     'manage_ocr',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   products_edit: [
-    'products.edit',
+    'products_edit',
     'edit_products',
+    'create_products',
     'manage_products',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   products_delete: [
-    'products.delete',
+    'products_delete',
     'delete_products',
     'manage_products',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   brands_order: [
-    'brands.order',
-    'manage_brand_order',
+    'brands_order',
+    'view_brand_ordering',
+    'manage_brand_ordering',
     'manage_products',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   products_order: [
-    'products.order',
-    'manage_product_order',
+    'products_order',
+    'view_product_ordering',
+    'manage_product_ordering',
     'manage_products',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   hot_offers_order: [
-    'hot_offers.order',
+    'hot_offers_order',
+    'view_hot_offers',
     'manage_hot_offers',
     'manage_products',
-    'admin.full_access'
+    'admin.full_access',
+    '*'
   ],
   stock_manage: [
-    'stock.manage',
+    'stock_manage',
+    'view_stock',
     'manage_stock',
-    'admin.full_access'
+    'manage_stock_movements',
+    'admin.full_access',
+    '*'
+  ],
+  users_view: [
+    'users_view',
+    'view_users',
+    'manage_users',
+    'view_roles',
+    'manage_roles',
+    'view_permissions',
+    'manage_permissions',
+    'admin.full_access',
+    '*'
+  ],
+  users_manage: [
+    'users_manage',
+    'manage_users',
+    'manage_roles',
+    'manage_permissions',
+    'admin.full_access',
+    '*'
+  ],
+  reports_view: [
+    'reports_view',
+    'view_analytics',
+    'admin.full_access',
+    '*'
+  ],
+  settings_view: [
+    'settings_view',
+    'view_settings',
+    'manage_settings',
+    'admin.full_access',
+    '*'
   ]
 };
 
@@ -107,13 +179,32 @@ function normalizePermissionKey(value) {
     .replace(/\s+/g, '_');
 }
 
+function normalizePermissionList(permissions) {
+  const result = [];
+
+  if (Array.isArray(permissions)) {
+    permissions.forEach(item => {
+      const key = normalizePermissionKey(item);
+      if (key) result.push(key);
+    });
+    return result;
+  }
+
+  if (permissions && typeof permissions === 'object') {
+    Object.keys(permissions).forEach(key => {
+      if (permissions[key]) {
+        const normalized = normalizePermissionKey(key);
+        if (normalized) result.push(normalized);
+      }
+    });
+  }
+
+  return result;
+}
+
 function setAdminAuthState(user = null, permissions = []) {
   ADMIN_STATE.user = user || null;
-  ADMIN_STATE.permissions = new Set(
-    (Array.isArray(permissions) ? permissions : [])
-      .map(normalizePermissionKey)
-      .filter(Boolean)
-  );
+  ADMIN_STATE.permissions = new Set(normalizePermissionList(permissions));
 }
 
 function hasAdminPermission(key) {
@@ -248,15 +339,25 @@ function applyPermissionDrivenUI() {
   setElementDisabled(dateFilter, !canViewOrders);
 }
 
-function getOrderActionPermissions() {
+function getOrderActionPermissions(apiPermissions = null) {
   return {
     canViewOrders: hasAdminPermission('orders_view'),
     canViewHistory: hasAdminPermission('orders_history_view'),
-    canApprove: hasAdminPermission('orders_approve'),
-    canReject: hasAdminPermission('orders_reject'),
-    canOnTheWay: hasAdminPermission('orders_mark_on_the_way'),
-    canDeliver: hasAdminPermission('orders_mark_delivered'),
-    canPending: hasAdminPermission('orders_mark_pending')
+    canApprove: apiPermissions && typeof apiPermissions.approve !== 'undefined'
+      ? !!apiPermissions.approve
+      : hasAdminPermission('orders_approve'),
+    canReject: apiPermissions && typeof apiPermissions.reject !== 'undefined'
+      ? !!apiPermissions.reject
+      : hasAdminPermission('orders_reject'),
+    canOnTheWay: apiPermissions && typeof apiPermissions.on_the_way !== 'undefined'
+      ? !!apiPermissions.on_the_way
+      : hasAdminPermission('orders_mark_on_the_way'),
+    canDeliver: apiPermissions && typeof apiPermissions.deliver !== 'undefined'
+      ? !!apiPermissions.deliver
+      : hasAdminPermission('orders_mark_delivered'),
+    canPending: apiPermissions && typeof apiPermissions.return_to_pending !== 'undefined'
+      ? !!apiPermissions.return_to_pending
+      : hasAdminPermission('orders_mark_pending')
   };
 }
 
@@ -1340,10 +1441,10 @@ function groupOrderItems(items) {
   return Array.from(map.values());
 }
 
-function renderAdminOrdersTable(orders) {
+function renderAdminOrdersTable(orders, apiPermissions = null) {
   const tbody = getEl('adminOrdersTableBody');
   const emptyBox = getEl('ordersEmptyBox');
-  const perms = getOrderActionPermissions();
+  const perms = getOrderActionPermissions(apiPermissions);
 
   if (!tbody) return;
 
@@ -1477,7 +1578,7 @@ async function loadOrdersManagement() {
       return;
     }
 
-    renderAdminOrdersTable(data.orders || []);
+    renderAdminOrdersTable(data.orders || [], data.permissions || null);
     renderOrdersSummary(data.summary || {});
     adminSetStatus('dashboardStatus', 'success', 'تم تحميل الطلبات بنجاح.');
   } catch (e) {
@@ -1666,6 +1767,19 @@ function bindOrdersManagementButtons() {
    AUTH
 ========================= */
 
+async function loadAdminProfileAndPermissions() {
+  try {
+    const { data } = await adminFetchJson('/admin/api/me.php');
+
+    if (data?.ok) {
+      setAdminAuthState(data.user || null, data.permissions || data.permission_codes || []);
+      return data.user || null;
+    }
+  } catch (e) {}
+
+  return null;
+}
+
 async function checkAuth() {
   try {
     const res = await fetch('/admin/api/check-auth.php', {
@@ -1676,8 +1790,13 @@ async function checkAuth() {
     const data = await res.json();
 
     if (data.ok) {
-      setAdminAuthState(data.user || null, data.permissions || []);
-      showDashboard(data.user);
+      const meUser = await loadAdminProfileAndPermissions();
+
+      if (!meUser) {
+        setAdminAuthState(data.user || null, data.permissions || []);
+      }
+
+      showDashboard(ADMIN_STATE.user || data.user);
       applyPermissionDrivenUI();
       bindOcrCategoryOnly('ocrCategory');
       bindEditCategoryBrandFilter('editCategory', 'editBrand');
