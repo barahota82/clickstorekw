@@ -1144,7 +1144,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div id="tab-stats" class="admin-panel" data-panel-permission="orders_view">
           <h3 class="panel-title">Statistics / Orders</h3>
           <p class="panel-desc">
-            هذا القسم مخصص لإدارة الطلبات المرسلة من العملاء، ومراجعتها وتغيير حالتها إلى Pending أو Approved أو On The Way أو Delivered أو Rejected.
+            قسم متابعة الطلبات المرسلة من العملاء .
           </p>
 
           <div class="summary-cards">
