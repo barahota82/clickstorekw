@@ -30,6 +30,16 @@ function stock_catalog_limit_devices(array $devices, int $max = 4): array
     return array_slice(array_values($devices), 0, $max);
 }
 
+function stock_value_or_null(mixed $value): ?string
+{
+    if ($value === null) {
+        return null;
+    }
+
+    $value = trim((string)$value);
+    return $value === '' ? null : $value;
+}
+
 function find_stock_catalog(
     PDO $pdo,
     string $normalizedTitle,
@@ -40,6 +50,9 @@ function find_stock_catalog(
     ?string $networkValue = null
 ): ?array {
     $normalizedTitle = normalize_stock_title($normalizedTitle);
+    $storageValue = stock_value_or_null($storageValue);
+    $ramValue = stock_value_or_null($ramValue);
+    $networkValue = stock_value_or_null($networkValue);
 
     if ($normalizedTitle === '') {
         return null;
@@ -56,8 +69,12 @@ function find_stock_catalog(
             sc.storage_value,
             sc.ram_value,
             sc.network_value,
-            sc.is_active
+            sc.is_active,
+            c.display_name AS category_name,
+            b.name AS brand_name
         FROM stock_catalog sc
+        LEFT JOIN categories c ON c.id = sc.category_id
+        LEFT JOIN brands b ON b.id = sc.brand_id
         WHERE sc.normalized_title = :normalized_title
     ";
 
@@ -75,19 +92,25 @@ function find_stock_catalog(
         $params['category_id'] = $categoryId;
     }
 
-    if ($storageValue !== null && $storageValue !== '') {
-        $sql .= " AND (sc.storage_value = :storage_value OR sc.storage_value IS NULL)";
+    if ($storageValue !== null) {
+        $sql .= " AND sc.storage_value = :storage_value";
         $params['storage_value'] = $storageValue;
+    } else {
+        $sql .= " AND sc.storage_value IS NULL";
     }
 
-    if ($ramValue !== null && $ramValue !== '') {
-        $sql .= " AND (sc.ram_value = :ram_value OR sc.ram_value IS NULL)";
+    if ($ramValue !== null) {
+        $sql .= " AND sc.ram_value = :ram_value";
         $params['ram_value'] = $ramValue;
+    } else {
+        $sql .= " AND sc.ram_value IS NULL";
     }
 
-    if ($networkValue !== null && $networkValue !== '') {
-        $sql .= " AND (sc.network_value = :network_value OR sc.network_value IS NULL)";
+    if ($networkValue !== null) {
+        $sql .= " AND sc.network_value = :network_value";
         $params['network_value'] = $networkValue;
+    } else {
+        $sql .= " AND sc.network_value IS NULL";
     }
 
     $sql .= " ORDER BY sc.id ASC LIMIT 1";
@@ -134,6 +157,9 @@ function create_stock_catalog(
 ): int {
     $title = trim($title);
     $normalizedTitle = normalize_stock_title($normalizedTitle);
+    $storageValue = stock_value_or_null($storageValue);
+    $ramValue = stock_value_or_null($ramValue);
+    $networkValue = stock_value_or_null($networkValue);
 
     if ($title === '' || $normalizedTitle === '') {
         throw new RuntimeException('Invalid stock title');
@@ -169,7 +195,7 @@ function create_stock_catalog(
         $check = $pdo->prepare("SELECT id FROM stock_catalog WHERE slug = :slug LIMIT 1");
         $check->execute(['slug' => $slug]);
 
-        if (!$check->fetch()) {
+        if (!$check->fetch(PDO::FETCH_ASSOC)) {
             break;
         }
 
@@ -221,42 +247,75 @@ function create_stock_catalog(
     return (int)$pdo->lastInsertId();
 }
 
-function get_stock_review_from_devices(PDO $pdo, array $devices, ?int $brandId = null): array
+function get_stock_review_from_devices(PDO $pdo, array $devices, ?int $brandId = null, ?int $categoryId = null): array
 {
     $devices = stock_catalog_limit_devices($devices, 4);
-    $result = [];
+    $linked = [];
+    $missing = [];
+    $all = [];
 
-    foreach ($devices as $device) {
+    foreach ($devices as $index => $device) {
+        $deviceIndex = (int)($device['device_index'] ?? ($index + 1));
         $rawTitle = trim((string)($device['raw_title'] ?? ''));
         $normalizedTitle = normalize_stock_title((string)($device['normalized_title'] ?? $rawTitle));
-        $storageValue = isset($device['storage_value']) ? (string)$device['storage_value'] : null;
-        $ramValue = isset($device['ram_value']) ? (string)$device['ram_value'] : null;
-        $networkValue = isset($device['network_value']) ? (string)$device['network_value'] : null;
+        $storageValue = stock_value_or_null($device['storage_value'] ?? null);
+        $ramValue = stock_value_or_null($device['ram_value'] ?? null);
+        $networkValue = stock_value_or_null($device['network_value'] ?? null);
+
+        if ($rawTitle === '' && $normalizedTitle === '') {
+            continue;
+        }
 
         $stockRow = find_stock_catalog(
             $pdo,
             $normalizedTitle,
             $brandId,
-            null,
+            $categoryId,
             $storageValue,
             $ramValue,
             $networkValue
         );
 
-        $result[] = [
-            'device_index' => (int)($device['device_index'] ?? 0),
+        $baseRow = [
+            'device_index' => $deviceIndex,
             'raw_title' => $rawTitle,
             'normalized_title' => $normalizedTitle,
             'storage_value' => $storageValue,
             'ram_value' => $ramValue,
             'network_value' => $networkValue,
-            'is_added' => $stockRow !== null,
-            'stock_catalog_id' => $stockRow ? (int)$stockRow['id'] : null,
-            'stock_category_id' => $stockRow ? (int)$stockRow['category_id'] : null,
-            'stock_brand_id' => $stockRow ? (int)$stockRow['brand_id'] : null,
-            'stock_title' => $stockRow ? (string)$stockRow['title'] : '',
         ];
+
+        if ($stockRow) {
+            $row = array_merge($baseRow, [
+                'is_added' => true,
+                'stock_catalog_id' => (int)$stockRow['id'],
+                'stock_title' => (string)$stockRow['title'],
+                'category_id' => (int)$stockRow['category_id'],
+                'category_name' => (string)($stockRow['category_name'] ?? ''),
+                'brand_id' => (int)$stockRow['brand_id'],
+                'brand_name' => (string)($stockRow['brand_name'] ?? ''),
+            ]);
+
+            $linked[] = $row;
+            $all[] = $row;
+        } else {
+            $row = array_merge($baseRow, [
+                'is_added' => false,
+                'expected_category_id' => $categoryId,
+                'expected_brand_id' => $brandId,
+            ]);
+
+            $missing[] = $row;
+            $all[] = $row;
+        }
     }
 
-    return $result;
+    return [
+        'devices_count' => count($all),
+        'devices' => $all,
+        'linked' => $linked,
+        'missing' => $missing,
+        'linked_count' => count($linked),
+        'missing_count' => count($missing),
+    ];
 }
