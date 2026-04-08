@@ -1,7 +1,4 @@
-let currentOCRFile = null;
-let ocrBoxes = [];
-let selectedBoxId = null;
-let dragState = null;
+let currentProductImageFile = null;
 
 /* =========================
    PERMISSIONS STATE
@@ -84,10 +81,11 @@ const ADMIN_PERMISSION_ALIASES = {
     'admin.full_access',
     '*'
   ],
-  ocr_view: [
-    'ocr_view',
-    'view_ocr',
-    'manage_ocr',
+  products_create: [
+    'products_create',
+    'create_products',
+    'edit_products',
+    'manage_products',
     'admin.full_access',
     '*'
   ],
@@ -381,14 +379,6 @@ function adminClearStatus(id) {
   box.textContent = '';
 }
 
-function slugToTitle(text) {
-  return String(text || '')
-    .replace(/\.[^.]+$/, '')
-    .replace(/[_\-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function normalizeStockText(text) {
   return String(text || '')
     .toLowerCase()
@@ -479,7 +469,7 @@ function buildDisplayNameFromFilename(part) {
     .join(' ');
 }
 
-function analyzeFilenameForOCR(filename) {
+function analyzeFilename(filename) {
   const devices = splitDevicesFromFilename(filename);
   const firstDevice = devices[0] || '';
   const brand = detectBrandFromFilename(firstDevice);
@@ -496,8 +486,7 @@ function analyzeFilenameForOCR(filename) {
     devicesCount: devices.length || 1,
     brandFromFilename: brand,
     title: fullOfferTitle || firstStockName,
-    stockDisplayName: firstStockName,
-    categorySlugGuess: ''
+    stockDisplayName: firstStockName
   };
 }
 
@@ -588,7 +577,7 @@ function bindEditCategoryBrandFilter(categoryId, brandId) {
   });
 }
 
-function bindOcrCategoryOnly(selectId) {
+function bindAddProductCategoryOnly(selectId) {
   const category = getEl(selectId);
   if (!category) return;
 
@@ -600,118 +589,7 @@ function bindOcrCategoryOnly(selectId) {
 }
 
 /* =========================
-   OCR VALUE PARSING
-========================= */
-
-function normalizeOcrText(text) {
-  return String(text || '')
-    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function parseOcrFinancials(text) {
-  const normalized = normalizeOcrText(text).toLowerCase();
-
-  const result = {
-    downPayment: '',
-    monthlyAmount: '',
-    durationMonths: ''
-  };
-
-  const downPatterns = [
-    /zero\s*down\s*payment/i,
-    /بدون\s*مقدم/i,
-    /مقدم\s*0/i,
-    /0\s*(?:kd|kwd)\s*(?:down|down payment|مقدم)/i
-  ];
-
-  if (downPatterns.some(rx => rx.test(normalized))) {
-    result.downPayment = '0';
-  }
-
-  const monthlyPatterns = [
-    /(\d+(?:\.\d+)?)\s*(?:kd|kwd)\s*monthly/i,
-    /monthly\s*(\d+(?:\.\d+)?)/i,
-    /القسط(?:\s*الشهري)?\s*(\d+(?:\.\d+)?)/i
-  ];
-
-  for (const rx of monthlyPatterns) {
-    const m = normalized.match(rx);
-    if (m && m[1]) {
-      result.monthlyAmount = m[1];
-      break;
-    }
-  }
-
-  const durationPatterns = [
-    /(\d+)\s*months?/i,
-    /(\d+)\s*month\s*to\s*pay/i,
-    /(\d+)\s*months\s*to\s*pay/i,
-    /(\d+)\s*شهر/i
-  ];
-
-  for (const rx of durationPatterns) {
-    const m = normalized.match(rx);
-    if (m && m[1]) {
-      result.durationMonths = m[1];
-      break;
-    }
-  }
-
-  const downPayPatterns = [
-    /down\s*payment\s*(\d+(?:\.\d+)?)/i,
-    /(\d+(?:\.\d+)?)\s*(?:kd|kwd)\s*down\s*payment/i,
-    /مقدم\s*(\d+(?:\.\d+)?)/i
-  ];
-
-  if (!result.downPayment) {
-    for (const rx of downPayPatterns) {
-      const m = normalized.match(rx);
-      if (m && m[1]) {
-        result.downPayment = m[1];
-        break;
-      }
-    }
-  }
-
-  return result;
-}
-
-/* =========================
-   OCR API
-========================= */
-
-async function runServerSideOcr(file, boxes = []) {
-  const formData = new FormData();
-  formData.append('image', file);
-
-  try {
-    formData.append('boxes_json', JSON.stringify(boxes || []));
-  } catch (e) {
-    formData.append('boxes_json', '[]');
-  }
-
-  const res = await fetch('/admin/api/ocr-read.php', {
-    method: 'POST',
-    credentials: 'same-origin',
-    body: formData
-  });
-
-  const raw = await res.text();
-  let data = null;
-
-  try {
-    data = JSON.parse(raw);
-  } catch (e) {
-    throw new Error(raw || 'OCR response is not valid JSON.');
-  }
-
-  return data;
-}
-
-/* =========================
-   JSON PREVIEW / OCR HELPERS
+   ADD PRODUCT HELPERS
 ========================= */
 
 function resolveSelectedCategoryRow() {
@@ -734,10 +612,10 @@ function resolveBrandRowForSelectedCategory() {
 function buildPreviewImagePath() {
   const categoryRow = resolveSelectedCategoryRow();
   const brandRow = resolveBrandRowForSelectedCategory();
-  if (!categoryRow || !brandRow || !currentOCRFile) return '';
+  if (!categoryRow || !brandRow || !currentProductImageFile) return '';
 
-  const ext = String(currentOCRFile.name || '').split('.').pop().toLowerCase();
-  const slug = toSlug(currentOCRFile.name);
+  const ext = String(currentProductImageFile.name || '').split('.').pop().toLowerCase();
+  const slug = toSlug(currentProductImageFile.name);
   if (!slug || !ext) return '';
 
   return `/images/products/${String(categoryRow.slug || '').toLowerCase()}/${String(brandRow.slug || '').toLowerCase()}/${slug}.${ext}`;
@@ -771,23 +649,7 @@ function updateProductJsonPreview() {
   preview.value = JSON.stringify(data, null, 2);
 }
 
-function applyOcrFinancialsToMainFields(fields) {
-  if (!fields) return;
-
-  if (fields.downPayment !== '') {
-    setInputValue('ocrDownPayment', fields.downPayment);
-  }
-  if (fields.monthlyAmount !== '') {
-    setInputValue('ocrMonthlyAmount', fields.monthlyAmount);
-  }
-  if (fields.durationMonths !== '') {
-    setInputValue('ocrDurationMonths', fields.durationMonths);
-  }
-
-  updateProductJsonPreview();
-}
-
-function fillOCRFieldsFromAnalysis(analysis) {
+function fillProductFieldsFromFilenameAnalysis(analysis) {
   setInputValue('ocrFileName', analysis.fileName || '');
   setInputValue('ocrTitle', analysis.title || '');
   setInputValue('ocrStockDisplayName', analysis.stockDisplayName || '');
@@ -797,19 +659,7 @@ function fillOCRFieldsFromAnalysis(analysis) {
   updateProductJsonPreview();
 }
 
-function bindOcrManualConfirmButton() {
-  const btn = getEl('ocrConfirmManualEditBtn');
-  if (!btn) return;
-
-  btn.addEventListener('click', function () {
-    if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
-
-    updateProductJsonPreview();
-    adminSetStatus('dashboardStatus', 'success', 'تم تأكيد التعديل اليدوي وسيتم الاعتماد على القيم الحالية في JSON.');
-  });
-}
-
-function bindOcrPreviewAutoUpdate() {
+function bindProductPreviewAutoUpdate() {
   [
     'ocrCategory',
     'ocrTitle',
@@ -826,12 +676,8 @@ function bindOcrPreviewAutoUpdate() {
   });
 }
 
-/* =========================
-   OCR CORE
-========================= */
-
-function clearOCRData(fullReset = false) {
-  currentOCRFile = fullReset ? null : currentOCRFile;
+function clearAddProductData(fullReset = false) {
+  currentProductImageFile = fullReset ? null : currentProductImageFile;
 
   const ids = [
     'ocrFileName',
@@ -870,14 +716,14 @@ function clearOCRData(fullReset = false) {
     }
     if (placeholder) placeholder.classList.remove('hidden');
     if (input) input.value = '';
-    currentOCRFile = null;
+    currentProductImageFile = null;
   }
 
   updateProductJsonPreview();
   adminClearStatus('dashboardStatus');
 }
 
-function bindOCRUploadButton() {
+function bindProductUploadButton() {
   const uploadBtn = getEl('ocrUploadBtn');
   const input = getEl('ocrImageInput');
   const image = getEl('ocrPreviewImage');
@@ -888,7 +734,7 @@ function bindOCRUploadButton() {
 
   uploadBtn.onclick = null;
   uploadBtn.addEventListener('click', function () {
-    if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية للوصول إلى OCR.')) return;
+    if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
 
     input.value = '';
     input.click();
@@ -899,13 +745,13 @@ function bindOCRUploadButton() {
     const file = this.files && this.files[0];
     if (!file) return;
 
-    clearOCRData(false);
-    currentOCRFile = file;
+    clearAddProductData(false);
+    currentProductImageFile = file;
 
     if (fileNameField) fileNameField.value = file.name;
 
-    const analysis = analyzeFilenameForOCR(file.name);
-    fillOCRFieldsFromAnalysis(analysis);
+    const analysis = analyzeFilename(file.name);
+    fillProductFieldsFromFilenameAnalysis(analysis);
 
     const reader = new FileReader();
     reader.onload = function (e) {
@@ -917,63 +763,133 @@ function bindOCRUploadButton() {
     reader.readAsDataURL(file);
 
     updateProductJsonPreview();
-    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة. اختر الفئة يدويًا ثم راجع الاسم قبل الحفظ.');
+    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة وتحليل اسم الملف. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.');
   });
 }
 
-function bindOCRAnalyzeButton() {
-  const analyzeBtn = getEl('ocrAnalyzeBtn');
-  if (!analyzeBtn) return;
+function bindProductManualConfirmButton() {
+  const btn = getEl('ocrConfirmManualEditBtn');
+  if (!btn) return;
 
-  analyzeBtn.onclick = null;
-  analyzeBtn.addEventListener('click', async function () {
-    if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية لاستخدام OCR.')) return;
+  btn.addEventListener('click', function () {
+    if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
 
-    if (!currentOCRFile) {
-      adminSetStatus('dashboardStatus', 'error', 'ارفع صورة أولًا قبل التحليل.');
+    updateProductJsonPreview();
+    adminSetStatus('dashboardStatus', 'success', 'تم اعتماد البيانات الحالية للحفظ.');
+  });
+}
+
+async function saveProduct() {
+  if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
+
+  if (!currentProductImageFile) {
+    adminSetStatus('dashboardStatus', 'error', 'ارفع صورة أولًا.');
+    return;
+  }
+
+  const title = String(getEl('ocrTitle')?.value || '').trim();
+  const stockDisplayName = String(getEl('ocrStockDisplayName')?.value || '').trim();
+  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
+  const downPayment = String(getEl('ocrDownPayment')?.value || '0').trim();
+  const monthlyAmount = String(getEl('ocrMonthlyAmount')?.value || '0').trim();
+  const durationMonths = String(getEl('ocrDurationMonths')?.value || '12').trim();
+  const hotOffer = String(getEl('ocrHotOffer')?.value || '0').trim();
+  const devicesCount = String(getEl('ocrDevicesCount')?.value || '1').trim();
+  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
+
+  if (!title) {
+    adminSetStatus('dashboardStatus', 'error', 'حقل Title مطلوب.');
+    return;
+  }
+
+  if (!stockDisplayName) {
+    adminSetStatus('dashboardStatus', 'error', 'حقل Stock Display Name مطلوب.');
+    return;
+  }
+
+  if (!categoryId) {
+    adminSetStatus('dashboardStatus', 'error', 'اختر Category أولًا.');
+    return;
+  }
+
+  if (!brandName) {
+    adminSetStatus('dashboardStatus', 'error', 'لم يتم التعرف على البراند من اسم الملف.');
+    return;
+  }
+
+  const brandRecord = getBootstrapBrands().find(
+    brand =>
+      String(brand.category_id) === String(categoryId) &&
+      String(brand.name || '').trim().toLowerCase() === brandName.toLowerCase()
+  );
+
+  if (!brandRecord) {
+    adminSetStatus('dashboardStatus', 'error', 'لا يوجد Brand مطابق داخل قاعدة البيانات لهذه الفئة.');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('title', title);
+  fd.append('stock_display_name', stockDisplayName);
+  fd.append('category_id', categoryId);
+  fd.append('brand_id', String(brandRecord.id));
+  fd.append('devices_count', devicesCount);
+  fd.append('duration_months', durationMonths);
+  fd.append('down_payment', downPayment);
+  fd.append('monthly_amount', monthlyAmount);
+  fd.append('is_hot_offer', hotOffer === '1' ? '1' : '0');
+  fd.append('is_available', '1');
+  fd.append('image', currentProductImageFile);
+
+  adminSetStatus('dashboardStatus', 'info', 'جاري حفظ المنتج...');
+
+  try {
+    const res = await fetch('/admin/api/save-product.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: fd
+    });
+
+    const raw = await res.text();
+    let data = null;
+
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      throw new Error(raw || 'Unexpected server response.');
+    }
+
+    if (!data.ok) {
+      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل حفظ المنتج.');
       return;
     }
 
-    const analysis = analyzeFilenameForOCR(currentOCRFile.name);
-    fillOCRFieldsFromAnalysis(analysis);
+    updateProductJsonPreview();
+    adminSetStatus(
+      'dashboardStatus',
+      'success',
+      (data.message || 'تم حفظ المنتج بنجاح.') +
+      (data.slug ? ` | slug: ${data.slug}` : '')
+    );
+  } catch (e) {
+    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء حفظ المنتج.');
+  }
+}
 
-    adminSetStatus('dashboardStatus', 'info', 'تم تحليل اسم الملف. الـ OCR المالي اختياري ويمكنك إدخال القيم يدويًا.');
+function bindProductSaveButton() {
+  const btn = getEl('ocrSaveBtn');
+  if (!btn) return;
+  btn.addEventListener('click', saveProduct);
+}
 
-    try {
-      const ocrData = await runServerSideOcr(currentOCRFile, ocrBoxes);
+function bindProductClearButton() {
+  const btn = getEl('ocrClearDataBtn');
+  if (!btn) return;
 
-      if (!ocrData?.ok) {
-        updateProductJsonPreview();
-        return;
-      }
-
-      const rawText = [
-        ocrData.text || '',
-        ...(Array.isArray(ocrData.lines) ? ocrData.lines : [])
-      ].join('\n');
-
-      let fields = {
-        downPayment: '',
-        monthlyAmount: '',
-        durationMonths: ''
-      };
-
-      if (ocrData.fields && typeof ocrData.fields === 'object') {
-        fields.downPayment = String(ocrData.fields.down_payment ?? '');
-        fields.monthlyAmount = String(ocrData.fields.monthly_amount ?? '');
-        fields.durationMonths = String(ocrData.fields.duration_months ?? '');
-      }
-
-      const parsed = parseOcrFinancials(rawText);
-
-      if (!fields.downPayment) fields.downPayment = parsed.downPayment || '';
-      if (!fields.monthlyAmount) fields.monthlyAmount = parsed.monthlyAmount || '';
-      if (!fields.durationMonths) fields.durationMonths = parsed.durationMonths || '';
-
-      applyOcrFinancialsToMainFields(fields);
-    } catch (e) {
-      updateProductJsonPreview();
-    }
+  btn.addEventListener('click', function () {
+    if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
+    clearAddProductData(true);
+    adminSetStatus('dashboardStatus', 'info', 'تم تفريغ النموذج.');
   });
 }
 
@@ -1042,331 +958,6 @@ function bindTabSwitching() {
       }
     });
   });
-}
-
-/* =========================
-   BOXES
-========================= */
-
-function renderBoxes() {
-  const layer = getEl('ocrBoxesLayer');
-  const list = getEl('ocrBoxesList');
-  if (!layer || !list) return;
-
-  layer.innerHTML = '';
-  list.innerHTML = '';
-
-  ocrBoxes.forEach(box => {
-    const boxEl = document.createElement('div');
-    boxEl.className = 'ocr-box' + (selectedBoxId === box.id ? ' selected' : '');
-    boxEl.style.left = box.x + '%';
-    boxEl.style.top = box.y + '%';
-    boxEl.style.width = box.w + '%';
-    boxEl.style.height = box.h + '%';
-    boxEl.dataset.id = String(box.id);
-
-    const label = document.createElement('div');
-    label.className = 'ocr-box-label';
-    label.textContent = box.label;
-    boxEl.appendChild(label);
-
-    const handle = document.createElement('div');
-    handle.className = 'ocr-box-handle';
-    boxEl.appendChild(handle);
-
-    boxEl.addEventListener('pointerdown', function (e) {
-      if (e.target === handle) {
-        startResizeBox(e, box.id);
-      } else {
-        startDragBox(e, box.id);
-      }
-    });
-
-    layer.appendChild(boxEl);
-
-    const item = document.createElement('div');
-    item.className = 'box-item';
-
-    item.innerHTML = `
-      <div class="box-item-grid">
-        <div>
-          <label>Box</label>
-          <input type="text" value="${escapeHtml(box.label)}">
-        </div>
-        <div>
-          <label>Type</label>
-          <select>
-            <option value="custom"${box.type === 'custom' ? ' selected' : ''}>Custom</option>
-            <option value="amounts"${box.type === 'amounts' ? ' selected' : ''}>Amounts</option>
-            <option value="device_1_name"${box.type === 'device_1_name' ? ' selected' : ''}>Device 1 Name</option>
-            <option value="device_2_name"${box.type === 'device_2_name' ? ' selected' : ''}>Device 2 Name</option>
-            <option value="months"${box.type === 'months' ? ' selected' : ''}>Months</option>
-          </select>
-        </div>
-        <div>
-          <small>X: ${box.x.toFixed(1)}% | Y: ${box.y.toFixed(1)}% | W: ${box.w.toFixed(1)}% | H: ${box.h.toFixed(1)}%</small>
-        </div>
-        <div>
-          <button class="btn danger-btn" type="button">Delete</button>
-        </div>
-      </div>
-    `;
-
-    const [labelInput, typeSelect, deleteBtn] = item.querySelectorAll('input, select, button');
-
-    labelInput.addEventListener('input', function () {
-      box.label = this.value || ('Box ' + box.id);
-      renderBoxes();
-    });
-
-    typeSelect.addEventListener('change', function () {
-      box.type = this.value;
-    });
-
-    deleteBtn.addEventListener('click', function () {
-      ocrBoxes = ocrBoxes.filter(b => b.id !== box.id);
-      if (selectedBoxId === box.id) selectedBoxId = null;
-      renderBoxes();
-    });
-
-    list.appendChild(item);
-  });
-}
-
-function addNewBox() {
-  const nextId = ocrBoxes.length ? Math.max(...ocrBoxes.map(b => b.id)) + 1 : 1;
-
-  ocrBoxes.push({
-    id: nextId,
-    label: 'Box ' + nextId,
-    type: 'custom',
-    x: 12,
-    y: 12,
-    w: 28,
-    h: 16
-  });
-
-  selectedBoxId = nextId;
-  renderBoxes();
-}
-
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function getLayerRect() {
-  const layer = getEl('ocrBoxesLayer');
-  return layer ? layer.getBoundingClientRect() : null;
-}
-
-function startDragBox(e, boxId) {
-  const rect = getLayerRect();
-  const box = ocrBoxes.find(b => b.id === boxId);
-  if (!rect || !box) return;
-
-  selectedBoxId = boxId;
-  dragState = {
-    mode: 'drag',
-    boxId,
-    startX: e.clientX,
-    startY: e.clientY,
-    boxX: box.x,
-    boxY: box.y,
-    boxW: box.w,
-    boxH: box.h,
-    rect
-  };
-
-  renderBoxes();
-}
-
-function startResizeBox(e, boxId) {
-  e.stopPropagation();
-  const rect = getLayerRect();
-  const box = ocrBoxes.find(b => b.id === boxId);
-  if (!rect || !box) return;
-
-  selectedBoxId = boxId;
-  dragState = {
-    mode: 'resize',
-    boxId,
-    startX: e.clientX,
-    startY: e.clientY,
-    boxX: box.x,
-    boxY: box.y,
-    boxW: box.w,
-    boxH: box.h,
-    rect
-  };
-
-  renderBoxes();
-}
-
-function bindBoxInteractions() {
-  document.addEventListener('pointermove', function (e) {
-    if (!dragState) return;
-
-    const box = ocrBoxes.find(b => b.id === dragState.boxId);
-    if (!box) return;
-
-    const dxPercent = ((e.clientX - dragState.startX) / dragState.rect.width) * 100;
-    const dyPercent = ((e.clientY - dragState.startY) / dragState.rect.height) * 100;
-
-    if (dragState.mode === 'drag') {
-      box.x = clamp(dragState.boxX + dxPercent, 0, 100 - box.w);
-      box.y = clamp(dragState.boxY + dyPercent, 0, 100 - box.h);
-    }
-
-    if (dragState.mode === 'resize') {
-      box.w = clamp(dragState.boxW + dxPercent, 4, 100 - box.x);
-      box.h = clamp(dragState.boxH + dyPercent, 2, 100 - box.y);
-    }
-
-    renderBoxes();
-  });
-
-  document.addEventListener('pointerup', function () {
-    dragState = null;
-  });
-}
-
-function bindBoxButtons() {
-  const insertBtn = getEl('ocrInsertBoxBtn');
-  const clearBoxesBtn = getEl('ocrClearBoxesBtn');
-  const clearDataBtn = getEl('ocrClearDataBtn');
-
-  if (insertBtn) {
-    insertBtn.addEventListener('click', function () {
-      if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
-      addNewBox();
-      adminSetStatus('dashboardStatus', 'info', 'تمت إضافة مربع جديد.');
-    });
-  }
-
-  if (clearBoxesBtn) {
-    clearBoxesBtn.addEventListener('click', function () {
-      if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
-      ocrBoxes = [];
-      selectedBoxId = null;
-      renderBoxes();
-      adminSetStatus('dashboardStatus', 'info', 'تم حذف جميع المربعات.');
-    });
-  }
-
-  if (clearDataBtn) {
-    clearDataBtn.addEventListener('click', function () {
-      if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية استخدام OCR.')) return;
-      clearOCRData(true);
-      adminSetStatus('dashboardStatus', 'info', 'تم تفريغ البيانات مع الإبقاء على أماكن المربعات.');
-    });
-  }
-}
-
-/* =========================
-   SAVE OCR PRODUCT
-========================= */
-
-async function saveOcrProduct() {
-  if (!requireFrontendPermissionOrWarn('ocr_view', 'ليس لديك صلاحية إضافة منتج عبر OCR.')) return;
-
-  if (!currentOCRFile) {
-    adminSetStatus('dashboardStatus', 'error', 'ارفع صورة أولًا.');
-    return;
-  }
-
-  const title = String(getEl('ocrTitle')?.value || '').trim();
-  const stockDisplayName = String(getEl('ocrStockDisplayName')?.value || '').trim();
-  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
-  const downPayment = String(getEl('ocrDownPayment')?.value || '0').trim();
-  const monthlyAmount = String(getEl('ocrMonthlyAmount')?.value || '0').trim();
-  const durationMonths = String(getEl('ocrDurationMonths')?.value || '12').trim();
-  const hotOffer = String(getEl('ocrHotOffer')?.value || '0').trim();
-  const devicesCount = String(getEl('ocrDevicesCount')?.value || '1').trim();
-  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
-
-  if (!title) {
-    adminSetStatus('dashboardStatus', 'error', 'حقل Title مطلوب.');
-    return;
-  }
-
-  if (!stockDisplayName) {
-    adminSetStatus('dashboardStatus', 'error', 'حقل Stock Display Name مطلوب.');
-    return;
-  }
-
-  if (!categoryId) {
-    adminSetStatus('dashboardStatus', 'error', 'اختر Category أولًا.');
-    return;
-  }
-
-  if (!brandName) {
-    adminSetStatus('dashboardStatus', 'error', 'Brand لم يتم استخراجه من اسم الصورة.');
-    return;
-  }
-
-  const brandRecord = getBootstrapBrands().find(
-    brand =>
-      String(brand.category_id) === String(categoryId) &&
-      String(brand.name || '').trim().toLowerCase() === brandName.toLowerCase()
-  );
-
-  if (!brandRecord) {
-    adminSetStatus('dashboardStatus', 'error', 'لا يوجد Brand مطابق داخل قاعدة البيانات لهذه الفئة.');
-    return;
-  }
-
-  const fd = new FormData();
-  fd.append('title', title);
-  fd.append('stock_display_name', stockDisplayName);
-  fd.append('category_id', categoryId);
-  fd.append('brand_id', String(brandRecord.id));
-  fd.append('devices_count', devicesCount);
-  fd.append('duration_months', durationMonths);
-  fd.append('down_payment', downPayment);
-  fd.append('monthly_amount', monthlyAmount);
-  fd.append('is_hot_offer', hotOffer === '1' ? '1' : '0');
-  fd.append('is_available', '1');
-  fd.append('image', currentOCRFile);
-
-  adminSetStatus('dashboardStatus', 'info', 'جاري حفظ المنتج...');
-
-  try {
-    const res = await fetch('/admin/api/save-product.php', {
-      method: 'POST',
-      credentials: 'same-origin',
-      body: fd
-    });
-
-    const raw = await res.text();
-    let data = null;
-
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
-      throw new Error(raw || 'Unexpected server response.');
-    }
-
-    if (!data.ok) {
-      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل حفظ المنتج.');
-      return;
-    }
-
-    updateProductJsonPreview();
-    adminSetStatus(
-      'dashboardStatus',
-      'success',
-      (data.message || 'تم حفظ المنتج بنجاح.') +
-      (data.slug ? ` | slug: ${data.slug}` : '')
-    );
-  } catch (e) {
-    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء حفظ المنتج.');
-  }
-}
-
-function bindOcrSaveButton() {
-  const btn = getEl('ocrSaveBtn');
-  if (!btn) return;
-  btn.addEventListener('click', saveOcrProduct);
 }
 
 /* =========================
@@ -1798,7 +1389,7 @@ async function checkAuth() {
 
       showDashboard(ADMIN_STATE.user || data.user);
       applyPermissionDrivenUI();
-      bindOcrCategoryOnly('ocrCategory');
+      bindAddProductCategoryOnly('ocrCategory');
       bindEditCategoryBrandFilter('editCategory', 'editBrand');
       updateProductJsonPreview();
     } else {
@@ -1920,19 +1511,16 @@ function initializeAdminUI() {
   bindAuthButtons();
   bindTabSwitching();
 
-  bindOCRUploadButton();
-  bindOCRAnalyzeButton();
-  bindOcrManualConfirmButton();
-  bindOcrPreviewAutoUpdate();
-  bindOcrSaveButton();
+  bindProductUploadButton();
+  bindProductManualConfirmButton();
+  bindProductPreviewAutoUpdate();
+  bindProductSaveButton();
+  bindProductClearButton();
   bindEditImageButton();
 
-  bindBoxButtons();
-  bindBoxInteractions();
   bindOrdersManagementButtons();
   bindOrderHistoryModal();
 
-  renderBoxes();
   updateProductJsonPreview();
   checkAuth();
 }
