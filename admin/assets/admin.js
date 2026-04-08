@@ -1,4 +1,10 @@
 let currentProductImageFile = null;
+let CURRENT_STOCK_REVIEW = {
+  productId: null,
+  devicesCount: 0,
+  linked: [],
+  missing: []
+};
 
 /* =========================
    PERMISSIONS STATE
@@ -337,28 +343,6 @@ function applyPermissionDrivenUI() {
   setElementDisabled(dateFilter, !canViewOrders);
 }
 
-function getOrderActionPermissions(apiPermissions = null) {
-  return {
-    canViewOrders: hasAdminPermission('orders_view'),
-    canViewHistory: hasAdminPermission('orders_history_view'),
-    canApprove: apiPermissions && typeof apiPermissions.approve !== 'undefined'
-      ? !!apiPermissions.approve
-      : hasAdminPermission('orders_approve'),
-    canReject: apiPermissions && typeof apiPermissions.reject !== 'undefined'
-      ? !!apiPermissions.reject
-      : hasAdminPermission('orders_reject'),
-    canOnTheWay: apiPermissions && typeof apiPermissions.on_the_way !== 'undefined'
-      ? !!apiPermissions.on_the_way
-      : hasAdminPermission('orders_mark_on_the_way'),
-    canDeliver: apiPermissions && typeof apiPermissions.deliver !== 'undefined'
-      ? !!apiPermissions.deliver
-      : hasAdminPermission('orders_mark_delivered'),
-    canPending: apiPermissions && typeof apiPermissions.return_to_pending !== 'undefined'
-      ? !!apiPermissions.return_to_pending
-      : hasAdminPermission('orders_mark_pending')
-  };
-}
-
 /* =========================
    UTILITIES
 ========================= */
@@ -409,7 +393,8 @@ function splitDevicesFromFilename(filename) {
   return noExt
     .split('+')
     .map(part => part.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .slice(0, 4);
 }
 
 function detectBrandFromFilename(text) {
@@ -483,7 +468,7 @@ function analyzeFilename(filename) {
 
   return {
     fileName: filename || '',
-    devicesCount: devices.length || 1,
+    devicesCount: Math.min(devices.length || 1, 4),
     brandFromFilename: brand,
     title: fullOfferTitle || firstStockName,
     stockDisplayName: firstStockName
@@ -612,10 +597,12 @@ function resolveBrandRowForSelectedCategory() {
 function buildPreviewImagePath() {
   const categoryRow = resolveSelectedCategoryRow();
   const brandRow = resolveBrandRowForSelectedCategory();
+
   if (!categoryRow || !brandRow || !currentProductImageFile) return '';
 
   const ext = String(currentProductImageFile.name || '').split('.').pop().toLowerCase();
   const slug = toSlug(currentProductImageFile.name);
+
   if (!slug || !ext) return '';
 
   return `/images/products/${String(categoryRow.slug || '').toLowerCase()}/${String(brandRow.slug || '').toLowerCase()}/${slug}.${ext}`;
@@ -653,7 +640,7 @@ function fillProductFieldsFromFilenameAnalysis(analysis) {
   setInputValue('ocrFileName', analysis.fileName || '');
   setInputValue('ocrTitle', analysis.title || '');
   setInputValue('ocrStockDisplayName', analysis.stockDisplayName || '');
-  setInputValue('ocrDevicesCount', analysis.devicesCount || 1);
+  setInputValue('ocrDevicesCount', Math.min(Number(analysis.devicesCount || 1), 4));
   setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
 
   updateProductJsonPreview();
@@ -671,9 +658,186 @@ function bindProductPreviewAutoUpdate() {
   ].forEach(id => {
     const el = getEl(id);
     if (!el) return;
+
     el.addEventListener('input', updateProductJsonPreview);
     el.addEventListener('change', updateProductJsonPreview);
   });
+}
+
+function clearStockReview() {
+  CURRENT_STOCK_REVIEW = {
+    productId: null,
+    devicesCount: 0,
+    linked: [],
+    missing: []
+  };
+
+  const grid = getEl('stockReviewGrid');
+  if (!grid) return;
+
+  grid.innerHTML = `
+    <div class="stock-review-card is-missing">
+      <div class="stock-review-card-head">
+        <h5 class="stock-review-title">Slot 1</h5>
+        <span class="stock-state-badge missing">Empty</span>
+      </div>
+      <div class="mini-note" style="margin-top:0;">
+        ارفع صورة أولًا ليتم تحليل اسم الملف وعرض الأجهزة.
+      </div>
+    </div>
+    <div class="stock-review-card is-missing">
+      <div class="stock-review-card-head">
+        <h5 class="stock-review-title">Slot 2</h5>
+        <span class="stock-state-badge missing">Empty</span>
+      </div>
+      <div class="mini-note" style="margin-top:0;">
+        الحد الأقصى داخل الصورة الواحدة هو 4 أجهزة.
+      </div>
+    </div>
+    <div class="stock-review-card is-missing">
+      <div class="stock-review-card-head">
+        <h5 class="stock-review-title">Slot 3</h5>
+        <span class="stock-state-badge missing">Empty</span>
+      </div>
+      <div class="mini-note" style="margin-top:0;">
+        سيتم تعبئة هذه الخانة تلقائيًا إذا وُجد جهاز ثالث.
+      </div>
+    </div>
+    <div class="stock-review-card is-missing">
+      <div class="stock-review-card-head">
+        <h5 class="stock-review-title">Slot 4</h5>
+        <span class="stock-state-badge missing">Empty</span>
+      </div>
+      <div class="mini-note" style="margin-top:0;">
+        هذه آخر خانة مدعومة.
+      </div>
+    </div>
+  `;
+}
+
+function buildCategoryOptionsHtml(selectedValue = '') {
+  return [
+    '<option value="">Select Category</option>',
+    ...getBootstrapCategories().map(cat => {
+      const selected = String(selectedValue) === String(cat.id) ? ' selected' : '';
+      return `<option value="${String(cat.id)}"${selected}>${escapeHtml(cat.display_name)}</option>`;
+    })
+  ].join('');
+}
+
+function renderStockReview(review) {
+  const grid = getEl('stockReviewGrid');
+  if (!grid) return;
+
+  const linked = Array.isArray(review?.linked) ? review.linked : [];
+  const missing = Array.isArray(review?.missing) ? review.missing : [];
+  const devicesCount = Math.min(Number(review?.devices_count || linked.length + missing.length || 0), 4);
+
+  CURRENT_STOCK_REVIEW = {
+    productId: review?.product_id ?? CURRENT_STOCK_REVIEW.productId,
+    devicesCount,
+    linked,
+    missing
+  };
+
+  const cards = [];
+
+  linked.forEach(item => {
+    cards.push(`
+      <div class="stock-review-card is-linked">
+        <div class="stock-review-card-head">
+          <h5 class="stock-review-title">${escapeHtml(item.raw_title || item.stock_title || 'Linked Device')}</h5>
+          <span class="stock-state-badge linked">Added</span>
+        </div>
+
+        <div class="stock-review-meta">
+          <div class="mini-box">
+            <strong>Brand ID</strong>
+            <span>${escapeHtml(item.brand_id ?? '')}</span>
+          </div>
+          <div class="mini-box">
+            <strong>Category ID</strong>
+            <span>${escapeHtml(item.category_id ?? '')}</span>
+          </div>
+          <div class="mini-box">
+            <strong>Stock Item</strong>
+            <span>${escapeHtml(item.stock_title || item.raw_title || '')}</span>
+          </div>
+          <div class="mini-box">
+            <strong>Device Index</strong>
+            <span>${escapeHtml(item.device_index ?? '')}</span>
+          </div>
+        </div>
+      </div>
+    `);
+  });
+
+  missing.forEach(item => {
+    const selectId = `missingCategory_${item.device_index}`;
+    cards.push(`
+      <div class="stock-review-card is-missing">
+        <div class="stock-review-card-head">
+          <h5 class="stock-review-title">${escapeHtml(item.raw_title || 'Missing Device')}</h5>
+          <span class="stock-state-badge missing">Not Added</span>
+        </div>
+
+        <div class="stock-review-meta">
+          <div class="mini-box">
+            <strong>Brand ID</strong>
+            <span>${escapeHtml(item.expected_brand_id ?? '')}</span>
+          </div>
+          <div class="mini-box">
+            <strong>Status</strong>
+            <span>Needs category selection</span>
+          </div>
+          <div class="mini-box">
+            <strong>Storage</strong>
+            <span>${escapeHtml(item.storage_value || '-')}</span>
+          </div>
+          <div class="mini-box">
+            <strong>RAM</strong>
+            <span>${escapeHtml(item.ram_value || '-')}</span>
+          </div>
+        </div>
+
+        <div class="stock-review-actions">
+          <div class="form-group stock-review-select">
+            <label for="${selectId}">Choose Category</label>
+            <select id="${selectId}">
+              ${buildCategoryOptionsHtml(item.expected_category_id || '')}
+            </select>
+          </div>
+
+          <button
+            class="btn success-btn"
+            type="button"
+            data-permission="stock_manage"
+            onclick="addMissingStockItem(${Number(item.device_index || 0)})"
+          >
+            Add To Stock
+          </button>
+        </div>
+      </div>
+    `);
+  });
+
+  while (cards.length < 4) {
+    const slotNumber = cards.length + 1;
+    cards.push(`
+      <div class="stock-review-card is-missing">
+        <div class="stock-review-card-head">
+          <h5 class="stock-review-title">Slot ${slotNumber}</h5>
+          <span class="stock-state-badge missing">Empty</span>
+        </div>
+        <div class="mini-note" style="margin-top:0;">
+          ${slotNumber <= devicesCount ? 'هذه الخانة غير مستخدمة حاليًا.' : 'لا يوجد جهاز في هذه الخانة.'}
+        </div>
+      </div>
+    `);
+  }
+
+  grid.innerHTML = cards.join('');
+  applyPermissionDrivenUI();
 }
 
 function clearAddProductData(fullReset = false) {
@@ -719,6 +883,7 @@ function clearAddProductData(fullReset = false) {
     currentProductImageFile = null;
   }
 
+  clearStockReview();
   updateProductJsonPreview();
   adminClearStatus('dashboardStatus');
 }
@@ -794,7 +959,7 @@ async function saveProduct() {
   const monthlyAmount = String(getEl('ocrMonthlyAmount')?.value || '0').trim();
   const durationMonths = String(getEl('ocrDurationMonths')?.value || '12').trim();
   const hotOffer = String(getEl('ocrHotOffer')?.value || '0').trim();
-  const devicesCount = String(getEl('ocrDevicesCount')?.value || '1').trim();
+  const devicesCount = String(Math.min(Number(getEl('ocrDevicesCount')?.value || '1'), 4));
   const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
 
   if (!title) {
@@ -864,6 +1029,17 @@ async function saveProduct() {
       return;
     }
 
+    if (data.stock_review) {
+      renderStockReview({
+        product_id: data.product_id,
+        devices_count: data.stock_review.devices_count || 0,
+        linked: data.stock_review.linked || [],
+        missing: data.stock_review.missing || []
+      });
+    } else {
+      clearStockReview();
+    }
+
     updateProductJsonPreview();
     adminSetStatus(
       'dashboardStatus',
@@ -892,6 +1068,76 @@ function bindProductClearButton() {
     adminSetStatus('dashboardStatus', 'info', 'تم تفريغ النموذج.');
   });
 }
+
+window.addMissingStockItem = async function (deviceIndex) {
+  if (!requireFrontendPermissionOrWarn('stock_manage', 'ليس لديك صلاحية إضافة عنصر إلى المخزن.')) return;
+
+  const item = CURRENT_STOCK_REVIEW.missing.find(entry => Number(entry.device_index) === Number(deviceIndex));
+
+  if (!item) {
+    adminSetStatus('dashboardStatus', 'error', 'لم يتم العثور على الجهاز المطلوب إضافته.');
+    return;
+  }
+
+  const categorySelect = getEl(`missingCategory_${deviceIndex}`);
+  const selectedCategoryId = String(categorySelect?.value || '').trim();
+
+  if (!selectedCategoryId) {
+    adminSetStatus('dashboardStatus', 'error', 'اختر الفئة أولًا قبل الإضافة.');
+    return;
+  }
+
+  adminSetStatus('dashboardStatus', 'info', 'جاري إضافة الجهاز إلى المخزن...');
+
+  try {
+    const { data } = await adminFetchJson('/admin/api/add-missing-stock-item.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        raw_title: item.raw_title || '',
+        normalized_title: item.normalized_title || '',
+        category_id: Number(selectedCategoryId),
+        brand_id: Number(item.expected_brand_id || item.brand_id || 0),
+        storage_value: item.storage_value || null,
+        ram_value: item.ram_value || null,
+        network_value: item.network_value || null
+      })
+    });
+
+    if (!data.ok) {
+      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل إضافة الجهاز إلى المخزن.');
+      return;
+    }
+
+    const stockItem = data.stock_item || {};
+
+    CURRENT_STOCK_REVIEW.missing = CURRENT_STOCK_REVIEW.missing.filter(entry => Number(entry.device_index) !== Number(deviceIndex));
+    CURRENT_STOCK_REVIEW.linked.push({
+      device_index: item.device_index,
+      raw_title: item.raw_title,
+      normalized_title: item.normalized_title,
+      storage_value: item.storage_value || null,
+      ram_value: item.ram_value || null,
+      network_value: item.network_value || null,
+      stock_catalog_id: Number(stockItem.id || 0),
+      stock_title: stockItem.title || item.raw_title || '',
+      category_id: Number(stockItem.category_id || selectedCategoryId || 0),
+      brand_id: Number(stockItem.brand_id || item.expected_brand_id || 0),
+      is_added: true
+    });
+
+    renderStockReview({
+      product_id: CURRENT_STOCK_REVIEW.productId,
+      devices_count: CURRENT_STOCK_REVIEW.devicesCount,
+      linked: CURRENT_STOCK_REVIEW.linked,
+      missing: CURRENT_STOCK_REVIEW.missing
+    });
+
+    adminSetStatus('dashboardStatus', 'success', data.message || 'تمت إضافة الجهاز إلى المخزن بنجاح.');
+  } catch (e) {
+    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء إضافة الجهاز إلى المخزن.');
+  }
+};
 
 /* =========================
    EDIT IMAGE
@@ -983,6 +1229,28 @@ async function adminFetchJson(url, options = {}) {
   return { res, data };
 }
 
+function getOrderActionPermissions(apiPermissions = null) {
+  return {
+    canViewOrders: hasAdminPermission('orders_view'),
+    canViewHistory: hasAdminPermission('orders_history_view'),
+    canApprove: apiPermissions && typeof apiPermissions.approve !== 'undefined'
+      ? !!apiPermissions.approve
+      : hasAdminPermission('orders_approve'),
+    canReject: apiPermissions && typeof apiPermissions.reject !== 'undefined'
+      ? !!apiPermissions.reject
+      : hasAdminPermission('orders_reject'),
+    canOnTheWay: apiPermissions && typeof apiPermissions.on_the_way !== 'undefined'
+      ? !!apiPermissions.on_the_way
+      : hasAdminPermission('orders_mark_on_the_way'),
+    canDeliver: apiPermissions && typeof apiPermissions.deliver !== 'undefined'
+      ? !!apiPermissions.deliver
+      : hasAdminPermission('orders_mark_delivered'),
+    canPending: apiPermissions && typeof apiPermissions.return_to_pending !== 'undefined'
+      ? !!apiPermissions.return_to_pending
+      : hasAdminPermission('orders_mark_pending')
+  };
+}
+
 function formatAdminOrderStatus(rawStatus, rejectionReason = '') {
   const status = String(rawStatus || '').toLowerCase();
 
@@ -992,6 +1260,7 @@ function formatAdminOrderStatus(rawStatus, rejectionReason = '') {
   if (status === 'cancelled') return 'Cancelled';
   if (status === 'rejected') return rejectionReason ? `Rejected - ${rejectionReason}` : 'Rejected';
   if (status === 'pending') return 'Pending';
+
   return 'Pending';
 }
 
@@ -1001,6 +1270,7 @@ function getAdminOrderStatusClass(rawStatus) {
   if (status === 'completed') return 'status-delivered';
   if (status === 'cancelled') return 'status-cancelled';
   if (status === 'rejected') return 'status-rejected';
+
   return 'status-pending';
 }
 
@@ -1145,6 +1415,7 @@ async function loadOrdersManagement() {
         </tr>
       `;
     }
+
     renderOrdersSummary({ all: 0, pending: 0, delivered: 0, rejected_cancelled: 0 });
     return;
   }
@@ -1154,6 +1425,7 @@ async function loadOrdersManagement() {
   const date = getEl('ordersDateFilter')?.value.trim() || '';
 
   const params = new URLSearchParams();
+
   if (search) params.set('search', search);
   if (status) params.set('status', status);
   if (date) params.set('date', date);
@@ -1392,6 +1664,7 @@ async function checkAuth() {
       bindAddProductCategoryOnly('ocrCategory');
       bindEditCategoryBrandFilter('editCategory', 'editBrand');
       updateProductJsonPreview();
+      clearStockReview();
     } else {
       setAdminAuthState(null, []);
       showLogin();
@@ -1522,6 +1795,7 @@ function initializeAdminUI() {
   bindOrderHistoryModal();
 
   updateProductJsonPreview();
+  clearStockReview();
   checkAuth();
 }
 
