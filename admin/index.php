@@ -776,7 +776,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div id="tab-add-product" class="admin-panel active" data-panel-permission="products_create">
           <h3 class="panel-title">Add Product</h3>
           <p class="panel-desc">
-            هذا القسم لإضافة منتج جديد . واضافة اسماء الاصناف الي المخزن .
+
           </p>
 
           <div class="top-grid">
