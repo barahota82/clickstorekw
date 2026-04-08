@@ -366,7 +366,7 @@ function adminClearStatus(id) {
 function normalizeStockText(text) {
   return String(text || '')
     .toLowerCase()
-    .replace(/[_.\-]+/g, ' ')
+    .replace(/[_.]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -374,7 +374,7 @@ function normalizeStockText(text) {
 function normalizeBrandComparable(text) {
   return String(text || '')
     .toLowerCase()
-    .replace(/[_.\-]+/g, ' ')
+    .replace(/[_.]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -405,97 +405,81 @@ function splitDevicesFromFilename(filename) {
     .slice(0, 4);
 }
 
+function extractBrandToken(rawText) {
+  const value = String(rawText || '').trim();
+  if (!value) return '';
+
+  const firstWord = value.split(/\s+/)[0] || '';
+  return firstWord.trim();
+}
+
+function normalizeBrandToken(rawText) {
+  return extractBrandToken(rawText)
+    .toLowerCase()
+    .replace(/[_.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function findBootstrapBrandByNameAndCategory(brandName, categoryId = '') {
   const normalizedTarget = normalizeBrandComparable(brandName);
+  const normalizedTargetToken = normalizeBrandToken(brandName);
 
-  if (!normalizedTarget) return null;
+  if (!normalizedTarget && !normalizedTargetToken) return null;
 
   return getBootstrapBrands().find(brand => {
     const sameCategory = categoryId ? String(brand.category_id) === String(categoryId) : true;
     if (!sameCategory) return false;
 
-    const nameValue = normalizeBrandComparable(String(brand.name || ''));
-    const slugValue = normalizeBrandComparable(String(brand.slug || ''));
+    const brandNameRaw = String(brand.name || '').trim();
+    const brandSlugRaw = String(brand.slug || '').trim();
 
-    return normalizedTarget === nameValue || normalizedTarget === slugValue;
+    const nameValue = normalizeBrandComparable(brandNameRaw);
+    const slugValue = normalizeBrandComparable(brandSlugRaw);
+    const nameToken = normalizeBrandToken(brandNameRaw);
+    const slugToken = normalizeBrandToken(brandSlugRaw);
+
+    return (
+      normalizedTarget === nameValue ||
+      normalizedTarget === slugValue ||
+      normalizedTargetToken === nameToken ||
+      normalizedTargetToken === slugToken
+    );
   }) || null;
 }
 
-function detectBrandFromFilename(text, categoryId = '') {
-  const source = normalizeBrandComparable(text);
+function detectBrandFromFilename(text) {
+  const firstTokenRaw = extractBrandToken(text);
+  if (!firstTokenRaw) return '';
 
-  const brands = getBootstrapBrands()
-    .filter(brand => {
-      if (!categoryId) return true;
-      return String(brand.category_id) === String(categoryId);
-    })
-    .map(brand => ({
-      id: String(brand.id || ''),
-      name: String(brand.name || '').trim(),
-      categoryId: String(brand.category_id || ''),
-      normalizedName: normalizeBrandComparable(String(brand.name || '')),
-      normalizedSlug: normalizeBrandComparable(String(brand.slug || ''))
-    }))
-    .filter(brand => brand.name && (brand.normalizedName || brand.normalizedSlug))
-    .sort((a, b) => {
-      const lenA = Math.max(a.normalizedName.length, a.normalizedSlug.length);
-      const lenB = Math.max(b.normalizedName.length, b.normalizedSlug.length);
-      return lenB - lenA;
-    });
+  const exactBrand = getBootstrapBrands().find(brand => {
+    const brandNameRaw = String(brand.name || '').trim();
+    const brandSlugRaw = String(brand.slug || '').trim();
 
-  for (const brand of brands) {
-    if (brand.normalizedName) {
-      if (
-        source === brand.normalizedName ||
-        source.startsWith(brand.normalizedName + ' ') ||
-        source.includes(' ' + brand.normalizedName + ' ')
-      ) {
-        return brand.name;
-      }
-    }
+    return (
+      firstTokenRaw.toLowerCase() === brandNameRaw.toLowerCase() ||
+      firstTokenRaw.toLowerCase() === brandSlugRaw.toLowerCase()
+    );
+  });
 
-    if (brand.normalizedSlug) {
-      if (
-        source === brand.normalizedSlug ||
-        source.startsWith(brand.normalizedSlug + ' ') ||
-        source.includes(' ' + brand.normalizedSlug + ' ')
-      ) {
-        return brand.name;
-      }
-    }
+  if (exactBrand) {
+    return exactBrand.name;
   }
 
-  const knownBrands = [
-    { keys: ['s color', 'scolor', 's-color'], value: 'S-Color' },
-    { keys: ['samsung'], value: 'Samsung' },
-    { keys: ['apple', 'iphone'], value: 'Apple' },
-    { keys: ['honor'], value: 'Honor' },
-    { keys: ['xiaomi'], value: 'Xiaomi' },
-    { keys: ['redmi'], value: 'Redmi' },
-    { keys: ['oppo'], value: 'Oppo' },
-    { keys: ['vivo'], value: 'Vivo' },
-    { keys: ['realme'], value: 'Realme' },
-    { keys: ['huawei'], value: 'Huawei' },
-    { keys: ['oneplus'], value: 'OnePlus' },
-    { keys: ['nokia'], value: 'Nokia' },
-    { keys: ['google', 'pixel'], value: 'Google' },
-    { keys: ['motorola'], value: 'Motorola' },
-    { keys: ['tecno'], value: 'Tecno' },
-    { keys: ['infinix'], value: 'Infinix' },
-    { keys: ['lenovo'], value: 'Lenovo' },
-    { keys: ['asus'], value: 'Asus' },
-    { keys: ['acer'], value: 'Acer' },
-    { keys: ['hp'], value: 'HP' },
-    { keys: ['dell'], value: 'Dell' }
-  ];
+  const normalizedToken = normalizeBrandToken(firstTokenRaw);
 
-  for (const brand of knownBrands) {
-    if (brand.keys.some(key => source === key || source.startsWith(key + ' ') || source.includes(' ' + key + ' '))) {
-      return brand.value;
-    }
+  const tokenBrand = getBootstrapBrands().find(brand => {
+    const brandNameToken = normalizeBrandToken(String(brand.name || ''));
+    const brandSlugToken = normalizeBrandToken(String(brand.slug || ''));
+
+    return normalizedToken === brandNameToken || normalizedToken === brandSlugToken;
+  });
+
+  if (tokenBrand) {
+    return tokenBrand.name;
   }
 
-  return '';
+  return firstTokenRaw;
 }
 
 function buildDisplayNameFromFilename(part) {
@@ -519,10 +503,10 @@ function buildDisplayNameFromFilename(part) {
     .join(' ');
 }
 
-function analyzeFilename(filename, categoryId = '') {
+function analyzeFilename(filename) {
   const devices = splitDevicesFromFilename(filename);
   const firstDevice = devices[0] || '';
-  const brand = detectBrandFromFilename(firstDevice, categoryId) || detectBrandFromFilename(firstDevice, '');
+  const brand = detectBrandFromFilename(firstDevice);
 
   const fullOfferTitle = devices
     .map(device => buildDisplayNameFromFilename(device))
@@ -633,8 +617,7 @@ function syncDetectedBrandAndPreview() {
     return;
   }
 
-  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
-  const analysis = analyzeFilename(currentProductImageFile.name, categoryId);
+  const analysis = analyzeFilename(currentProductImageFile.name);
 
   setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
   updateProductJsonPreview();
@@ -808,8 +791,8 @@ function buildMissingCardBrandGuess(item) {
   const explicit = String(item.expected_brand_name || item.brand_guess || '').trim();
   if (explicit) return explicit;
 
-  const detected = detectBrandFromFilename(String(item.raw_title || ''), '') ||
-                   detectBrandFromFilename(String(item.stock_title || ''), '');
+  const detected = detectBrandFromFilename(String(item.raw_title || '')) ||
+                   detectBrandFromFilename(String(item.stock_title || ''));
 
   return detected || '-';
 }
@@ -864,8 +847,8 @@ function renderStockReview(review) {
       String(item.brand_name || '').trim() ||
       String(item.expected_brand_name || '').trim() ||
       String(item.brand_guess || '').trim() ||
-      detectBrandFromFilename(String(item.raw_title || ''), '') ||
-      detectBrandFromFilename(String(item.stock_title || ''), '') ||
+      detectBrandFromFilename(String(item.raw_title || '')) ||
+      detectBrandFromFilename(String(item.stock_title || '')) ||
       '-';
 
     cards.push(`
@@ -1083,8 +1066,7 @@ function bindProductUploadButton() {
 
     if (fileNameField) fileNameField.value = file.name;
 
-    const categoryId = String(getEl('ocrCategory')?.value || '').trim();
-    const analysis = analyzeFilename(file.name, categoryId);
+    const analysis = analyzeFilename(file.name);
     fillProductFieldsFromFilenameAnalysis(analysis);
 
     const reader = new FileReader();
