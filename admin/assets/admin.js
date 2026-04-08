@@ -405,6 +405,22 @@ function splitDevicesFromFilename(filename) {
     .slice(0, 4);
 }
 
+function findBootstrapBrandByNameAndCategory(brandName, categoryId = '') {
+  const normalizedTarget = normalizeBrandComparable(brandName);
+
+  if (!normalizedTarget) return null;
+
+  return getBootstrapBrands().find(brand => {
+    const sameCategory = categoryId ? String(brand.category_id) === String(categoryId) : true;
+    if (!sameCategory) return false;
+
+    const nameValue = normalizeBrandComparable(String(brand.name || ''));
+    const slugValue = normalizeBrandComparable(String(brand.slug || ''));
+
+    return normalizedTarget === nameValue || normalizedTarget === slugValue;
+  }) || null;
+}
+
 function detectBrandFromFilename(text, categoryId = '') {
   const source = normalizeBrandComparable(text);
   const brands = getBootstrapBrands()
@@ -638,14 +654,11 @@ function resolveSelectedCategoryRow() {
 
 function resolveBrandRowForSelectedCategory() {
   const categoryId = String(getEl('ocrCategory')?.value || '').trim();
-  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim().toLowerCase();
+  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
 
   if (!categoryId || !brandName) return null;
 
-  return getBootstrapBrands().find(brand =>
-    String(brand.category_id) === categoryId &&
-    String(brand.name || '').trim().toLowerCase() === brandName
-  ) || null;
+  return findBootstrapBrandByNameAndCategory(brandName, categoryId);
 }
 
 function buildPreviewImagePath() {
@@ -777,6 +790,27 @@ function buildCategoryOptionsHtml(selectedValue = '') {
   ].join('');
 }
 
+function getSelectedTopCategoryText() {
+  const categorySelect = getEl('ocrCategory');
+  if (!categorySelect) return '';
+
+  const value = String(categorySelect.value || '').trim();
+  if (!value) return '';
+
+  return categorySelect.options[categorySelect.selectedIndex]?.textContent || '';
+}
+
+function buildMissingCardBrandGuess(item) {
+  const explicit = String(item.expected_brand_name || item.brand_guess || '').trim();
+  if (explicit) return explicit;
+
+  const selectedCategoryId = String(getEl('ocrCategory')?.value || '').trim();
+  const detected = detectBrandFromFilename(String(item.raw_title || ''), selectedCategoryId) ||
+                   detectBrandFromFilename(String(item.raw_title || ''), '');
+
+  return detected || '-';
+}
+
 function bindStockReviewSelects() {
   document.querySelectorAll('.stock-review-select select').forEach(select => {
     select.addEventListener('change', function () {
@@ -812,6 +846,8 @@ function renderStockReview(review) {
   const linked = Array.isArray(review?.linked) ? review.linked : [];
   const missing = Array.isArray(review?.missing) ? review.missing : [];
   const devicesCount = Math.min(Number(review?.devices_count || linked.length + missing.length || 0), 4);
+  const selectedTopCategoryText = getSelectedTopCategoryText();
+  const selectedTopCategoryId = String(getEl('ocrCategory')?.value || '').trim();
 
   CURRENT_STOCK_REVIEW = {
     productId: review?.product_id ?? CURRENT_STOCK_REVIEW.productId,
@@ -823,6 +859,10 @@ function renderStockReview(review) {
   const cards = [];
 
   linked.forEach(item => {
+    const linkedBrand = String(item.brand_name || '').trim() ||
+      detectBrandFromFilename(String(item.raw_title || ''), selectedTopCategoryId) ||
+      '-';
+
     cards.push(`
       <div class="stock-review-card is-linked">
         <div class="stock-review-card-head">
@@ -833,7 +873,7 @@ function renderStockReview(review) {
         <div class="stock-review-meta">
           <div class="mini-box">
             <strong>Brand</strong>
-            <span>${escapeHtml(item.brand_name || item.brand_id || '-')}</span>
+            <span>${escapeHtml(linkedBrand)}</span>
           </div>
           <div class="mini-box">
             <strong>Category</strong>
@@ -854,6 +894,9 @@ function renderStockReview(review) {
 
   missing.forEach(item => {
     const selectId = `missingCategory_${item.device_index}`;
+    const effectiveCategoryId = String(item.expected_category_id || selectedTopCategoryId || '').trim();
+    const effectiveBrandGuess = buildMissingCardBrandGuess(item);
+
     cards.push(`
       <div class="stock-review-card is-missing">
         <div class="stock-review-card-head">
@@ -864,27 +907,33 @@ function renderStockReview(review) {
         <div class="stock-review-meta">
           <div class="mini-box">
             <strong>Brand Guess</strong>
-            <span>${escapeHtml(item.expected_brand_name || item.brand_guess || '-')}</span>
+            <span>${escapeHtml(effectiveBrandGuess)}</span>
           </div>
           <div class="mini-box">
             <strong>Status</strong>
             <span>Needs category selection</span>
           </div>
           <div class="mini-box">
-            <strong>RAM</strong>
-            <span>${escapeHtml(item.ram_value || '-')}</span>
-          </div>
-          <div class="mini-box">
             <strong>Storage</strong>
             <span>${escapeHtml(item.storage_value || '-')}</span>
           </div>
+          <div class="mini-box">
+            <strong>RAM</strong>
+            <span>${escapeHtml(item.ram_value || '-')}</span>
+          </div>
+          ${effectiveCategoryId ? `
+            <div class="mini-box js-selected-category-live">
+              <strong>Selected Category</strong>
+              <span>${escapeHtml(selectedTopCategoryText || 'Select Category')}</span>
+            </div>
+          ` : ''}
         </div>
 
         <div class="stock-review-actions">
           <div class="form-group stock-review-select">
             <label for="${selectId}">Choose Category</label>
             <select id="${selectId}">
-              ${buildCategoryOptionsHtml(item.expected_category_id || '')}
+              ${buildCategoryOptionsHtml(effectiveCategoryId)}
             </select>
           </div>
 
@@ -1100,11 +1149,7 @@ async function saveProduct() {
     return;
   }
 
-  const brandRecord = getBootstrapBrands().find(
-    brand =>
-      String(brand.category_id) === String(categoryId) &&
-      String(brand.name || '').trim().toLowerCase() === brandName.toLowerCase()
-  );
+  const brandRecord = findBootstrapBrandByNameAndCategory(brandName, categoryId);
 
   if (!brandRecord) {
     adminSetStatus('dashboardStatus', 'error', 'لا يوجد Brand مطابق داخل قاعدة البيانات لهذه الفئة.');
@@ -1230,6 +1275,7 @@ window.addMissingStockItem = async function (deviceIndex) {
     }
 
     const stockItem = data.stock_item || {};
+    const selectedCategoryText = categorySelect?.options?.[categorySelect.selectedIndex]?.textContent || '';
 
     CURRENT_STOCK_REVIEW.missing = CURRENT_STOCK_REVIEW.missing.filter(entry => Number(entry.device_index) !== Number(deviceIndex));
     CURRENT_STOCK_REVIEW.linked.push({
@@ -1242,9 +1288,9 @@ window.addMissingStockItem = async function (deviceIndex) {
       stock_catalog_id: Number(stockItem.id || 0),
       stock_title: stockItem.title || item.raw_title || '',
       category_id: Number(stockItem.category_id || selectedCategoryId || 0),
-      category_name: stockItem.category_name || '',
+      category_name: stockItem.category_name || selectedCategoryText || '',
       brand_id: Number(stockItem.brand_id || item.expected_brand_id || 0),
-      brand_name: stockItem.brand_name || item.expected_brand_name || '',
+      brand_name: stockItem.brand_name || item.expected_brand_name || buildMissingCardBrandGuess(item) || '',
       is_added: true
     });
 
