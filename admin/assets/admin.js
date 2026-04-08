@@ -371,6 +371,14 @@ function normalizeStockText(text) {
     .trim();
 }
 
+function normalizeBrandComparable(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function toSlug(text) {
   const withoutExt = String(text || '').replace(/\.[^.]+$/, '');
   return withoutExt
@@ -397,14 +405,19 @@ function splitDevicesFromFilename(filename) {
     .slice(0, 4);
 }
 
-function detectBrandFromFilename(text) {
-  const source = normalizeStockText(text);
+function detectBrandFromFilename(text, categoryId = '') {
+  const source = normalizeBrandComparable(text);
   const brands = getBootstrapBrands()
+    .filter(brand => {
+      if (!categoryId) return true;
+      return String(brand.category_id) === String(categoryId);
+    })
     .map(brand => ({
       id: String(brand.id || ''),
       name: String(brand.name || '').trim(),
-      normalizedName: normalizeStockText(String(brand.name || '')),
-      normalizedSlug: normalizeStockText(String(brand.slug || ''))
+      categoryId: String(brand.category_id || ''),
+      normalizedName: normalizeBrandComparable(String(brand.name || '')),
+      normalizedSlug: normalizeBrandComparable(String(brand.slug || ''))
     }))
     .filter(brand => brand.name && (brand.normalizedName || brand.normalizedSlug))
     .sort((a, b) => {
@@ -423,6 +436,7 @@ function detectBrandFromFilename(text) {
   }
 
   const knownBrands = [
+    { keys: ['s color', 'scolor', 's-color'], value: 'S-Color' },
     { keys: ['samsung'], value: 'Samsung' },
     { keys: ['apple', 'iphone'], value: 'Apple' },
     { keys: ['honor'], value: 'Honor' },
@@ -446,7 +460,7 @@ function detectBrandFromFilename(text) {
   ];
 
   for (const brand of knownBrands) {
-    if (brand.keys.some(key => source.includes(key))) {
+    if (brand.keys.some(key => source === key || source.startsWith(key + ' ') || source.includes(' ' + key + ' '))) {
       return brand.value;
     }
   }
@@ -475,10 +489,10 @@ function buildDisplayNameFromFilename(part) {
     .join(' ');
 }
 
-function analyzeFilename(filename) {
+function analyzeFilename(filename, categoryId = '') {
   const devices = splitDevicesFromFilename(filename);
   const firstDevice = devices[0] || '';
-  const brand = detectBrandFromFilename(firstDevice);
+  const brand = detectBrandFromFilename(firstDevice, categoryId) || detectBrandFromFilename(firstDevice, '');
 
   const fullOfferTitle = devices
     .map(device => buildDisplayNameFromFilename(device))
@@ -583,14 +597,33 @@ function bindEditCategoryBrandFilter(categoryId, brandId) {
   });
 }
 
+function syncDetectedBrandAndPreview() {
+  if (!currentProductImageFile) {
+    updateProductJsonPreview();
+    return;
+  }
+
+  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
+  const analysis = analyzeFilename(currentProductImageFile.name, categoryId);
+
+  setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
+  updateProductJsonPreview();
+}
+
 function bindAddProductCategoryOnly(selectId) {
   const category = getEl(selectId);
   if (!category) return;
 
   populateCategorySelect(selectId);
 
-  category.addEventListener('change', function () {
-    updateProductJsonPreview();
+  category.addEventListener('change', async function () {
+    syncDetectedBrandAndPreview();
+
+    if (currentProductImageFile?.name) {
+      await refreshStockReviewFromFilename(currentProductImageFile.name);
+    } else {
+      updateProductJsonPreview();
+    }
   });
 }
 
@@ -744,6 +777,34 @@ function buildCategoryOptionsHtml(selectedValue = '') {
   ].join('');
 }
 
+function bindStockReviewSelects() {
+  document.querySelectorAll('.stock-review-select select').forEach(select => {
+    select.addEventListener('change', function () {
+      const card = this.closest('.stock-review-card');
+      const selectedText = this.options[this.selectedIndex]?.textContent || 'Select Category';
+
+      let liveBox = card?.querySelector('.js-selected-category-live');
+      if (!liveBox && card) {
+        const meta = card.querySelector('.stock-review-meta');
+        if (meta) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'mini-box js-selected-category-live';
+          wrapper.innerHTML = `
+            <strong>Selected Category</strong>
+            <span>${escapeHtml(selectedText)}</span>
+          `;
+          meta.appendChild(wrapper);
+        }
+      } else if (liveBox) {
+        const span = liveBox.querySelector('span');
+        if (span) {
+          span.textContent = selectedText;
+        }
+      }
+    });
+  });
+}
+
 function renderStockReview(review) {
   const grid = getEl('stockReviewGrid');
   if (!grid) return;
@@ -810,12 +871,12 @@ function renderStockReview(review) {
             <span>Needs category selection</span>
           </div>
           <div class="mini-box">
-            <strong>Storage</strong>
-            <span>${escapeHtml(item.storage_value || '-')}</span>
-          </div>
-          <div class="mini-box">
             <strong>RAM</strong>
             <span>${escapeHtml(item.ram_value || '-')}</span>
+          </div>
+          <div class="mini-box">
+            <strong>Storage</strong>
+            <span>${escapeHtml(item.storage_value || '-')}</span>
           </div>
         </div>
 
@@ -856,6 +917,7 @@ function renderStockReview(review) {
   }
 
   grid.innerHTML = cards.join('');
+  bindStockReviewSelects();
   applyPermissionDrivenUI();
 }
 
@@ -865,11 +927,16 @@ async function refreshStockReviewFromFilename(filename) {
     return;
   }
 
+  const selectedCategoryId = String(getEl('ocrCategory')?.value || '').trim();
+
   try {
     const { data } = await adminFetchJson('/admin/api/check-stock-from-filename.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename })
+      body: JSON.stringify({
+        filename,
+        category_id: selectedCategoryId ? Number(selectedCategoryId) : 0
+      })
     });
 
     if (!data.ok) {
@@ -963,7 +1030,8 @@ function bindProductUploadButton() {
 
     if (fileNameField) fileNameField.value = file.name;
 
-    const analysis = analyzeFilename(file.name);
+    const categoryId = String(getEl('ocrCategory')?.value || '').trim();
+    const analysis = analyzeFilename(file.name, categoryId);
     fillProductFieldsFromFilenameAnalysis(analysis);
 
     const reader = new FileReader();
@@ -989,7 +1057,7 @@ function bindProductManualConfirmButton() {
   btn.addEventListener('click', function () {
     if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
 
-    updateProductJsonPreview();
+    syncDetectedBrandAndPreview();
     adminSetStatus('dashboardStatus', 'success', 'تم اعتماد البيانات الحالية للحفظ.');
   });
 }
