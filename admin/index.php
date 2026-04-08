@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 require_once dirname(__DIR__) . '/config.php';
 
 $pdo = db();
@@ -685,7 +686,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <button class="admin-tab-btn" data-tab="tab-brand-order" data-permission="brands_order" id="tabBtnBrandOrder" type="button">Brand Ordering</button>
         <button class="admin-tab-btn" data-tab="tab-product-order" data-permission="products_order" id="tabBtnProductOrder" type="button">Product Ordering</button>
         <button class="admin-tab-btn" data-tab="tab-stock" data-permission="stock_manage" id="tabBtnStock" type="button">Stock Management</button>
-        <button class="admin-tab-btn" data-tab="tab-users" data-permission="admin.full_access" id="tabBtnUsers" type="button">User Permissions</button>
+        <button class="admin-tab-btn" data-tab="tab-users" data-permission="users_view" id="tabBtnUsers" type="button">User Permissions</button>
         <button class="admin-tab-btn" data-tab="tab-stats" data-permission="orders_view" id="tabBtnStats" type="button">Statistics / Orders</button>
       </div>
 
@@ -965,7 +966,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
           </div>
         </div>
 
-        <div id="tab-users" class="admin-panel" data-panel-permission="admin.full_access">
+        <div id="tab-users" class="admin-panel" data-panel-permission="users_view">
           <h3 class="panel-title">User Permissions</h3>
           <div class="placeholder-panels">
             <div class="placeholder-card"><strong>Roles</strong><span>إدارة الأدوار مثل Super Admin و Viewer.</span></div>
@@ -1096,12 +1097,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
     categories: <?= json_encode($categories, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
     brands: <?= json_encode($brands, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
   };
-
-  console.log('ADMIN_BOOTSTRAP categories count:', Array.isArray(window.ADMIN_BOOTSTRAP.categories) ? window.ADMIN_BOOTSTRAP.categories.length : 'invalid');
-  console.log('ADMIN_BOOTSTRAP brands count:', Array.isArray(window.ADMIN_BOOTSTRAP.brands) ? window.ADMIN_BOOTSTRAP.brands.length : 'invalid');
-  console.log('ADMIN_BOOTSTRAP categories data:', window.ADMIN_BOOTSTRAP.categories);
-  console.log('ADMIN_BOOTSTRAP brands data:', window.ADMIN_BOOTSTRAP.brands);
 </script>
-<script src="/admin/assets/admin.js?v=20260407-99"></script>
+<script src="/admin/assets/admin.js?v=20260408-1"></script>
 </body>
 </html>
