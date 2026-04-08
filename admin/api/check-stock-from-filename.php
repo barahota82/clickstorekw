@@ -10,57 +10,32 @@ require_post();
 require_admin_auth_json();
 admin_require_permission_json('stock_manage', 'ليس لديك صلاحية لفحص المخزن');
 
-if (!function_exists('stock_review_normalize_brand_text')) {
-    function stock_review_normalize_brand_text(string $value): string
+if (!function_exists('stock_review_extract_brand_token')) {
+    function stock_review_extract_brand_token(string $value): string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $parts = preg_split('/\s+/', $value) ?: [];
+        return trim((string)($parts[0] ?? ''));
+    }
+}
+
+if (!function_exists('stock_review_normalize_brand_compare')) {
+    function stock_review_normalize_brand_compare(string $value): string
     {
         $value = strtolower(trim($value));
-        $value = str_replace(['_', '-', '.'], ' ', $value);
+        $value = str_replace(['_', '.'], ' ', $value);
         $value = preg_replace('/\s+/', ' ', (string)$value);
         return trim((string)$value);
     }
 }
 
-if (!function_exists('stock_review_brand_match_score')) {
-    function stock_review_brand_match_score(
-        string $lookupSource,
-        string $brandNameNormalized,
-        string $brandSlugNormalized,
-        int $brandCategoryId,
-        int $selectedCategoryId
-    ): int {
-        $score = 0;
-
-        if ($brandNameNormalized !== '') {
-            if ($lookupSource === $brandNameNormalized) {
-                $score += 3000 + strlen($brandNameNormalized);
-            } elseif (str_starts_with($lookupSource, $brandNameNormalized . ' ')) {
-                $score += 2000 + strlen($brandNameNormalized);
-            } elseif (str_contains($lookupSource, ' ' . $brandNameNormalized . ' ')) {
-                $score += 1000 + strlen($brandNameNormalized);
-            }
-        }
-
-        if ($brandSlugNormalized !== '') {
-            if ($lookupSource === $brandSlugNormalized) {
-                $score = max($score, 2900 + strlen($brandSlugNormalized));
-            } elseif (str_starts_with($lookupSource, $brandSlugNormalized . ' ')) {
-                $score = max($score, 1900 + strlen($brandSlugNormalized));
-            } elseif (str_contains($lookupSource, ' ' . $brandSlugNormalized . ' ')) {
-                $score = max($score, 900 + strlen($brandSlugNormalized));
-            }
-        }
-
-        if ($score > 0 && $selectedCategoryId > 0 && $brandCategoryId === $selectedCategoryId) {
-            $score += 5000;
-        }
-
-        return $score;
-    }
-}
-
 $data = get_request_json();
 $filename = trim((string)($data['filename'] ?? ''));
-$selectedCategoryId = (int)($data['category_id'] ?? 0);
 
 if ($filename === '') {
     json_response(false, ['message' => 'Filename is required'], 422);
@@ -126,37 +101,50 @@ foreach ($devices as $device) {
     $brandIdGuess = 0;
     $expectedCategoryId = null;
 
-    $lookupSource = stock_review_normalize_brand_text($rawTitle . ' ' . $normalizedTitle);
+    /*
+    |--------------------------------------------------------------------------
+    | Brand Extraction Rule
+    |--------------------------------------------------------------------------
+    | اسم البراند = أول كلمة قبل أول مسافة
+    | سواء كانت تحتوي - أو لا
+    | مثال:
+    | m-horse hero ... => brand = m-horse
+    | s-color ultra ... => brand = s-color
+    |--------------------------------------------------------------------------
+    */
+    $brandToken = stock_review_extract_brand_token($rawTitle);
+    $brandTokenNormalized = stock_review_normalize_brand_compare($brandToken);
 
-    $bestBrandRow = null;
-    $bestScore = 0;
+    if ($brandTokenNormalized !== '') {
+        foreach ($brands as $brandRow) {
+            $dbBrandName = trim((string)($brandRow['name'] ?? ''));
+            $dbBrandSlug = trim((string)($brandRow['slug'] ?? ''));
 
-    foreach ($brands as $brandRow) {
-        $brandName = trim((string)($brandRow['name'] ?? ''));
-        $brandSlug = trim((string)($brandRow['slug'] ?? ''));
+            $dbBrandNameNormalized = stock_review_normalize_brand_compare($dbBrandName);
+            $dbBrandSlugNormalized = stock_review_normalize_brand_compare($dbBrandSlug);
 
-        $brandNameNormalized = stock_review_normalize_brand_text($brandName);
-        $brandSlugNormalized = stock_review_normalize_brand_text($brandSlug);
-        $brandCategoryId = (int)($brandRow['category_id'] ?? 0);
-
-        $score = stock_review_brand_match_score(
-            $lookupSource,
-            $brandNameNormalized,
-            $brandSlugNormalized,
-            $brandCategoryId,
-            $selectedCategoryId
-        );
-
-        if ($score > $bestScore) {
-            $bestScore = $score;
-            $bestBrandRow = $brandRow;
+            if (
+                $brandTokenNormalized === $dbBrandNameNormalized ||
+                $brandTokenNormalized === $dbBrandSlugNormalized
+            ) {
+                $brandGuess = $dbBrandName;
+                $brandIdGuess = (int)($brandRow['id'] ?? 0);
+                $expectedCategoryId = (int)($brandRow['category_id'] ?? 0);
+                break;
+            }
         }
     }
 
-    if ($bestBrandRow) {
-        $brandGuess = (string)($bestBrandRow['name'] ?? '');
-        $brandIdGuess = (int)($bestBrandRow['id'] ?? 0);
-        $expectedCategoryId = (int)($bestBrandRow['category_id'] ?? 0);
+    /*
+    |--------------------------------------------------------------------------
+    | لو البراند غير موجود في قاعدة البيانات
+    |--------------------------------------------------------------------------
+    | نظل نعرض أول كلمة كما هي كـ brand guess
+    | حتى لو كان براند جديد أول مرة
+    |--------------------------------------------------------------------------
+    */
+    if ($brandGuess === '' && $brandToken !== '') {
+        $brandGuess = $brandToken;
     }
 
     $existing = null;
@@ -179,18 +167,6 @@ foreach ($devices as $device) {
             $normalizedTitle,
             $brandIdGuess,
             null,
-            $storageValue,
-            $ramValue,
-            $networkValue
-        );
-    }
-
-    if (!$existing && $selectedCategoryId > 0) {
-        $existing = find_stock_catalog(
-            $pdo,
-            $normalizedTitle,
-            null,
-            $selectedCategoryId,
             $storageValue,
             $ramValue,
             $networkValue
@@ -221,7 +197,7 @@ foreach ($devices as $device) {
         'ram_value' => $ramValue,
         'network_value' => $networkValue,
         'brand_guess' => $brandGuess,
-        'expected_brand_name' => $brandGuess,
+        'expected_brand_name' => $brandGuess !== '' ? $brandGuess : null,
         'expected_brand_id' => $brandIdGuess > 0 ? $brandIdGuess : null,
     ];
 
