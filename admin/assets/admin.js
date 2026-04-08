@@ -513,14 +513,11 @@ function analyzeFilename(filename) {
     .filter(Boolean)
     .join(' + ');
 
-  const firstStockName = buildDisplayNameFromFilename(firstDevice);
-
   return {
     fileName: filename || '',
     devicesCount: Math.min(devices.length || 1, 4),
     brandFromFilename: brand,
-    title: fullOfferTitle || firstStockName,
-    stockDisplayName: firstStockName
+    title: fullOfferTitle || buildDisplayNameFromFilename(firstDevice)
   };
 }
 
@@ -618,7 +615,6 @@ function syncDetectedBrandAndPreview() {
   }
 
   const analysis = analyzeFilename(currentProductImageFile.name);
-
   setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
   updateProductJsonPreview();
 }
@@ -633,6 +629,7 @@ function bindAddProductCategoryOnly(selectId) {
     syncDetectedBrandAndPreview();
 
     if (currentProductImageFile?.name) {
+      updateProductJsonPreview();
       await refreshStockReviewFromFilename(currentProductImageFile.name);
     } else {
       updateProductJsonPreview();
@@ -701,10 +698,8 @@ function updateProductJsonPreview() {
 function fillProductFieldsFromFilenameAnalysis(analysis) {
   setInputValue('ocrFileName', analysis.fileName || '');
   setInputValue('ocrTitle', analysis.title || '');
-  setInputValue('ocrStockDisplayName', analysis.stockDisplayName || '');
   setInputValue('ocrDevicesCount', Math.min(Number(analysis.devicesCount || 1), 4));
   setInputValue('ocrBrandFromFilename', analysis.brandFromFilename || '');
-
   updateProductJsonPreview();
 }
 
@@ -712,7 +707,6 @@ function bindProductPreviewAutoUpdate() {
   [
     'ocrCategory',
     'ocrTitle',
-    'ocrStockDisplayName',
     'ocrDownPayment',
     'ocrMonthlyAmount',
     'ocrDurationMonths',
@@ -990,7 +984,6 @@ function clearAddProductData(fullReset = false) {
   const ids = [
     'ocrFileName',
     'ocrTitle',
-    'ocrStockDisplayName',
     'ocrDevicesCount',
     'ocrBrandFromFilename',
     'ocrDownPayment',
@@ -1099,7 +1092,6 @@ async function saveProduct() {
   }
 
   const title = String(getEl('ocrTitle')?.value || '').trim();
-  const stockDisplayName = String(getEl('ocrStockDisplayName')?.value || '').trim();
   const categoryId = String(getEl('ocrCategory')?.value || '').trim();
   const downPayment = String(getEl('ocrDownPayment')?.value || '0').trim();
   const monthlyAmount = String(getEl('ocrMonthlyAmount')?.value || '0').trim();
@@ -1110,11 +1102,6 @@ async function saveProduct() {
 
   if (!title) {
     adminSetStatus('dashboardStatus', 'error', 'حقل Title مطلوب.');
-    return;
-  }
-
-  if (!stockDisplayName) {
-    adminSetStatus('dashboardStatus', 'error', 'حقل Stock Display Name مطلوب.');
     return;
   }
 
@@ -1137,7 +1124,6 @@ async function saveProduct() {
 
   const fd = new FormData();
   fd.append('title', title);
-  fd.append('stock_display_name', stockDisplayName);
   fd.append('category_id', categoryId);
   fd.append('brand_id', String(brandRecord.id));
   fd.append('devices_count', devicesCount);
