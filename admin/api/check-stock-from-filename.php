@@ -21,8 +21,13 @@ if (!function_exists('stock_review_normalize_brand_text')) {
 }
 
 if (!function_exists('stock_review_brand_match_score')) {
-    function stock_review_brand_match_score(string $lookupSource, string $brandNameNormalized, string $brandSlugNormalized, int $brandCategoryId, int $selectedCategoryId): int
-    {
+    function stock_review_brand_match_score(
+        string $lookupSource,
+        string $brandNameNormalized,
+        string $brandSlugNormalized,
+        int $brandCategoryId,
+        int $selectedCategoryId
+    ): int {
         $score = 0;
 
         if ($brandNameNormalized !== '') {
@@ -154,25 +159,25 @@ foreach ($devices as $device) {
         $expectedCategoryId = (int)($bestBrandRow['category_id'] ?? 0);
     }
 
-    if ($selectedCategoryId > 0) {
-        $expectedCategoryId = $selectedCategoryId;
-    }
+    $existing = null;
 
-    $existing = find_stock_catalog(
-        $pdo,
-        $normalizedTitle,
-        $brandIdGuess > 0 ? $brandIdGuess : null,
-        $expectedCategoryId,
-        $storageValue,
-        $ramValue,
-        $networkValue
-    );
-
-    if (!$existing) {
+    if ($brandIdGuess > 0 && $expectedCategoryId !== null) {
         $existing = find_stock_catalog(
             $pdo,
             $normalizedTitle,
-            $brandIdGuess > 0 ? $brandIdGuess : null,
+            $brandIdGuess,
+            $expectedCategoryId,
+            $storageValue,
+            $ramValue,
+            $networkValue
+        );
+    }
+
+    if (!$existing && $brandIdGuess > 0) {
+        $existing = find_stock_catalog(
+            $pdo,
+            $normalizedTitle,
+            $brandIdGuess,
             null,
             $storageValue,
             $ramValue,
@@ -202,6 +207,10 @@ foreach ($devices as $device) {
             $ramValue,
             $networkValue
         );
+    }
+
+    if ($existing && $expectedCategoryId === null && isset($existing['category_id'])) {
+        $expectedCategoryId = (int)$existing['category_id'];
     }
 
     $row = [
