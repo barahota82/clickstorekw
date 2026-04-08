@@ -752,12 +752,12 @@ function renderStockReview(review) {
 
         <div class="stock-review-meta">
           <div class="mini-box">
-            <strong>Brand ID</strong>
-            <span>${escapeHtml(item.brand_id ?? '')}</span>
+            <strong>Brand</strong>
+            <span>${escapeHtml(item.brand_name || item.brand_id || '-')}</span>
           </div>
           <div class="mini-box">
-            <strong>Category ID</strong>
-            <span>${escapeHtml(item.category_id ?? '')}</span>
+            <strong>Category</strong>
+            <span>${escapeHtml(item.category_name || item.category_id || '-')}</span>
           </div>
           <div class="mini-box">
             <strong>Stock Item</strong>
@@ -783,8 +783,8 @@ function renderStockReview(review) {
 
         <div class="stock-review-meta">
           <div class="mini-box">
-            <strong>Brand ID</strong>
-            <span>${escapeHtml(item.expected_brand_id ?? '')}</span>
+            <strong>Brand Guess</strong>
+            <span>${escapeHtml(item.expected_brand_name || item.brand_guess || '-')}</span>
           </div>
           <div class="mini-box">
             <strong>Status</strong>
@@ -838,6 +838,35 @@ function renderStockReview(review) {
 
   grid.innerHTML = cards.join('');
   applyPermissionDrivenUI();
+}
+
+async function refreshStockReviewFromFilename(filename) {
+  if (!filename) {
+    clearStockReview();
+    return;
+  }
+
+  try {
+    const { data } = await adminFetchJson('/admin/api/check-stock-from-filename.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename })
+    });
+
+    if (!data.ok) {
+      clearStockReview();
+      return;
+    }
+
+    renderStockReview({
+      product_id: null,
+      devices_count: data.devices_count || 0,
+      linked: data.linked || [],
+      missing: data.missing || []
+    });
+  } catch (e) {
+    clearStockReview();
+  }
 }
 
 function clearAddProductData(fullReset = false) {
@@ -906,7 +935,7 @@ function bindProductUploadButton() {
   });
 
   input.onchange = null;
-  input.addEventListener('change', function () {
+  input.addEventListener('change', async function () {
     const file = this.files && this.files[0];
     if (!file) return;
 
@@ -928,7 +957,9 @@ function bindProductUploadButton() {
     reader.readAsDataURL(file);
 
     updateProductJsonPreview();
-    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة وتحليل اسم الملف. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.');
+    await refreshStockReviewFromFilename(file.name);
+
+    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة وتحليل اسم الملف ومراجعة المخزن. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.');
   });
 }
 
@@ -1036,6 +1067,8 @@ async function saveProduct() {
         linked: data.stock_review.linked || [],
         missing: data.stock_review.missing || []
       });
+    } else if (currentProductImageFile?.name) {
+      await refreshStockReviewFromFilename(currentProductImageFile.name);
     } else {
       clearStockReview();
     }
@@ -1122,7 +1155,9 @@ window.addMissingStockItem = async function (deviceIndex) {
       stock_catalog_id: Number(stockItem.id || 0),
       stock_title: stockItem.title || item.raw_title || '',
       category_id: Number(stockItem.category_id || selectedCategoryId || 0),
+      category_name: stockItem.category_name || '',
       brand_id: Number(stockItem.brand_id || item.expected_brand_id || 0),
+      brand_name: stockItem.brand_name || item.expected_brand_name || '',
       is_added: true
     });
 
