@@ -321,7 +321,7 @@
       if (!select) return;
 
       const currentValue = select.value || "all";
-      const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
+      const brands = Array.from(renderedBrands).filter(Boolean).sort((a, b) => a.localeCompare(b));
 
       select.innerHTML = '<option value="all">All Brands</option>';
 
@@ -341,8 +341,15 @@
 
     function filterProducts(category, buttonEl) {
       currentCategoryFilter = category;
+
       document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
       if (buttonEl) buttonEl.classList.add("active");
+
+      const brandSelect = document.getElementById("brandFilter");
+      if (brandSelect) {
+        brandSelect.value = "all";
+      }
+
       applyAllFilters();
     }
 
@@ -351,7 +358,7 @@
     }
 
     function buildProductCard(product) {
-      const imagePath = (product.image || "/images/logo.png").trim();
+      const imagePath = String(product.image || "/images/logo.png").trim();
       const brandName = normalizeBrandValue(product.brand);
       const monthlyText = formatMonthly(product.monthly);
       const durationText = formatDuration(product.duration);
@@ -362,7 +369,7 @@
 
       const card = document.createElement("div");
       card.className = "product-card";
-      card.setAttribute("data-category", product.category || "");
+      card.setAttribute("data-category", String(product.category || "").trim());
       card.setAttribute("data-brand", brandName);
 
       card.innerHTML = `
@@ -417,7 +424,7 @@
         const cardBrand = card.getAttribute("data-brand") || "";
         const matchCategory = currentCategoryFilter === "all" || cardCategory === currentCategoryFilter;
 
-        if (matchCategory) {
+        if (matchCategory && cardBrand) {
           renderedBrands.add(cardBrand);
         }
       });
@@ -464,13 +471,9 @@
       const visibleProducts = items
         .filter(item => item && item.available === true)
         .sort((a, b) => {
-          const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
-          const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
-          if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
-
-          const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
-          const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
-          if (aPriority !== bPriority) return aPriority - bPriority;
+          const aOrder = Number.isFinite(Number(a.product_order)) ? Number(a.product_order) : 9999;
+          const bOrder = Number.isFinite(Number(b.product_order)) ? Number(b.product_order) : 9999;
+          if (aOrder !== bOrder) return aOrder - bOrder;
 
           return String(a.title || "").localeCompare(String(b.title || ""));
         });
@@ -486,9 +489,13 @@
         return;
       }
 
+      const fragment = document.createDocumentFragment();
+
       visibleProducts.forEach(product => {
-        grid.appendChild(buildProductCard(product));
+        fragment.appendChild(buildProductCard(product));
       });
+
+      grid.appendChild(fragment);
 
       if (empty) empty.style.display = "none";
       applyAllFilters();
@@ -499,25 +506,15 @@
         const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
         if (!res.ok) throw new Error(`Failed to load ${categoryName} data.json`);
 
-        const files = await res.json();
-        if (!Array.isArray(files)) throw new Error(`${categoryName} data.json must be an array`);
+        const items = await res.json();
+        if (!Array.isArray(items)) throw new Error(`${categoryName} data.json must be an array`);
 
-        const productResults = await Promise.all(
-          files.map(async (file) => {
-            try {
-              const r = await fetch(`/products/${categoryName}/${file}`, { cache: "no-store" });
-              if (!r.ok) return null;
-
-              const item = await r.json();
-              return { ...item, category: categoryName };
-            } catch (e) {
-              console.error(`Failed to load ${categoryName} file:`, file, e);
-              return null;
-            }
-          })
-        );
-
-        return productResults.filter(Boolean);
+        return items
+          .filter(item => item && typeof item === "object")
+          .map(item => ({
+            ...item,
+            category: String(item.category || categoryName).trim() || categoryName
+          }));
       } catch (e) {
         console.error(`Failed to load ${categoryName} data:`, e);
         return [];
