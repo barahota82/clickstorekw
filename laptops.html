@@ -314,7 +314,7 @@
       if (!select) return;
 
       const currentValue = select.value || "all";
-      const brands = Array.from(renderedBrands).sort((a, b) => a.localeCompare(b));
+      const brands = Array.from(renderedBrands).filter(Boolean).sort((a, b) => a.localeCompare(b));
 
       select.innerHTML = '<option value="all">All Brands</option>';
 
@@ -333,7 +333,7 @@
     }
 
     function buildProductCard(product) {
-      const imagePath = (product.image || "/images/logo.png").trim();
+      const imagePath = String(product.image || "/images/logo.png").trim();
       const brandName = normalizeBrandValue(product.brand);
 
       const monthlyText = formatMonthly(product.monthly);
@@ -421,13 +421,9 @@
       const visibleProducts = items
         .filter(item => item && item.available === true)
         .sort((a, b) => {
-          const aBrandPriority = Number.isFinite(Number(a.brand_priority)) ? Number(a.brand_priority) : 9999;
-          const bBrandPriority = Number.isFinite(Number(b.brand_priority)) ? Number(b.brand_priority) : 9999;
-          if (aBrandPriority !== bBrandPriority) return aBrandPriority - bBrandPriority;
-
-          const aPriority = Number.isFinite(Number(a.priority)) ? Number(a.priority) : 9999;
-          const bPriority = Number.isFinite(Number(b.priority)) ? Number(b.priority) : 9999;
-          if (aPriority !== bPriority) return aPriority - bPriority;
+          const aOrder = Number.isFinite(Number(a.product_order)) ? Number(a.product_order) : 9999;
+          const bOrder = Number.isFinite(Number(b.product_order)) ? Number(b.product_order) : 9999;
+          if (aOrder !== bOrder) return aOrder - bOrder;
 
           return String(a.title || "").localeCompare(String(b.title || ""));
         });
@@ -443,11 +439,15 @@
         return;
       }
 
+      const fragment = document.createDocumentFragment();
+
       visibleProducts.forEach(product => {
         const { card, brandName } = buildProductCard(product);
-        grid.appendChild(card);
+        fragment.appendChild(card);
         renderedBrands.add(brandName);
       });
+
+      grid.appendChild(fragment);
 
       if (empty) empty.style.display = "none";
 
@@ -460,23 +460,16 @@
         const res = await fetch("/products/laptops/data.json", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load laptops data.json");
 
-        const files = await res.json();
-        if (!Array.isArray(files)) throw new Error("laptops data.json must be an array");
+        const items = await res.json();
+        if (!Array.isArray(items)) throw new Error("laptops data.json must be an array");
 
-        const productResults = await Promise.all(
-          files.map(async (file) => {
-            try {
-              const r = await fetch(`/products/laptops/${file}`, { cache: "no-store" });
-              if (!r.ok) return null;
-              return await r.json();
-            } catch (e) {
-              console.error("Failed to load laptops file:", file, e);
-              return null;
-            }
-          })
-        );
+        productsData = items
+          .filter(item => item && typeof item === "object")
+          .map(item => ({
+            ...item,
+            category: "laptops"
+          }));
 
-        productsData = productResults.filter(Boolean);
         renderProducts(productsData);
       } catch (e) {
         console.error("Failed to load laptops data:", e);
