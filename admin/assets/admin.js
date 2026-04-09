@@ -646,27 +646,19 @@ function resolveSelectedCategoryRow() {
   return getBootstrapCategories().find(cat => String(cat.id) === categoryId) || null;
 }
 
-function resolveBrandRowForSelectedCategory() {
-  const categoryId = String(getEl('ocrCategory')?.value || '').trim();
-  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
-
-  if (!categoryId || !brandName) return null;
-
-  return findBootstrapBrandByNameAndCategory(brandName, categoryId);
-}
-
 function buildPreviewImagePath() {
   const categoryRow = resolveSelectedCategoryRow();
-  const brandRow = resolveBrandRowForSelectedCategory();
+  const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
+  const ext = String(currentProductImageFile?.name || '').split('.').pop().toLowerCase();
+  const slug = toSlug(currentProductImageFile?.name || '');
 
-  if (!categoryRow || !brandRow || !currentProductImageFile) return '';
+  if (!categoryRow || !brandName || !ext || !slug) return '';
 
-  const ext = String(currentProductImageFile.name || '').split('.').pop().toLowerCase();
-  const slug = toSlug(currentProductImageFile.name);
+  const brandSlug = toSlug(brandName);
 
-  if (!slug || !ext) return '';
+  if (!brandSlug) return '';
 
-  return `/images/products/${String(categoryRow.slug || '').toLowerCase()}/${String(brandRow.slug || '').toLowerCase()}/${slug}.${ext}`;
+  return `/images/products/${String(categoryRow.slug || '').toLowerCase()}/${brandSlug}/${slug}.${ext}`;
 }
 
 function buildProductJsonPreviewObject() {
@@ -1068,18 +1060,6 @@ function bindProductUploadButton() {
     await refreshStockReviewFromFilename(file.name);
 
     adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة وتحليل اسم الملف ومراجعة المخزن. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.');
-  });
-}
-
-function bindProductManualConfirmButton() {
-  const btn = getEl('ocrConfirmManualEditBtn');
-  if (!btn) return;
-
-  btn.addEventListener('click', function () {
-    if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
-
-    syncDetectedBrandAndPreview();
-    adminSetStatus('dashboardStatus', 'success', 'تم اعتماد البيانات الحالية للحفظ.');
   });
 }
 
@@ -1919,7 +1899,6 @@ function initializeAdminUI() {
   bindTabSwitching();
 
   bindProductUploadButton();
-  bindProductManualConfirmButton();
   bindProductPreviewAutoUpdate();
   bindProductSaveButton();
   bindProductClearButton();
