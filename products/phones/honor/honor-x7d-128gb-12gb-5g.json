@@ -6,7 +6,7 @@
   "image": "/images/phones/honor/honor-x7d-128gb-12gb-5g.webp",
   "down_payment": 0,
   "monthly": 10,
-  "duration": 12,
-  "available": false,
-  "hot_offer": false
+  "duration": 13,
+  "available": true,
+  "hot_offer": true
 }
