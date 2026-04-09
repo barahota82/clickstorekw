@@ -8,7 +8,5 @@
   "monthly": 10,
   "duration": 15,
   "available": true,
-  "hot_offer": true,
-  "brand_priority": 3,
-  "priority": 5
+  "hot_offer": true
 }
