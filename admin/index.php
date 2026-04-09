@@ -916,11 +916,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
                     <input id="ocrTitle" type="text" placeholder="Product title">
                   </div>
 
-                  <div class="form-group full-col">
-                    <label for="ocrStockDisplayName">Stock Display Name</label>
-                    <input id="ocrStockDisplayName" type="text" placeholder="Final stock-facing product name">
-                  </div>
-
                   <div class="form-group">
                     <label for="ocrDevicesCount">Device Count</label>
                     <input id="ocrDevicesCount" type="number" min="1" max="4" class="readonly-input" readonly placeholder="Auto">
