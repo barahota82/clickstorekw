@@ -1,3 +1,12 @@
 {
-  "honor/honor-choice-earbuds-clip.json"
+  "title": "Honor Choice Earbuds Clip",
+  "category": "accessories",
+  "brand": "Honor",
+  "devices_count": 1,
+  "image": "/images/accessories/honor/honor-choice-earbuds-clip.webp",
+  "down_payment": 0,
+  "monthly": 5,
+  "duration": 9,
+  "available": true,
+  "hot_offer": true
 }
