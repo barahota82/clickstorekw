@@ -950,10 +950,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
                     </select>
                   </div>
                 </div>
-
-                <div class="action-row">
-                  <button class="btn btn-primary secondary-btn" type="button" id="ocrConfirmManualEditBtn" data-permission="products_create">Confirm Manual Edit</button>
-                </div>
               </div>
 
               <div class="sub-card">
@@ -1259,6 +1255,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
     brands: <?= json_encode($brands, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
   };
 </script>
-<script src="/admin/assets/admin.js?v=20260408-2"></script>
+<script src="/admin/assets/admin.js?v=20260409-1"></script>
 </body>
 </html>
