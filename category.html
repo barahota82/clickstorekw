@@ -841,11 +841,12 @@
         if (languageSelect) {
           languageSelect.value = APP_LANGUAGE;
           languageSelect.addEventListener("change", function () {
-            APP_LANGUAGE = this.value || "en";
-            localStorage.setItem("site_language", APP_LANGUAGE);
-            applyStaticTranslations();
-            renderProducts(productsData);
-          });
+           APP_LANGUAGE = this.value || "en";
+           localStorage.setItem("site_language", APP_LANGUAGE);
+           applyStaticTranslations();
+           renderProducts(productsData);
+           updatePromoBanner();
+         });
         }
 
         if (!CURRENT_CATEGORY) {
