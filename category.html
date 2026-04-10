@@ -380,6 +380,7 @@
 
   <script>
     let APP_LANGUAGE = localStorage.getItem("site_language") || "en";
+    let LAST_APPLIED_LANGUAGE = APP_LANGUAGE;
     let TRANSLATIONS = {};
     let CATEGORIES = [];
     let CURRENT_CATEGORY = null;
@@ -508,6 +509,7 @@
       const sendOrderBtn = document.getElementById("sendOrderBtn");
       const footerTagline = document.getElementById("footerTagline");
       const infiniteLoaderText = document.getElementById("infiniteLoaderText");
+      const languageSelect = document.getElementById("languageSelect");
 
       if (homeNavLink) homeNavLink.textContent = t("home");
       if (hotOffersNavLink) hotOffersNavLink.textContent = t("hot_offers");
@@ -520,6 +522,7 @@
       if (sendOrderBtn) sendOrderBtn.textContent = t("send_order_whatsapp");
       if (footerTagline) footerTagline.textContent = t("depend_on_us");
       if (infiniteLoaderText) infiniteLoaderText.textContent = t("loading_more");
+      if (languageSelect) languageSelect.value = APP_LANGUAGE;
 
       document.title = CURRENT_CATEGORY
         ? `${getCategoryDisplayName(CURRENT_CATEGORY)} - ${t("site_title")}`
@@ -830,6 +833,26 @@
       setupInfiniteObserver();
     }
 
+    function syncLanguageAndRefresh(newLanguage) {
+      const nextLanguage = String(newLanguage || localStorage.getItem("site_language") || "en").trim().toLowerCase() || "en";
+
+      if (APP_LANGUAGE === nextLanguage && LAST_APPLIED_LANGUAGE === nextLanguage) {
+        return;
+      }
+
+      APP_LANGUAGE = nextLanguage;
+      LAST_APPLIED_LANGUAGE = nextLanguage;
+      localStorage.setItem("site_language", APP_LANGUAGE);
+
+      applyStaticTranslations();
+
+      if (productsData.length) {
+        renderProducts(productsData);
+      }
+
+      updatePromoBanner();
+    }
+
     async function bootCategoryPage() {
       try {
         await Promise.all([loadCategories(), loadTranslations()]);
@@ -842,6 +865,7 @@
           languageSelect.value = APP_LANGUAGE;
           languageSelect.addEventListener("change", function () {
             APP_LANGUAGE = this.value || "en";
+            LAST_APPLIED_LANGUAGE = APP_LANGUAGE;
             localStorage.setItem("site_language", APP_LANGUAGE);
 
             applyStaticTranslations();
@@ -886,15 +910,17 @@
     document.addEventListener("DOMContentLoaded", function () {
       setupInfiniteObserver();
       bootCategoryPage();
+
+      setInterval(function () {
+        const storedLanguage = String(localStorage.getItem("site_language") || "en").trim().toLowerCase();
+        if (storedLanguage && storedLanguage !== LAST_APPLIED_LANGUAGE) {
+          syncLanguageAndRefresh(storedLanguage);
+        }
+      }, 150);
     });
 
     document.addEventListener("site-language-changed", function (e) {
-      APP_LANGUAGE = e?.detail?.language || localStorage.getItem("site_language") || "en";
-      localStorage.setItem("site_language", APP_LANGUAGE);
-
-      applyStaticTranslations();
-      renderProducts(productsData);
-      updatePromoBanner();
+      syncLanguageAndRefresh(e?.detail?.language);
     });
   </script>
 
