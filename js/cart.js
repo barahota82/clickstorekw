@@ -319,9 +319,27 @@
   }
 
   function tr(key) {
-    const lang = getUiLanguage();
-    return CART_I18N[lang]?.[key] || CART_I18N.en?.[key] || key;
+  const lang = getUiLanguage();
+  return CART_I18N[lang]?.[key] || CART_I18N.en?.[key] || key;
+}
+
+function getMobileAuthText() {
+  const user = getUserData();
+
+  if (!user || !user.email) {
+    return tr("login");
   }
+
+  const firstName = String(user.full_name || user.name || tr("customer"))
+    .trim()
+    .split(/\s+/)[0];
+
+  if (!firstName) {
+    return tr("customer");
+  }
+
+  return firstName.length > 8 ? `${firstName.slice(0, 8)}…` : firstName;
+}
 
   function safeParse(value, fallback) {
     try {
@@ -733,7 +751,7 @@
 
    <button type="button" class="mobile-app-item" data-mobile-nav="auth" onclick="openAuthModal()">
      <span class="mobile-app-icon">👤</span>
-     <span class="mobile-app-label" id="mobileAuthLabel">${tr("login")}</span>
+     <span class="mobile-app-label" id="mobileAuthLabel">${getMobileAuthText()}</span>
    </button>
  `;
       document.body.appendChild(bar);
@@ -886,19 +904,20 @@
   }
 
   function updateAuthLabel() {
-    const user = getUserData();
-    const value = user && user.email ? (user.full_name || user.email) : tr("login");
+  const user = getUserData();
+  const desktopValue = user && user.email ? (user.full_name || user.email) : tr("login");
+  const mobileValue = getMobileAuthText();
 
-    if (typeof window.setTopAuthLabel === "function") {
-      window.setTopAuthLabel(value);
-    }
-
-    const desktopLabel = document.getElementById("desktopAuthLabel");
-    const mobileLabel = document.getElementById("mobileAuthLabel");
-
-    if (desktopLabel) desktopLabel.textContent = value;
-    if (mobileLabel) mobileLabel.textContent = value;
+  if (typeof window.setTopAuthLabel === "function") {
+    window.setTopAuthLabel(desktopValue);
   }
+
+  const desktopLabel = document.getElementById("desktopAuthLabel");
+  const mobileLabel = document.getElementById("mobileAuthLabel");
+
+  if (desktopLabel) desktopLabel.textContent = desktopValue;
+  if (mobileLabel) mobileLabel.textContent = mobileValue;
+}
 
   window.openAuthModal = function () {
     const modal = document.getElementById("authModalGlobal");
