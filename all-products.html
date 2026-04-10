@@ -9,16 +9,22 @@
 
   <style>
     .promo-banner {
-      display: none;
       width: 100%;
       background: linear-gradient(135deg, #22c55e, #16a34a);
       color: #fff;
       border-bottom: 1px solid rgba(255,255,255,0.14);
       box-shadow: 0 10px 24px rgba(22,163,74,0.18);
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      visibility: hidden;
+      transition: max-height 0.25s ease, opacity 0.25s ease;
     }
 
     .promo-banner.show {
-      display: block;
+      max-height: 120px;
+      opacity: 1;
+      visibility: visible;
     }
 
     .promo-banner .promo-banner-inner {
@@ -30,7 +36,7 @@
       justify-content: center;
       gap: 10px;
       text-align: center;
-      padding: 10px 0;
+      padding: 14px 0;
       font-size: 14px;
       font-weight: 800;
       line-height: 1.6;
@@ -111,7 +117,6 @@
       background: rgba(255,255,255,0.08);
     }
 
-    /* FIX PRODUCT IMAGE DISPLAY */
     .product-image {
       width: 100%;
       aspect-ratio: 4 / 5;
@@ -132,10 +137,41 @@
       display: block;
     }
 
+    .load-more-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 26px;
+      margin-bottom: 14px;
+    }
+
+    .load-more-btn {
+      min-width: 180px;
+      height: 48px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #37a0ff, #2f6bff);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(55,160,255,0.28);
+      transition: 0.2s ease;
+    }
+
+    .load-more-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .load-more-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     @media (max-width: 640px) {
       .promo-banner .promo-banner-inner {
         font-size: 13px;
-        padding: 10px 0;
+        padding: 12px 0;
       }
 
       .catalog-filter {
@@ -153,6 +189,12 @@
       .product-image {
         aspect-ratio: 4 / 5;
         padding: 8px;
+      }
+
+      .load-more-btn {
+        min-width: 160px;
+        height: 46px;
+        font-size: 14px;
       }
     }
   </style>
@@ -226,6 +268,10 @@
       <div class="loading-state" id="loading-state">Loading products...</div>
       <div class="empty-state" id="empty-state" style="display:none;">No products available yet.</div>
     </div>
+
+    <div id="loadMoreWrap" class="load-more-wrap" style="display:none;">
+      <button id="loadMoreBtn" class="load-more-btn" type="button">Load More</button>
+    </div>
   </section>
 
   <footer>
@@ -271,6 +317,9 @@
     let allProductsData = [];
     let renderedBrands = new Set();
     let currentCategoryFilter = "all";
+    let filteredProductsData = [];
+    let visibleProductsCount = 0;
+    const PRODUCTS_PER_PAGE = 6;
 
     function normalizeBrandValue(value) {
       const raw = String(value || "").trim();
@@ -342,6 +391,16 @@
       return total ? `${total} KD` : "";
     }
 
+    function sortProducts(items) {
+      return [...items].sort((a, b) => {
+        const aOrder = Number.isFinite(Number(a.product_order)) ? Number(a.product_order) : 9999;
+        const bOrder = Number.isFinite(Number(b.product_order)) ? Number(b.product_order) : 9999;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+
+        return String(a.title || "").localeCompare(String(b.title || ""));
+      });
+    }
+
     function populateBrandFilter() {
       const select = document.getElementById("brandFilter");
       if (!select) return;
@@ -376,10 +435,12 @@
         brandSelect.value = "all";
       }
 
+      visibleProductsCount = PRODUCTS_PER_PAGE;
       applyAllFilters();
     }
 
     function applyBrandFilter() {
+      visibleProductsCount = PRODUCTS_PER_PAGE;
       applyAllFilters();
     }
 
@@ -400,7 +461,7 @@
 
       card.innerHTML = `
         <div class="product-image">
-          <img src="${imagePath}" alt="${titleText || "Product"}" loading="lazy">
+          <img src="${imagePath}" alt="${titleText || "Product"}" loading="lazy" decoding="async">
         </div>
 
         <div class="product-body">
@@ -437,22 +498,66 @@
       return card;
     }
 
-    function applyAllFilters() {
-      const cards = document.querySelectorAll(".product-card");
+    function updateLoadMoreState() {
+      const wrap = document.getElementById("loadMoreWrap");
+      const btn = document.getElementById("loadMoreBtn");
+
+      if (!wrap || !btn) return;
+
+      if (filteredProductsData.length > visibleProductsCount) {
+        wrap.style.display = "flex";
+        btn.disabled = false;
+      } else {
+        wrap.style.display = "none";
+        btn.disabled = true;
+      }
+    }
+
+    function renderVisibleProducts() {
+      const grid = document.getElementById("grid");
       const empty = document.getElementById("empty-state");
+
+      document.querySelectorAll(".product-card").forEach(card => card.remove());
+
+      if (!filteredProductsData.length) {
+        if (empty) {
+          empty.style.display = "";
+          empty.textContent = "No products available for this filter.";
+        }
+        updateLoadMoreState();
+        return;
+      }
+
+      if (empty) empty.style.display = "none";
+
+      const fragment = document.createDocumentFragment();
+      const itemsToRender = filteredProductsData.slice(0, visibleProductsCount);
+
+      itemsToRender.forEach(product => {
+        fragment.appendChild(buildProductCard(product));
+      });
+
+      grid.appendChild(fragment);
+      updateLoadMoreState();
+    }
+
+    function applyAllFilters() {
       const brandSelect = document.getElementById("brandFilter");
       const previousBrandValue = brandSelect ? brandSelect.value : "all";
 
+      const categoryMatched = sortProducts(
+        allProductsData.filter(item => {
+          if (!item || item.available !== true) return false;
+          const itemCategory = String(item.category || "").trim();
+          return currentCategoryFilter === "all" || itemCategory === currentCategoryFilter;
+        })
+      );
+
       renderedBrands = new Set();
 
-      cards.forEach(card => {
-        const cardCategory = card.getAttribute("data-category") || "";
-        const cardBrand = card.getAttribute("data-brand") || "";
-        const matchCategory = currentCategoryFilter === "all" || cardCategory === currentCategoryFilter;
-
-        if (matchCategory && cardBrand) {
-          renderedBrands.add(cardBrand);
-        }
+      categoryMatched.forEach(item => {
+        const brand = normalizeBrandValue(item.brand);
+        if (brand) renderedBrands.add(brand);
       });
 
       populateBrandFilter();
@@ -463,67 +568,30 @@
       }
 
       const selectedBrand = brandSelect ? brandSelect.value : "all";
-      let visibleCount = 0;
 
-      cards.forEach(card => {
-        const cardCategory = card.getAttribute("data-category") || "";
-        const cardBrand = card.getAttribute("data-brand") || "";
-
-        const matchCategory = currentCategoryFilter === "all" || cardCategory === currentCategoryFilter;
-        const matchBrand = selectedBrand === "all" || cardBrand === selectedBrand;
-        const shouldShow = matchCategory && matchBrand;
-
-        card.style.display = shouldShow ? "" : "none";
-        if (shouldShow) visibleCount++;
+      filteredProductsData = categoryMatched.filter(item => {
+        const brand = normalizeBrandValue(item.brand);
+        return selectedBrand === "all" || brand === selectedBrand;
       });
 
-      if (empty) {
-        if (visibleCount === 0) {
-          empty.style.display = "";
-          empty.textContent = "No products available for this filter.";
-        } else {
-          empty.style.display = "none";
-        }
-      }
+      renderVisibleProducts();
     }
 
     function renderProducts(items) {
-      const grid = document.getElementById("grid");
       const loading = document.getElementById("loading-state");
       const empty = document.getElementById("empty-state");
 
-      document.querySelectorAll(".product-card").forEach(card => card.remove());
-
-      const visibleProducts = items
-        .filter(item => item && item.available === true)
-        .sort((a, b) => {
-          const aOrder = Number.isFinite(Number(a.product_order)) ? Number(a.product_order) : 9999;
-          const bOrder = Number.isFinite(Number(b.product_order)) ? Number(b.product_order) : 9999;
-          if (aOrder !== bOrder) return aOrder - bOrder;
-
-          return String(a.title || "").localeCompare(String(b.title || ""));
-        });
-
       if (loading) loading.remove();
-
-      if (!visibleProducts.length) {
-        if (empty) {
-          empty.style.display = "";
-          empty.textContent = "No products available yet.";
-        }
-        populateBrandFilter();
-        return;
-      }
-
-      const fragment = document.createDocumentFragment();
-
-      visibleProducts.forEach(product => {
-        fragment.appendChild(buildProductCard(product));
-      });
-
-      grid.appendChild(fragment);
-
       if (empty) empty.style.display = "none";
+
+      allProductsData = items
+        .filter(item => item && item.available === true)
+        .map(item => ({
+          ...item,
+          category: String(item.category || "").trim()
+        }));
+
+      visibleProductsCount = PRODUCTS_PER_PAGE;
       applyAllFilters();
     }
 
@@ -551,9 +619,7 @@
       try {
         const categories = ["phones", "tablets", "laptops", "accessories"];
         const results = await Promise.all(categories.map(loadCategory));
-
-        allProductsData = results.flat();
-        renderProducts(allProductsData);
+        renderProducts(results.flat());
       } catch (e) {
         console.error("Failed to load all products:", e);
 
@@ -567,6 +633,16 @@
         }
       }
     }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const loadMoreBtn = document.getElementById("loadMoreBtn");
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener("click", function () {
+          visibleProductsCount += PRODUCTS_PER_PAGE;
+          renderVisibleProducts();
+        });
+      }
+    });
 
     load();
   </script>
@@ -595,6 +671,25 @@
   </script>
 
   <script>
+    let promoBannerRequestId = 0;
+    let promoBannerResolvedOnce = false;
+
+    function hidePromoBanner() {
+      const banner = document.getElementById("promoBanner");
+      if (!banner) return;
+      banner.classList.remove("show");
+    }
+
+    function showPromoBanner(message) {
+      const banner = document.getElementById("promoBanner");
+      const text = document.getElementById("promoBannerText");
+
+      if (!banner || !text) return;
+
+      text.textContent = message;
+      banner.classList.add("show");
+    }
+
     function orderAlreadyUsedGift(order) {
       if (!order || typeof order !== "object") return false;
 
@@ -615,52 +710,66 @@
     }
 
     async function updatePromoBanner() {
-      const banner = document.getElementById("promoBanner");
-      const text = document.getElementById("promoBannerText");
-
-      if (!banner || !text) return;
-
-      banner.classList.remove("show");
-      banner.style.display = "";
+      const currentRequestId = ++promoBannerRequestId;
 
       try {
         const statusRes = await fetch("/auth/status.php", { cache: "no-store" });
         const statusData = await statusRes.json();
 
+        if (currentRequestId !== promoBannerRequestId) return;
+
         if (!statusData || !statusData.logged_in) {
-          text.textContent = "Register now and get a FREE gift with your first delivered order.";
-          banner.classList.add("show");
+          showPromoBanner("Register now and get a FREE gift with your first delivered order.");
+          promoBannerResolvedOnce = true;
           return;
         }
-
-        text.textContent = "You are registered. Your FREE gift will be included with your first delivered order.";
-        banner.classList.add("show");
 
         try {
           const ordersRes = await fetch("/orders/list.php", { cache: "no-store" });
           const ordersData = await ordersRes.json();
 
+          if (currentRequestId !== promoBannerRequestId) return;
+
           if (ordersData && ordersData.ok && Array.isArray(ordersData.orders)) {
             const consumedOffer = ordersData.orders.some(orderClearlyConsumedFirstOrderOffer);
 
             if (consumedOffer) {
-              banner.classList.remove("show");
-              banner.style.display = "none";
-              return;
+              hidePromoBanner();
+            } else {
+              showPromoBanner("You are registered. Your FREE gift will be included with your first delivered order.");
             }
+          } else {
+            showPromoBanner("You are registered. Your FREE gift will be included with your first delivered order.");
           }
+
+          promoBannerResolvedOnce = true;
         } catch (orderError) {
           console.error("Promo orders check failed:", orderError);
+
+          if (currentRequestId !== promoBannerRequestId) return;
+
+          showPromoBanner("You are registered. Your FREE gift will be included with your first delivered order.");
+          promoBannerResolvedOnce = true;
         }
       } catch (e) {
         console.error("Promo status check failed:", e);
-        text.textContent = "Register now and get a FREE gift with your first delivered order.";
-        banner.classList.add("show");
+
+        if (currentRequestId !== promoBannerRequestId) return;
+
+        showPromoBanner("Register now and get a FREE gift with your first delivered order.");
+        promoBannerResolvedOnce = true;
       }
     }
 
-    document.addEventListener("DOMContentLoaded", updatePromoBanner);
-    document.addEventListener("customer-auth-updated", updatePromoBanner);
+    document.addEventListener("DOMContentLoaded", function () {
+      hidePromoBanner();
+      updatePromoBanner();
+    });
+
+    document.addEventListener("customer-auth-updated", function () {
+      if (!promoBannerResolvedOnce) return;
+      updatePromoBanner();
+    });
   </script>
 
   <script src="/js/cart.js?v=20260404"></script>
