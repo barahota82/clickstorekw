@@ -197,19 +197,10 @@
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       max-width: 100%;
-      flex-wrap: nowrap !important;
     }
 
     .dynamic-nav-row::-webkit-scrollbar {
       display: none;
-    }
-
-    .dynamic-categories-nav {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 0 0 auto;
-      white-space: nowrap;
     }
 
     .dynamic-nav-link {
@@ -222,6 +213,28 @@
 
     .dynamic-nav-link.active {
       color: #7dc2ff;
+    }
+
+    .language-switcher {
+      margin-left: 8px;
+      flex: 0 0 auto;
+    }
+
+    .language-select {
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      padding: 0 10px;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .language-select option {
+      color: #111827;
+      background: #fff;
     }
 
     @media (max-width: 640px) {
@@ -250,10 +263,6 @@
       .dynamic-nav-row {
         gap: 10px;
       }
-
-      .dynamic-categories-nav {
-        gap: 10px;
-      }
     }
   </style>
 </head>
@@ -274,10 +283,17 @@
       <nav class="nav-links">
         <div class="nav-row main-row dynamic-nav-row" id="dynamicNavRow">
           <a href="/index.html" class="dynamic-nav-link desktop-only" id="homeNavLink">Home</a>
-
-          <div id="dynamicCategoriesNav" class="dynamic-categories-nav"></div>
+          <div id="dynamicCategoriesNav"></div>
 
           <a href="/index.html#hot-offers" class="hot-link dynamic-nav-link" id="hotOffersNavLink">Hot Offers</a>
+
+          <div class="language-switcher">
+            <select id="languageSelect" class="language-select">
+              <option value="en">EN</option>
+              <option value="ph">PH</option>
+              <option value="hi">HI</option>
+            </select>
+          </div>
 
           <button class="registration-top-btn desktop-only" type="button" onclick="openAuthModal()">
             <span id="desktopAuthLabel">Login</span>
@@ -409,8 +425,6 @@
       return langPack[key] || key;
     }
 
-    window.t = t;
-
     function getCategoryDisplayName(categoryRow) {
       if (!categoryRow) return "";
       return String(
@@ -465,7 +479,7 @@
       const monthly = parseFloat(extractNumber(monthlyText)) || 0;
       const months = parseFloat(extractNumber(durationText)) || 0;
       const down = parseFloat(extractNumber(downPaymentText)) || 0;
-      const total = monthly * months + down;
+      const total = (monthly * months) + down;
 
       return total ? `${total} KD` : "";
     }
@@ -494,7 +508,6 @@
       const sendOrderBtn = document.getElementById("sendOrderBtn");
       const footerTagline = document.getElementById("footerTagline");
       const infiniteLoaderText = document.getElementById("infiniteLoaderText");
-      const whatsappBtn = document.getElementById("whatsappBtn");
 
       if (homeNavLink) homeNavLink.textContent = t("home");
       if (hotOffersNavLink) hotOffersNavLink.textContent = t("hot_offers");
@@ -507,7 +520,6 @@
       if (sendOrderBtn) sendOrderBtn.textContent = t("send_order_whatsapp");
       if (footerTagline) footerTagline.textContent = t("depend_on_us");
       if (infiniteLoaderText) infiniteLoaderText.textContent = t("loading_more");
-      if (whatsappBtn) whatsappBtn.textContent = t("whatsapp");
 
       document.title = CURRENT_CATEGORY
         ? `${getCategoryDisplayName(CURRENT_CATEGORY)} - ${t("site_title")}`
@@ -528,10 +540,6 @@
 
       populateBrandFilter();
       renderDynamicHeader();
-
-      if (typeof window.updateLanguageDependentUI === "function") {
-        window.updateLanguageDependentUI();
-      }
     }
 
     function renderDynamicHeader() {
@@ -731,8 +739,6 @@
       resetInfiniteObserver();
     }
 
-    window.applyBrandFilter = applyBrandFilter;
-
     function renderProducts(items) {
       const loading = document.getElementById("loading-state");
       const empty = document.getElementById("empty-state");
@@ -831,6 +837,18 @@
         const slug = getCategorySlugFromUrl();
         CURRENT_CATEGORY = CATEGORIES.find(item => String(item.slug || "").trim().toLowerCase() === slug && item.visible === true) || null;
 
+        const languageSelect = document.getElementById("languageSelect");
+        if (languageSelect) {
+          languageSelect.value = APP_LANGUAGE;
+          languageSelect.addEventListener("change", function () {
+           APP_LANGUAGE = this.value || "en";
+           localStorage.setItem("site_language", APP_LANGUAGE);
+           applyStaticTranslations();
+           renderProducts(productsData);
+           updatePromoBanner();
+         });
+        }
+
         if (!CURRENT_CATEGORY) {
           document.title = t("site_title");
           const loading = document.getElementById("loading-state");
@@ -867,12 +885,18 @@
   </script>
 
   <script>
+    const texts = [
+      "You Can Depend on Us",
+      "Best Deals in Kuwait",
+      "Easy Monthly Installments",
+      "Fast Delivery"
+    ];
+
     let i = 0;
+    const el = document.getElementById("loopText");
 
     setInterval(() => {
-      const el = document.getElementById("loopText");
       if (!el) return;
-
       el.style.opacity = 0;
 
       setTimeout(() => {
@@ -992,7 +1016,7 @@
     });
   </script>
 
-  <script src="/js/cart.js?v=20260410"></script>
+  <script src="/js/cart.js?v=20260404"></script>
   <script src="/js/country-codes.js?v=20260404"></script>
   <script src="/js/customer-auth.js?v=20260404"></script>
 </body>
