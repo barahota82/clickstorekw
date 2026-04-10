@@ -284,6 +284,16 @@
   document.addEventListener("DOMContentLoaded", async function () {
     await loadWhatsAppSettings();
     await syncCustomerSession();
+    
+   if (isMobile()) {
+     const langTop = document.getElementById("languageSelect");
+     if (langTop) {
+       langTop.style.display = "none";
+
+       const parent = langTop.closest(".language-switcher") || langTop.parentElement;
+       if (parent) parent.style.display = "none";
+     }
+   }
 
     cart = cart.map(normalizeItem);
     pendingCart = pendingCart.map(normalizeItem);
