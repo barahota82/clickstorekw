@@ -839,15 +839,20 @@
 
         const languageSelect = document.getElementById("languageSelect");
         if (languageSelect) {
-          languageSelect.value = APP_LANGUAGE;
-          languageSelect.addEventListener("change", function () {
+         languageSelect.value = APP_LANGUAGE;
+         languageSelect.addEventListener("change", function () {
            APP_LANGUAGE = this.value || "en";
            localStorage.setItem("site_language", APP_LANGUAGE);
-           applyStaticTranslations();
-           renderProducts(productsData);
-           updatePromoBanner();
-         });
-        }
+
+          applyStaticTranslations();
+          renderProducts(productsData);
+          updatePromoBanner();
+
+          document.dispatchEvent(new CustomEvent("site-language-changed", {
+              detail: { language: APP_LANGUAGE, source: "desktop-header" }
+          }));
+      });
+    }
 
         if (!CURRENT_CATEGORY) {
           document.title = t("site_title");
