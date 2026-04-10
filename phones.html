@@ -285,8 +285,8 @@
 
   <section class="page-head">
     <div class="container">
-      <h2 id="pageCategoryTitle">Phones</h2>
-      <p id="pageCategoryDescription">Browse all phone offers.</p>
+      <h2 id="categoryTitle">Phones</h2>
+      <p id="categoryDescription">Browse all phone offers.</p>
 
       <div class="catalog-filter-wrap">
         <label for="brandFilter" class="catalog-filter-label" id="brandFilterLabel">Filter by Brand</label>
@@ -353,6 +353,7 @@
     let APP_LANGUAGE = localStorage.getItem("site_language") || "en";
     let TRANSLATIONS = {};
     let CATEGORIES = [];
+    const CURRENT_CATEGORY_SLUG = "phones";
 
     let productsData = [];
     let renderedBrands = new Set();
@@ -369,10 +370,72 @@
       return langPack[key] || key;
     }
 
-    function getCategoryNameBySlug(slug) {
-      const row = CATEGORIES.find(item => String(item.slug || "").trim().toLowerCase() === String(slug || "").trim().toLowerCase());
-      if (!row) return "Phones";
-      return String(row.names?.[APP_LANGUAGE] || row.names?.en || row.slug || "Phones").trim();
+    function getCategoryRow(slug) {
+      return CATEGORIES.find(item => String(item.slug || "").trim().toLowerCase() === String(slug || "").trim().toLowerCase()) || null;
+    }
+
+    function getCategoryDisplayName(slug) {
+      const row = getCategoryRow(slug);
+      if (!row) return String(slug || "");
+      return String(
+        row.names?.[APP_LANGUAGE] ||
+        row.names?.en ||
+        row.slug ||
+        ""
+      ).trim();
+    }
+
+    function applyStaticTranslations() {
+      document.documentElement.lang = APP_LANGUAGE === "hi" ? "hi" : "en";
+
+      const homeNavLink = document.getElementById("homeNavLink");
+      const phonesNavLink = document.getElementById("phonesNavLink");
+      const tabletsNavLink = document.getElementById("tabletsNavLink");
+      const laptopsNavLink = document.getElementById("laptopsNavLink");
+      const accessoriesNavLink = document.getElementById("accessoriesNavLink");
+      const hotOffersNavLink = document.getElementById("hotOffersNavLink");
+      const cartLabel = document.getElementById("cartLabel");
+      const brandFilterLabel = document.getElementById("brandFilterLabel");
+      const loadingState = document.getElementById("loading-state");
+      const yourCartTitle = document.getElementById("yourCartTitle");
+      const cartEmptyText = document.getElementById("cartEmptyText");
+      const sendOrderBtn = document.getElementById("sendOrderBtn");
+      const footerTagline = document.getElementById("footerTagline");
+      const infiniteLoaderText = document.getElementById("infiniteLoaderText");
+      const categoryTitle = document.getElementById("categoryTitle");
+      const categoryDescription = document.getElementById("categoryDescription");
+      const languageSelect = document.getElementById("languageSelect");
+
+      if (homeNavLink) homeNavLink.textContent = t("home");
+      if (phonesNavLink) phonesNavLink.textContent = getCategoryDisplayName("phones") || "Phones";
+      if (tabletsNavLink) tabletsNavLink.textContent = getCategoryDisplayName("tablets") || "Tablets";
+      if (laptopsNavLink) laptopsNavLink.textContent = getCategoryDisplayName("laptops") || "Laptops";
+      if (accessoriesNavLink) accessoriesNavLink.textContent = getCategoryDisplayName("accessories") || "Accessories";
+      if (hotOffersNavLink) hotOffersNavLink.textContent = t("hot_offers");
+      if (cartLabel) cartLabel.textContent = t("cart");
+      if (brandFilterLabel) brandFilterLabel.textContent = t("filter_by_brand");
+      if (loadingState) loadingState.textContent = t("loading_products");
+      if (yourCartTitle) yourCartTitle.textContent = t("your_cart");
+      if (cartEmptyText) cartEmptyText.textContent = t("your_cart_empty");
+      if (sendOrderBtn) sendOrderBtn.textContent = t("send_order_whatsapp");
+      if (footerTagline) footerTagline.textContent = t("depend_on_us");
+      if (infiniteLoaderText) infiniteLoaderText.textContent = t("loading_more");
+      if (languageSelect) languageSelect.value = APP_LANGUAGE;
+
+      const currentCategoryName = getCategoryDisplayName(CURRENT_CATEGORY_SLUG) || "Phones";
+      if (categoryTitle) categoryTitle.textContent = currentCategoryName;
+
+      if (categoryDescription) {
+        if (APP_LANGUAGE === "en") {
+          categoryDescription.textContent = "Browse all phone offers.";
+        } else {
+          categoryDescription.textContent = t("browse_all_offers");
+        }
+      }
+
+      document.title = `${currentCategoryName} - ${t("site_title")}`;
+
+      populateBrandFilter();
     }
 
     function normalizeBrandValue(value) {
@@ -453,56 +516,6 @@
 
         return String(a.title || "").localeCompare(String(b.title || ""));
       });
-    }
-
-    function applyStaticTranslations() {
-      document.documentElement.lang = APP_LANGUAGE === "hi" ? "hi" : "en";
-
-      const languageSelect = document.getElementById("languageSelect");
-      if (languageSelect) languageSelect.value = APP_LANGUAGE;
-
-      const categoryName = getCategoryNameBySlug("phones");
-
-      const pageTitle = document.querySelector("title");
-      if (pageTitle) pageTitle.textContent = `${categoryName} - ${t("site_title")}`;
-
-      const homeNavLink = document.getElementById("homeNavLink");
-      const phonesNavLink = document.getElementById("phonesNavLink");
-      const tabletsNavLink = document.getElementById("tabletsNavLink");
-      const laptopsNavLink = document.getElementById("laptopsNavLink");
-      const accessoriesNavLink = document.getElementById("accessoriesNavLink");
-      const hotOffersNavLink = document.getElementById("hotOffersNavLink");
-      const cartLabel = document.getElementById("cartLabel");
-      const brandFilterLabel = document.getElementById("brandFilterLabel");
-      const pageCategoryTitle = document.getElementById("pageCategoryTitle");
-      const pageCategoryDescription = document.getElementById("pageCategoryDescription");
-      const loadingState = document.getElementById("loading-state");
-      const emptyState = document.getElementById("empty-state");
-      const yourCartTitle = document.getElementById("yourCartTitle");
-      const cartEmptyText = document.getElementById("cartEmptyText");
-      const sendOrderBtn = document.getElementById("sendOrderBtn");
-      const footerTagline = document.getElementById("footerTagline");
-      const infiniteLoaderText = document.getElementById("infiniteLoaderText");
-
-      if (homeNavLink) homeNavLink.textContent = t("home");
-      if (phonesNavLink) phonesNavLink.textContent = getCategoryNameBySlug("phones");
-      if (tabletsNavLink) tabletsNavLink.textContent = getCategoryNameBySlug("tablets");
-      if (laptopsNavLink) laptopsNavLink.textContent = getCategoryNameBySlug("laptops");
-      if (accessoriesNavLink) accessoriesNavLink.textContent = getCategoryNameBySlug("accessories");
-      if (hotOffersNavLink) hotOffersNavLink.textContent = t("hot_offers");
-      if (cartLabel) cartLabel.textContent = t("cart");
-      if (brandFilterLabel) brandFilterLabel.textContent = t("filter_by_brand");
-      if (pageCategoryTitle) pageCategoryTitle.textContent = categoryName;
-      if (pageCategoryDescription) pageCategoryDescription.textContent = t("browse_all_offers");
-      if (loadingState) loadingState.textContent = t("loading_products");
-      if (emptyState && emptyState.style.display !== "none") emptyState.textContent = t("no_products_yet");
-      if (yourCartTitle) yourCartTitle.textContent = t("your_cart");
-      if (cartEmptyText) cartEmptyText.textContent = t("your_cart_empty");
-      if (sendOrderBtn) sendOrderBtn.textContent = t("send_order_whatsapp");
-      if (footerTagline) footerTagline.textContent = t("depend_on_us");
-      if (infiniteLoaderText) infiniteLoaderText.textContent = t("loading_more");
-
-      populateBrandFilter();
     }
 
     function populateBrandFilter() {
@@ -690,7 +703,7 @@
         .filter(item => item && item.available === true)
         .map(item => ({
           ...item,
-          category: "phones"
+          category: CURRENT_CATEGORY_SLUG
         }));
 
       renderedBrands = new Set();
@@ -772,6 +785,14 @@
       infiniteObserver.observe(sentinel);
     }
 
+    function resetInfiniteObserver() {
+      if (infiniteObserver) {
+        infiniteObserver.disconnect();
+        infiniteObserver = null;
+      }
+      setupInfiniteObserver();
+    }
+
     async function bootPage() {
       try {
         await Promise.all([loadTranslations(), loadCategories()]);
@@ -784,7 +805,9 @@
             localStorage.setItem("site_language", APP_LANGUAGE);
 
             applyStaticTranslations();
-            renderProducts(productsData);
+            if (productsData.length) {
+              renderProducts(productsData);
+            }
             updatePromoBanner();
 
             document.dispatchEvent(new CustomEvent("site-language-changed", {
@@ -800,35 +823,9 @@
       }
     }
 
-    function resetInfiniteObserver() {
-      if (infiniteObserver) {
-        infiniteObserver.disconnect();
-        infiniteObserver = null;
-      }
-      setupInfiniteObserver();
-    }
-
     document.addEventListener("DOMContentLoaded", function () {
       setupInfiniteObserver();
       bootPage();
-    });
-
-    document.addEventListener("site-language-changed", function (e) {
-      const newLanguage = String(e?.detail?.language || localStorage.getItem("site_language") || "en").trim().toLowerCase() || "en";
-
-      if (APP_LANGUAGE === newLanguage) {
-        applyStaticTranslations();
-        if (productsData.length) renderProducts(productsData);
-        updatePromoBanner();
-        return;
-      }
-
-      APP_LANGUAGE = newLanguage;
-      localStorage.setItem("site_language", APP_LANGUAGE);
-
-      applyStaticTranslations();
-      if (productsData.length) renderProducts(productsData);
-      updatePromoBanner();
     });
   </script>
 
