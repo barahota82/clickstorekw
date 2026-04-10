@@ -5,6 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Click Company</title>
 
+  <script>
+  (function () {
+    try {
+      var lang = localStorage.getItem("site_language") || "en";
+      document.documentElement.setAttribute("data-site-language", lang);
+      document.documentElement.classList.add("lang-preload");
+    } catch (e) {
+      document.documentElement.classList.add("lang-preload");
+    }
+  })();
+</script>
+
+<style>
+  html.lang-preload body {
+    visibility: hidden;
+  }
+
+  html.lang-ready body {
+    visibility: visible;
+  }
+</style>
+
   <link rel="stylesheet" href="/css/style.css?v=20260404" />
 
   <style>
