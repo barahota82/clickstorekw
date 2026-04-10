@@ -137,35 +137,51 @@
       display: block;
     }
 
-    .load-more-wrap {
-      display: flex;
+    .infinite-loader-wrap {
+      display: none;
       justify-content: center;
-      margin-top: 26px;
+      margin-top: 22px;
       margin-bottom: 14px;
     }
 
-    .load-more-btn {
-      min-width: 180px;
-      height: 48px;
+    .infinite-loader-wrap.show {
+      display: flex;
+    }
+
+    .infinite-loader {
+      min-width: 170px;
+      height: 46px;
       border-radius: 14px;
-      border: none;
-      background: linear-gradient(135deg, #37a0ff, #2f6bff);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
       color: #fff;
-      font-size: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 14px;
       font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 10px 24px rgba(55,160,255,0.28);
-      transition: 0.2s ease;
     }
 
-    .load-more-btn:hover {
-      transform: translateY(-1px);
+    .infinite-loader::before {
+      content: "";
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      animation: spinLoader 0.8s linear infinite;
     }
 
-    .load-more-btn:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-      transform: none;
+    @keyframes spinLoader {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #scrollSentinel {
+      width: 100%;
+      height: 2px;
     }
 
     @media (max-width: 640px) {
@@ -189,12 +205,6 @@
       .product-image {
         aspect-ratio: 4 / 5;
         padding: 8px;
-      }
-
-      .load-more-btn {
-        min-width: 160px;
-        height: 46px;
-        font-size: 14px;
       }
     }
   </style>
@@ -269,9 +279,11 @@
       <div class="empty-state" id="empty-state" style="display:none;">No products available yet.</div>
     </div>
 
-    <div id="loadMoreWrap" class="load-more-wrap" style="display:none;">
-      <button id="loadMoreBtn" class="load-more-btn" type="button">Load More</button>
+    <div id="infiniteLoaderWrap" class="infinite-loader-wrap">
+      <div class="infinite-loader">Loading more</div>
     </div>
+
+    <div id="scrollSentinel"></div>
   </section>
 
   <footer>
@@ -320,6 +332,10 @@
     let filteredProductsData = [];
     let visibleProductsCount = 0;
     const PRODUCTS_PER_PAGE = 6;
+
+    let infiniteObserver = null;
+    let isAppendingProducts = false;
+    let hasMoreProductsToLoad = false;
 
     function normalizeBrandValue(value) {
       const raw = String(value || "").trim();
@@ -424,6 +440,17 @@
       }
     }
 
+    function showInfiniteLoader(show) {
+      const wrap = document.getElementById("infiniteLoaderWrap");
+      if (!wrap) return;
+      wrap.classList.toggle("show", !!show);
+    }
+
+    function updateInfiniteScrollState() {
+      hasMoreProductsToLoad = filteredProductsData.length > visibleProductsCount;
+      showInfiniteLoader(hasMoreProductsToLoad);
+    }
+
     function filterProducts(category, buttonEl) {
       currentCategoryFilter = category;
 
@@ -437,11 +464,13 @@
 
       visibleProductsCount = PRODUCTS_PER_PAGE;
       applyAllFilters();
+      resetInfiniteObserver();
     }
 
     function applyBrandFilter() {
       visibleProductsCount = PRODUCTS_PER_PAGE;
       applyAllFilters();
+      resetInfiniteObserver();
     }
 
     function buildProductCard(product) {
@@ -498,33 +527,24 @@
       return card;
     }
 
-    function updateLoadMoreState() {
-      const wrap = document.getElementById("loadMoreWrap");
-      const btn = document.getElementById("loadMoreBtn");
-
-      if (!wrap || !btn) return;
-
-      if (filteredProductsData.length > visibleProductsCount) {
-        wrap.style.display = "flex";
-        btn.disabled = false;
-      } else {
-        wrap.style.display = "none";
-        btn.disabled = true;
-      }
+    function clearRenderedProducts() {
+      document.querySelectorAll(".product-card").forEach(card => card.remove());
     }
 
-    function renderVisibleProducts() {
+    function renderVisibleProducts(resetGrid = true) {
       const grid = document.getElementById("grid");
       const empty = document.getElementById("empty-state");
 
-      document.querySelectorAll(".product-card").forEach(card => card.remove());
+      if (resetGrid) {
+        clearRenderedProducts();
+      }
 
       if (!filteredProductsData.length) {
         if (empty) {
           empty.style.display = "";
           empty.textContent = "No products available for this filter.";
         }
-        updateLoadMoreState();
+        updateInfiniteScrollState();
         return;
       }
 
@@ -537,8 +557,41 @@
         fragment.appendChild(buildProductCard(product));
       });
 
+      if (resetGrid) {
+        grid.appendChild(fragment);
+      }
+
+      updateInfiniteScrollState();
+    }
+
+    function appendNextProductsBatch() {
+      if (isAppendingProducts || !hasMoreProductsToLoad) return;
+
+      isAppendingProducts = true;
+
+      const grid = document.getElementById("grid");
+      const nextStart = visibleProductsCount;
+      const nextEnd = Math.min(visibleProductsCount + PRODUCTS_PER_PAGE, filteredProductsData.length);
+      const nextItems = filteredProductsData.slice(nextStart, nextEnd);
+
+      if (!nextItems.length) {
+        hasMoreProductsToLoad = false;
+        showInfiniteLoader(false);
+        isAppendingProducts = false;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+
+      nextItems.forEach(product => {
+        fragment.appendChild(buildProductCard(product));
+      });
+
       grid.appendChild(fragment);
-      updateLoadMoreState();
+      visibleProductsCount = nextEnd;
+
+      updateInfiniteScrollState();
+      isAppendingProducts = false;
     }
 
     function applyAllFilters() {
@@ -574,7 +627,7 @@
         return selectedBrand === "all" || brand === selectedBrand;
       });
 
-      renderVisibleProducts();
+      renderVisibleProducts(true);
     }
 
     function renderProducts(items) {
@@ -593,6 +646,7 @@
 
       visibleProductsCount = PRODUCTS_PER_PAGE;
       applyAllFilters();
+      resetInfiniteObserver();
     }
 
     async function loadCategory(categoryName) {
@@ -634,14 +688,34 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-      const loadMoreBtn = document.getElementById("loadMoreBtn");
-      if (loadMoreBtn) {
-        loadMoreBtn.addEventListener("click", function () {
-          visibleProductsCount += PRODUCTS_PER_PAGE;
-          renderVisibleProducts();
-        });
+    function setupInfiniteObserver() {
+      const sentinel = document.getElementById("scrollSentinel");
+      if (!sentinel) return;
+
+      infiniteObserver = new IntersectionObserver((entries) => {
+        const entry = entries[0];
+        if (!entry || !entry.isIntersecting) return;
+        if (!hasMoreProductsToLoad || isAppendingProducts) return;
+        appendNextProductsBatch();
+      }, {
+        root: null,
+        rootMargin: "350px 0px 350px 0px",
+        threshold: 0
+      });
+
+      infiniteObserver.observe(sentinel);
+    }
+
+    function resetInfiniteObserver() {
+      if (infiniteObserver) {
+        infiniteObserver.disconnect();
+        infiniteObserver = null;
       }
+      setupInfiniteObserver();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      setupInfiniteObserver();
     });
 
     load();
