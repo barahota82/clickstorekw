@@ -5,13 +5,272 @@
     cart: "click_company_cart_v5",
     pending: "click_company_pending_v5",
     orders: "click_company_orders_v5",
-    user: "click_company_user_v2"
+    user: "click_company_user_v2",
+    language: "site_language"
   };
 
   const DEFAULT_WHATSAPP = {
     phone: "67680877",
     employee_name: "Sales",
     greeting: "Hello 👋"
+  };
+
+  const CART_I18N = {
+    en: {
+      home: "Home",
+      cart: "Cart",
+      whatsapp: "WhatsApp",
+      login: "Login",
+      pending: "Pending",
+      my_orders: "My Orders",
+      your_cart: "Your Cart",
+      your_cart_empty: "Your cart is empty",
+      your_cart_empty_text: "Add offers to start your order.",
+      pending_empty: "No pending offers",
+      pending_empty_text: "Saved pending offers will appear here.",
+      no_orders_yet: "No orders yet",
+      no_orders_text: "Your sent orders will appear here.",
+      select_all: "Select All",
+      selected: "selected",
+      send_order: "Send Order",
+      save_as_pending: "Save as Pending",
+      empty_cart: "Empty Cart",
+      empty_pending_cart: "Empty Pending Cart",
+      track_my_order: "Track My Order",
+      cancel_order: "Cancel Order",
+      order_cancelled: "Order Cancelled",
+      order_rejected: "Order Rejected",
+      order_delivered: "Order Delivered",
+      cancel_by_company_only: "Cancel By Company Only",
+      order_locked: "Order Locked",
+      remove_item: "Remove Item",
+      remove_item_confirm: "Are you sure you want to remove this item?",
+      remove: "Remove",
+      confirm: "Confirm",
+      are_you_sure: "Are you sure?",
+      cancel: "Cancel",
+      empty_cart_title: "Empty Cart",
+      empty_cart_confirm: "Are you sure you want to empty the cart?",
+      empty_pending_title: "Empty Pending Cart",
+      empty_pending_confirm: "Are you sure you want to empty the pending cart?",
+      added_to_cart: "Added to cart",
+      item_removed: "Item removed",
+      cart_emptied: "Cart emptied",
+      pending_emptied: "Pending cart emptied",
+      select_offers_first: "Please select offers first",
+      moved_to_pending: "Selected offers moved to pending",
+      order_created_successfully: "Order created successfully",
+      order_prepared_successfully: "Order prepared successfully",
+      failed_create_order: "Failed to create order",
+      failed_send_order: "Failed to send order",
+      cancel_order_title: "Cancel Order",
+      cancel_order_confirm: "Are you sure you want to cancel this order?",
+      cancel_order_btn: "Cancel Order",
+      order_cancelled_successfully: "Order cancelled successfully",
+      failed_cancel_order: "Failed to cancel order",
+      signed_out: "Signed out",
+      customer: "Customer",
+      pending_delivery: "Pending Delivery",
+      approved: "Approved",
+      on_the_way: "On The Way",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+      rejected: "Rejected",
+      rejected_default_reason: "Not matching conditions",
+      offer: "Offer",
+      offer_name: "Offer Name",
+      devices_in_offer: "Devices in Offer",
+      quantity: "Quantity",
+      down_payment: "Down Payment",
+      monthly_installment: "Monthly Installment",
+      months: "Months",
+      total_price: "Total Price",
+      image: "Image",
+      order_reference: "Order Reference",
+      order_date: "Order Date",
+      customer_name: "Customer Name",
+      customer_email: "Customer Email",
+      customer_whatsapp: "Customer WhatsApp",
+      gift: "Gift",
+      free_gift_first_order: "Free gift for first order",
+      offers_label: "Offers",
+      please_confirm_order: "Please confirm this order and proceed with processing.",
+      please_update_status: "Please update me with the current status of this order.",
+      i_want_cancel: "I want to cancel this order.",
+      please_confirm_cancel: "Please confirm the cancellation.",
+      request_timeout: "Request timeout. Please try again.",
+      unexpected_server_response: "Unexpected server response."
+    },
+    ph: {
+      home: "Home",
+      cart: "Cart",
+      whatsapp: "WhatsApp",
+      login: "Login",
+      pending: "Pending",
+      my_orders: "My Orders",
+      your_cart: "Iyong Cart",
+      your_cart_empty: "Walang laman ang iyong cart",
+      your_cart_empty_text: "Magdagdag ng mga alok upang simulan ang iyong order.",
+      pending_empty: "Walang pending offers",
+      pending_empty_text: "Ang mga naka-save na pending offer ay lalabas dito.",
+      no_orders_yet: "Wala pang orders",
+      no_orders_text: "Ang mga naipadalang order mo ay lalabas dito.",
+      select_all: "Piliin Lahat",
+      selected: "napili",
+      send_order: "Ipadala ang Order",
+      save_as_pending: "I-save bilang Pending",
+      empty_cart: "I-empty ang Cart",
+      empty_pending_cart: "I-empty ang Pending Cart",
+      track_my_order: "I-track ang Order Ko",
+      cancel_order: "I-cancel ang Order",
+      order_cancelled: "Nakansela ang Order",
+      order_rejected: "Tinanggihan ang Order",
+      order_delivered: "Na-deliver ang Order",
+      cancel_by_company_only: "Company Lang ang Puwedeng Mag-cancel",
+      order_locked: "Naka-lock ang Order",
+      remove_item: "Alisin ang Item",
+      remove_item_confirm: "Sigurado ka bang gusto mong alisin ang item na ito?",
+      remove: "Alisin",
+      confirm: "Kumpirmahin",
+      are_you_sure: "Sigurado ka ba?",
+      cancel: "Kanselahin",
+      empty_cart_title: "I-empty ang Cart",
+      empty_cart_confirm: "Sigurado ka bang gusto mong i-empty ang cart?",
+      empty_pending_title: "I-empty ang Pending Cart",
+      empty_pending_confirm: "Sigurado ka bang gusto mong i-empty ang pending cart?",
+      added_to_cart: "Naidagdag sa cart",
+      item_removed: "Naalis ang item",
+      cart_emptied: "Na-empty ang cart",
+      pending_emptied: "Na-empty ang pending cart",
+      select_offers_first: "Pumili muna ng offers",
+      moved_to_pending: "Ang napiling offers ay nailipat sa pending",
+      order_created_successfully: "Matagumpay na nalikha ang order",
+      order_prepared_successfully: "Matagumpay na naihanda ang order",
+      failed_create_order: "Hindi nagawang likhain ang order",
+      failed_send_order: "Hindi naipadala ang order",
+      cancel_order_title: "I-cancel ang Order",
+      cancel_order_confirm: "Sigurado ka bang gusto mong i-cancel ang order na ito?",
+      cancel_order_btn: "I-cancel ang Order",
+      order_cancelled_successfully: "Matagumpay na nakansela ang order",
+      failed_cancel_order: "Hindi nakansela ang order",
+      signed_out: "Nakapag-sign out na",
+      customer: "Customer",
+      pending_delivery: "Pending Delivery",
+      approved: "Approved",
+      on_the_way: "On The Way",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+      rejected: "Rejected",
+      rejected_default_reason: "Hindi tugma sa mga kondisyon",
+      offer: "Offer",
+      offer_name: "Pangalan ng Offer",
+      devices_in_offer: "Mga Device sa Offer",
+      quantity: "Dami",
+      down_payment: "Down Payment",
+      monthly_installment: "Buwanang Hulugan",
+      months: "Buwan",
+      total_price: "Kabuuang Presyo",
+      image: "Larawan",
+      order_reference: "Order Reference",
+      order_date: "Petsa ng Order",
+      customer_name: "Pangalan ng Customer",
+      customer_email: "Email ng Customer",
+      customer_whatsapp: "WhatsApp ng Customer",
+      gift: "Regalo",
+      free_gift_first_order: "Libreng regalo para sa unang order",
+      offers_label: "Mga Offer",
+      please_confirm_order: "Pakikumpirma ang order na ito at ipagpatuloy ang proseso.",
+      please_update_status: "Pakibigay ang kasalukuyang status ng order na ito.",
+      i_want_cancel: "Gusto kong kanselahin ang order na ito.",
+      please_confirm_cancel: "Pakikumpirma ang pagkansela.",
+      request_timeout: "Nag-timeout ang request. Pakisubukang muli.",
+      unexpected_server_response: "Hindi inaasahang tugon ng server."
+    },
+    hi: {
+      home: "होम",
+      cart: "कार्ट",
+      whatsapp: "व्हाट्सऐप",
+      login: "लॉगिन",
+      pending: "पेंडिंग",
+      my_orders: "मेरे ऑर्डर",
+      your_cart: "आपका कार्ट",
+      your_cart_empty: "आपका कार्ट खाली है",
+      your_cart_empty_text: "अपना ऑर्डर शुरू करने के लिए ऑफर जोड़ें।",
+      pending_empty: "कोई pending offers नहीं हैं",
+      pending_empty_text: "सहेजे गए pending offers यहाँ दिखाई देंगे।",
+      no_orders_yet: "अभी तक कोई ऑर्डर नहीं",
+      no_orders_text: "आपके भेजे गए ऑर्डर यहाँ दिखाई देंगे।",
+      select_all: "सभी चुनें",
+      selected: "चयनित",
+      send_order: "ऑर्डर भेजें",
+      save_as_pending: "Pending के रूप में सेव करें",
+      empty_cart: "कार्ट खाली करें",
+      empty_pending_cart: "Pending Cart खाली करें",
+      track_my_order: "मेरा ऑर्डर ट्रैक करें",
+      cancel_order: "ऑर्डर रद्द करें",
+      order_cancelled: "ऑर्डर रद्द किया गया",
+      order_rejected: "ऑर्डर अस्वीकृत",
+      order_delivered: "ऑर्डर डिलीवर हो गया",
+      cancel_by_company_only: "केवल कंपनी रद्द कर सकती है",
+      order_locked: "ऑर्डर लॉक है",
+      remove_item: "आइटम हटाएं",
+      remove_item_confirm: "क्या आप वाकई इस आइटम को हटाना चाहते हैं?",
+      remove: "हटाएं",
+      confirm: "पुष्टि करें",
+      are_you_sure: "क्या आप सुनिश्चित हैं?",
+      cancel: "रद्द करें",
+      empty_cart_title: "कार्ट खाली करें",
+      empty_cart_confirm: "क्या आप वाकई कार्ट खाली करना चाहते हैं?",
+      empty_pending_title: "Pending Cart खाली करें",
+      empty_pending_confirm: "क्या आप वाकई pending cart खाली करना चाहते हैं?",
+      added_to_cart: "कार्ट में जोड़ दिया गया",
+      item_removed: "आइटम हटा दिया गया",
+      cart_emptied: "कार्ट खाली कर दिया गया",
+      pending_emptied: "Pending cart खाली कर दिया गया",
+      select_offers_first: "कृपया पहले ऑफर चुनें",
+      moved_to_pending: "चयनित ऑफर pending में भेज दिए गए",
+      order_created_successfully: "ऑर्डर सफलतापूर्वक बनाया गया",
+      order_prepared_successfully: "ऑर्डर सफलतापूर्वक तैयार किया गया",
+      failed_create_order: "ऑर्डर बनाना विफल रहा",
+      failed_send_order: "ऑर्डर भेजना विफल रहा",
+      cancel_order_title: "ऑर्डर रद्द करें",
+      cancel_order_confirm: "क्या आप वाकई इस ऑर्डर को रद्द करना चाहते हैं?",
+      cancel_order_btn: "ऑर्डर रद्द करें",
+      order_cancelled_successfully: "ऑर्डर सफलतापूर्वक रद्द किया गया",
+      failed_cancel_order: "ऑर्डर रद्द नहीं हो सका",
+      signed_out: "साइन आउट हो गया",
+      customer: "ग्राहक",
+      pending_delivery: "Pending Delivery",
+      approved: "Approved",
+      on_the_way: "On The Way",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+      rejected: "Rejected",
+      rejected_default_reason: "शर्तों से मेल नहीं खाता",
+      offer: "ऑफर",
+      offer_name: "ऑफर का नाम",
+      devices_in_offer: "ऑफर में डिवाइस",
+      quantity: "मात्रा",
+      down_payment: "डाउन पेमेंट",
+      monthly_installment: "मासिक किस्त",
+      months: "महीने",
+      total_price: "कुल कीमत",
+      image: "चित्र",
+      order_reference: "ऑर्डर रेफरेंस",
+      order_date: "ऑर्डर तिथि",
+      customer_name: "ग्राहक का नाम",
+      customer_email: "ग्राहक का ईमेल",
+      customer_whatsapp: "ग्राहक का व्हाट्सऐप",
+      gift: "उपहार",
+      free_gift_first_order: "पहले ऑर्डर के लिए मुफ्त गिफ्ट",
+      offers_label: "ऑफर",
+      please_confirm_order: "कृपया इस ऑर्डर की पुष्टि करें और प्रक्रिया शुरू करें।",
+      please_update_status: "कृपया इस ऑर्डर की वर्तमान स्थिति बताएं।",
+      i_want_cancel: "मैं इस ऑर्डर को रद्द करना चाहता हूँ।",
+      please_confirm_cancel: "कृपया रद्दीकरण की पुष्टि करें।",
+      request_timeout: "अनुरोध का समय समाप्त हो गया। कृपया पुनः प्रयास करें।",
+      unexpected_server_response: "अनपेक्षित सर्वर प्रतिक्रिया।"
+    }
   };
 
   let whatsappSettings = { ...DEFAULT_WHATSAPP };
@@ -39,8 +298,20 @@
     await syncOrdersFromServer();
     updateAllBadges();
     updateAuthLabel();
+    applyCartTranslations();
     renderCartSystem();
   });
+
+  function getUiLanguage() {
+    const value = String(localStorage.getItem(STORAGE_KEYS.language) || "en").trim().toLowerCase();
+    if (CART_I18N[value]) return value;
+    return "en";
+  }
+
+  function tr(key) {
+    const lang = getUiLanguage();
+    return CART_I18N[lang]?.[key] || CART_I18N.en?.[key] || key;
+  }
 
   function safeParse(value, fallback) {
     try {
@@ -64,7 +335,7 @@
       id: String(order.id || buildOrderId()).trim(),
       db_id: order.db_id ? Number(order.db_id) : null,
       date: String(order.date || new Date().toLocaleString()).trim(),
-      status: String(order.status || "Pending Delivery").trim(),
+      status: String(order.status || tr("pending_delivery")).trim(),
       rejection_reason: String(order.rejection_reason || "").trim(),
       server_order: !!order.server_order,
       is_first_order: !!order.is_first_order,
@@ -77,7 +348,7 @@
   function normalizeItem(item) {
     const normalized = {
       id: String(item.id || buildRandomId()).trim(),
-      title: String(item.title || "Offer").trim(),
+      title: String(item.title || tr("offer")).trim(),
       image: String(item.image || "/images/logo.png").trim(),
       quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
       checked: typeof item.checked === "boolean" ? item.checked : true,
@@ -141,16 +412,16 @@
     if (!raw) return "";
     if (/month/i.test(raw)) return raw;
     const num = extractNumber(raw);
-    return num ? `${num} Months` : raw;
+    return num ? `${num} ${tr("months")}` : raw;
   }
 
   function normalizeDownPayment(value) {
     const raw = String(value || "").trim();
-    if (!raw) return "0 KD Down Payment";
+    if (!raw) return `0 KD ${tr("down_payment")}`;
     if (/down payment/i.test(raw)) return raw;
-    if (/kd/i.test(raw)) return `${raw} Down Payment`;
+    if (/kd/i.test(raw)) return `${raw} ${tr("down_payment")}`;
     const num = extractNumber(raw);
-    return num ? `${num} KD Down Payment` : "0 KD Down Payment";
+    return num ? `${num} KD ${tr("down_payment")}` : `0 KD ${tr("down_payment")}`;
   }
 
   function extractMonthly(priceText) {
@@ -164,17 +435,17 @@
     const raw = String(monthsText || "").trim();
     if (!raw) return "";
     const match = raw.match(/(\d+)\s*Months/i);
-    if (match) return `${match[1]} Months`;
+    if (match) return `${match[1]} ${tr("months")}`;
     const num = extractNumber(raw);
-    return num ? `${num} Months` : "";
+    return num ? `${num} ${tr("months")}` : "";
   }
 
   function extractDownPayment(monthsText) {
     const raw = String(monthsText || "").trim();
-    if (!raw) return "0 KD Down Payment";
+    if (!raw) return `0 KD ${tr("down_payment")}`;
     const match = raw.match(/(\d+(\.\d+)?)\s*KD\s*Down\s*Payment/i);
-    if (match) return `${match[1]} KD Down Payment`;
-    return "0 KD Down Payment";
+    if (match) return `${match[1]} KD ${tr("down_payment")}`;
+    return `0 KD ${tr("down_payment")}`;
   }
 
   function inferDevicesCount(title) {
@@ -249,13 +520,13 @@
       try {
         data = JSON.parse(raw);
       } catch (e) {
-        throw new Error(raw || "Unexpected server response.");
+        throw new Error(raw || tr("unexpected_server_response"));
       }
 
       return { res, data };
     } catch (err) {
       if (err.name === "AbortError") {
-        throw new Error("Request timeout. Please try again.");
+        throw new Error(tr("request_timeout"));
       }
       throw err;
     } finally {
@@ -277,7 +548,7 @@
 
     if (customerSession.logged_in && customerSession.customer) {
       setUserData({
-        name: customerSession.customer.full_name || customerSession.customer.email || "Customer",
+        name: customerSession.customer.full_name || customerSession.customer.email || tr("customer"),
         email: customerSession.customer.email || "",
         full_name: customerSession.customer.full_name || "",
         id: customerSession.customer.id || null,
@@ -318,11 +589,28 @@
   function getGreeting() {
     let greeting = whatsappSettings.greeting || DEFAULT_WHATSAPP.greeting;
     greeting = greeting.replace("{{name}}", whatsappSettings.employee_name || DEFAULT_WHATSAPP.employee_name);
+
+    if (!/[👋]/.test(greeting)) {
+      greeting = `${greeting} 👋`;
+    }
+
     return greeting;
   }
 
+  function enhanceWhatsAppMessage(text) {
+    let message = String(text || "").trim();
+    if (!message) return message;
+
+    message = message.replace(/^Welcome to Click Company\s*/im, "Welcome to Click Company 👋\n");
+    message = message.replace(/^Gift:/gim, "🎁 Gift:");
+    message = message.replace(/^Offer\s+(\d+)/gim, "🔹 Offer $1");
+
+    return message;
+  }
+
   function openWhatsApp(text) {
-    const url = `https://wa.me/${getWhatsappPhone()}?text=${encodeURIComponent(text)}`;
+    const finalText = enhanceWhatsAppMessage(text);
+    const url = `https://wa.me/${getWhatsappPhone()}?text=${encodeURIComponent(finalText)}`;
     if (isMobile()) {
       window.location.href = url;
     } else {
@@ -350,9 +638,9 @@
       tabs.className = "cart-tabs-wrap";
       tabs.innerHTML = `
         <div class="cart-tabs">
-          <button type="button" class="cart-tab-btn active" data-tab="cart" onclick="switchCartTab('cart')">Cart</button>
-          <button type="button" class="cart-tab-btn" data-tab="pending" onclick="switchCartTab('pending')">Pending</button>
-          <button type="button" class="cart-tab-btn" data-tab="orders" onclick="switchCartTab('orders')">My Orders</button>
+          <button type="button" class="cart-tab-btn active" data-tab="cart" onclick="switchCartTab('cart')">${tr("cart")}</button>
+          <button type="button" class="cart-tab-btn" data-tab="pending" onclick="switchCartTab('pending')">${tr("pending")}</button>
+          <button type="button" class="cart-tab-btn" data-tab="orders" onclick="switchCartTab('orders')">${tr("my_orders")}</button>
         </div>
       `;
       header.insertAdjacentElement("afterend", tabs);
@@ -404,34 +692,57 @@
   }
 
   function ensureMobileAppBar() {
-    if (document.getElementById("mobileAppBarGlobal")) return;
+    if (!document.getElementById("mobileAppBarGlobal")) {
+      const bar = document.createElement("div");
+      bar.id = "mobileAppBarGlobal";
+      bar.className = "mobile-app-bar-global";
+      bar.innerHTML = `
+        <div class="mobile-app-lang-wrap">
+          <select id="mobileLanguageSelect" class="mobile-language-select" aria-label="Language">
+            <option value="en">EN</option>
+            <option value="ph">PH</option>
+            <option value="hi">HI</option>
+          </select>
+        </div>
 
-    const bar = document.createElement("div");
-    bar.id = "mobileAppBarGlobal";
-    bar.className = "mobile-app-bar-global";
-    bar.innerHTML = `
-      <button type="button" class="mobile-app-item active" data-mobile-nav="home" onclick="goHomePage()">
-        <span class="mobile-app-icon">🏠</span>
-        <span class="mobile-app-label">Home</span>
-      </button>
+        <button type="button" class="mobile-app-item active" data-mobile-nav="home" onclick="goHomePage()">
+          <span class="mobile-app-icon">🏠</span>
+          <span class="mobile-app-label" id="mobileNavHomeLabel">${tr("home")}</span>
+        </button>
 
-      <button type="button" class="mobile-app-item" data-mobile-nav="cart" onclick="openCart()">
-        <span class="mobile-app-icon">🛒</span>
-        <span class="mobile-app-label">Cart</span>
-        <span class="mobile-app-badge" id="cart-count-floating">0</span>
-      </button>
+        <button type="button" class="mobile-app-item" data-mobile-nav="cart" onclick="openCart()">
+          <span class="mobile-app-icon">🛒</span>
+          <span class="mobile-app-label" id="mobileNavCartLabel">${tr("cart")}</span>
+          <span class="mobile-app-badge" id="cart-count-floating">0</span>
+        </button>
 
-      <button type="button" class="mobile-app-item" data-mobile-nav="whatsapp" onclick="openWhatsAppDirect()">
-        <span class="mobile-app-icon">💬</span>
-        <span class="mobile-app-label">WhatsApp</span>
-      </button>
+        <button type="button" class="mobile-app-item" data-mobile-nav="whatsapp" onclick="openWhatsAppDirect()">
+          <span class="mobile-app-icon">💬</span>
+          <span class="mobile-app-label" id="mobileNavWhatsappLabel">${tr("whatsapp")}</span>
+        </button>
 
-      <button type="button" class="mobile-app-item" data-mobile-nav="auth" onclick="openAuthModal()">
-        <span class="mobile-app-icon">👤</span>
-        <span class="mobile-app-label" id="mobileAuthLabel">Login</span>
-      </button>
-    `;
-    document.body.appendChild(bar);
+        <button type="button" class="mobile-app-item" data-mobile-nav="auth" onclick="openAuthModal()">
+          <span class="mobile-app-icon">👤</span>
+          <span class="mobile-app-label" id="mobileAuthLabel">${tr("login")}</span>
+        </button>
+      `;
+      document.body.appendChild(bar);
+    }
+
+    const languageSelect = document.getElementById("mobileLanguageSelect");
+    if (languageSelect) {
+      languageSelect.value = getUiLanguage();
+
+      if (!languageSelect.dataset.bound) {
+        languageSelect.dataset.bound = "1";
+        languageSelect.addEventListener("change", function () {
+          localStorage.setItem(STORAGE_KEYS.language, this.value || "en");
+          document.dispatchEvent(new CustomEvent("site-language-changed", {
+            detail: { language: this.value || "en" }
+          }));
+        });
+      }
+    }
   }
 
   function ensureConfirmModal() {
@@ -442,11 +753,11 @@
     modal.className = "global-confirm-modal";
     modal.innerHTML = `
       <div class="global-confirm-box">
-        <div class="global-confirm-title" id="globalConfirmTitle">Confirm</div>
-        <div class="global-confirm-text" id="globalConfirmText">Are you sure?</div>
+        <div class="global-confirm-title" id="globalConfirmTitle">${tr("confirm")}</div>
+        <div class="global-confirm-text" id="globalConfirmText">${tr("are_you_sure")}</div>
         <div class="global-confirm-actions">
-          <button type="button" class="confirm-btn confirm-cancel-btn" id="globalConfirmCancel">Cancel</button>
-          <button type="button" class="confirm-btn confirm-ok-btn" id="globalConfirmOk">Confirm</button>
+          <button type="button" class="confirm-btn confirm-cancel-btn" id="globalConfirmCancel">${tr("cancel")}</button>
+          <button type="button" class="confirm-btn confirm-ok-btn" id="globalConfirmOk">${tr("confirm")}</button>
         </div>
       </div>
     `;
@@ -467,7 +778,7 @@
     floatingButtons.forEach(button => {
       button.innerHTML = `
         <span class="floating-cart-icon">🛒</span>
-        <span class="floating-cart-label">Cart</span>
+        <span class="floating-cart-label">${tr("cart")}</span>
         <span id="count">0</span>
       `;
     });
@@ -495,6 +806,16 @@
       await syncOrdersFromServer();
       renderCartSystem();
       updateAuthLabel();
+      applyCartTranslations();
+    });
+
+    document.addEventListener("site-language-changed", function (e) {
+      const lang = e?.detail?.language || getUiLanguage();
+      localStorage.setItem(STORAGE_KEYS.language, lang);
+      normalizeFloatingCartButton();
+      updateAuthLabel();
+      applyCartTranslations();
+      renderCartSystem();
     });
   }
 
@@ -514,13 +835,45 @@
     onScroll();
   }
 
+  function applyCartTranslations() {
+    const cartHeaderTitle = document.querySelector(".cart-header h3");
+    if (cartHeaderTitle) cartHeaderTitle.textContent = tr("your_cart");
+
+    const cartTabs = document.querySelectorAll(".cart-tab-btn");
+    cartTabs.forEach(btn => {
+      if (btn.dataset.tab === "cart") btn.textContent = tr("cart");
+      if (btn.dataset.tab === "pending") btn.textContent = tr("pending");
+      if (btn.dataset.tab === "orders") btn.textContent = tr("my_orders");
+    });
+
+    const mobileNavHomeLabel = document.getElementById("mobileNavHomeLabel");
+    const mobileNavCartLabel = document.getElementById("mobileNavCartLabel");
+    const mobileNavWhatsappLabel = document.getElementById("mobileNavWhatsappLabel");
+    const mobileLanguageSelect = document.getElementById("mobileLanguageSelect");
+
+    if (mobileNavHomeLabel) mobileNavHomeLabel.textContent = tr("home");
+    if (mobileNavCartLabel) mobileNavCartLabel.textContent = tr("cart");
+    if (mobileNavWhatsappLabel) mobileNavWhatsappLabel.textContent = tr("whatsapp");
+    if (mobileLanguageSelect) mobileLanguageSelect.value = getUiLanguage();
+
+    const cartBtns = document.querySelectorAll(".cart-btn");
+    cartBtns.forEach(btn => {
+      const textNodes = Array.from(btn.childNodes).filter(node => node.nodeType === 3);
+      if (textNodes.length) {
+        textNodes[0].textContent = `${tr("cart")} `;
+      }
+    });
+
+    normalizeFloatingCartButton();
+    updateAuthLabel();
+  }
+
   function updateAuthLabel() {
     const user = getUserData();
-    const value = user && user.email ? (user.full_name || user.email) : "Login";
+    const value = user && user.email ? (user.full_name || user.email) : tr("login");
 
     if (typeof window.setTopAuthLabel === "function") {
       window.setTopAuthLabel(value);
-      return;
     }
 
     const desktopLabel = document.getElementById("desktopAuthLabel");
@@ -642,7 +995,7 @@
     saveAll();
     animateCartPulse();
     renderCartSystem();
-    showToast("Added to cart");
+    showToast(tr("added_to_cart"));
   };
 
   function renderCartSystem() {
@@ -668,15 +1021,15 @@
       itemsWrap.innerHTML = `
         <div class="cart-empty-block">
           <div class="cart-empty-icon">🛒</div>
-          <div class="cart-empty-title">${type === "cart" ? "Your cart is empty" : "No pending offers"}</div>
-          <div class="cart-empty-text">${type === "cart" ? "Add offers to start your order." : "Saved pending offers will appear here."}</div>
+          <div class="cart-empty-title">${type === "cart" ? tr("your_cart_empty") : tr("pending_empty")}</div>
+          <div class="cart-empty-text">${type === "cart" ? tr("your_cart_empty_text") : tr("pending_empty_text")}</div>
         </div>
       `;
 
       footer.innerHTML = `
         <div class="cart-footer-actions">
           <button type="button" class="cart-action-btn cart-action-btn-danger" onclick="confirmEmptySection('${type}')">
-            ${type === "cart" ? "Empty Cart" : "Empty Pending Cart"}
+            ${type === "cart" ? tr("empty_cart") : tr("empty_pending_cart")}
           </button>
         </div>
       `;
@@ -690,10 +1043,10 @@
       <div class="cart-list-tools">
         <label class="select-all-line">
           <input type="checkbox" ${allChecked ? "checked" : ""} onchange="toggleSelectAll('${type}', this.checked)">
-          <span>Select All</span>
+          <span>${tr("select_all")}</span>
         </label>
 
-        <div class="selected-counter">${selectedCount} selected</div>
+        <div class="selected-counter">${selectedCount} ${tr("selected")}</div>
       </div>
 
       <div class="cart-list-grid">
@@ -704,22 +1057,22 @@
     footer.innerHTML = type === "cart"
       ? `
         <div class="cart-footer-actions">
-          <button type="button" class="cart-action-btn cart-action-btn-primary" onclick="sendSelectedOrder('${type}')">Send Order</button>
-          <button type="button" class="cart-action-btn cart-action-btn-secondary" onclick="saveSelectedAsPending()">Save as Pending</button>
-          <button type="button" class="cart-action-btn cart-action-btn-danger" onclick="confirmEmptySection('${type}')">Empty Cart</button>
+          <button type="button" class="cart-action-btn cart-action-btn-primary" onclick="sendSelectedOrder('${type}')">${tr("send_order")}</button>
+          <button type="button" class="cart-action-btn cart-action-btn-secondary" onclick="saveSelectedAsPending()">${tr("save_as_pending")}</button>
+          <button type="button" class="cart-action-btn cart-action-btn-danger" onclick="confirmEmptySection('${type}')">${tr("empty_cart")}</button>
         </div>
       `
       : `
         <div class="cart-footer-actions">
-          <button type="button" class="cart-action-btn cart-action-btn-primary" onclick="sendSelectedOrder('${type}')">Send Order</button>
-          <button type="button" class="cart-action-btn cart-action-btn-danger" onclick="confirmEmptySection('${type}')">Empty Pending Cart</button>
+          <button type="button" class="cart-action-btn cart-action-btn-primary" onclick="sendSelectedOrder('${type}')">${tr("send_order")}</button>
+          <button type="button" class="cart-action-btn cart-action-btn-danger" onclick="confirmEmptySection('${type}')">${tr("empty_pending_cart")}</button>
         </div>
       `;
   }
 
   function renderSelectableRow(item, index, type) {
     const image = escapeHTML(item.image || "/images/logo.png");
-    const title = escapeHTML(item.title || "Offer");
+    const title = escapeHTML(item.title || tr("offer"));
     const quantity = Number(item.quantity) || 1;
 
     return `
@@ -751,8 +1104,8 @@
       itemsWrap.innerHTML = `
         <div class="cart-empty-block">
           <div class="cart-empty-icon">📦</div>
-          <div class="cart-empty-title">No orders yet</div>
-          <div class="cart-empty-text">Your sent orders will appear here.</div>
+          <div class="cart-empty-title">${tr("no_orders_yet")}</div>
+          <div class="cart-empty-text">${tr("no_orders_text")}</div>
         </div>
       `;
       footer.innerHTML = "";
@@ -798,21 +1151,21 @@
 
         <div class="order-card-actions">
           ${canTrack
-            ? `<button type="button" class="order-small-btn order-track-btn" onclick="trackOrder(${index})">Track My Order</button>`
-            : `<button type="button" class="order-small-btn order-track-btn order-disabled-btn" disabled>Track My Order</button>`
+            ? `<button type="button" class="order-small-btn order-track-btn" onclick="trackOrder(${index})">${tr("track_my_order")}</button>`
+            : `<button type="button" class="order-small-btn order-track-btn order-disabled-btn" disabled>${tr("track_my_order")}</button>`
           }
 
           ${canCancel
-            ? `<button type="button" class="order-small-btn order-cancel-btn" onclick="cancelOrderRequest(${index})">Cancel Order</button>`
+            ? `<button type="button" class="order-small-btn order-cancel-btn" onclick="cancelOrderRequest(${index})">${tr("cancel_order")}</button>`
             : isCancelled
-              ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Cancelled</button>`
+              ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>${tr("order_cancelled")}</button>`
               : isRejected
-                ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Rejected</button>`
+                ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>${tr("order_rejected")}</button>`
                 : isDelivered
-                  ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Delivered</button>`
+                  ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>${tr("order_delivered")}</button>`
                   : isOnTheWay
-                    ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Cancel By Company Only</button>`
-                    : `<button type="button" class="order-small-btn order-cancelled-btn" disabled>Order Locked</button>`
+                    ? `<button type="button" class="order-small-btn order-cancelled-btn" disabled>${tr("cancel_by_company_only")}</button>`
+                    : `<button type="button" class="order-small-btn order-cancelled-btn" disabled>${tr("order_locked")}</button>`
           }
         </div>
       </div>
@@ -833,13 +1186,13 @@
   function formatStatusLabel(status, rejectionReason = "") {
     const s = String(status || "").trim().toLowerCase();
 
-    if (!s) return "Pending Delivery";
-    if (s === "cancelled") return "Cancelled";
-    if (s === "rejected") return rejectionReason ? `Rejected - ${rejectionReason}` : "Rejected - Not matching conditions";
-    if (s === "completed" || s === "delivered") return "Delivered";
-    if (s === "approved") return "Approved";
-    if (s === "on the way" || s === "on_the_way") return "On The Way";
-    if (s === "pending" || s === "sent" || s === "pending delivery") return "Pending Delivery";
+    if (!s) return tr("pending_delivery");
+    if (s === "cancelled") return tr("cancelled");
+    if (s === "rejected") return rejectionReason ? `${tr("rejected")} - ${rejectionReason}` : `${tr("rejected")} - ${tr("rejected_default_reason")}`;
+    if (s === "completed" || s === "delivered") return tr("delivered");
+    if (s === "approved") return tr("approved");
+    if (s === "on the way" || s === "on_the_way") return tr("on_the_way");
+    if (s === "pending" || s === "sent" || s === "pending delivery") return tr("pending_delivery");
 
     return String(status || "").trim();
   }
@@ -880,15 +1233,15 @@
 
     if (current <= 1) {
       openConfirmModal({
-        title: "Remove Item",
-        text: "Are you sure you want to remove this item?",
-        confirmText: "Remove",
+        title: tr("remove_item"),
+        text: tr("remove_item_confirm"),
+        confirmText: tr("remove"),
         danger: true,
         onConfirm: function () {
           list.splice(index, 1);
           saveAll();
           renderCartSystem();
-          showToast("Item removed");
+          showToast(tr("item_removed"));
         }
       });
       return;
@@ -902,18 +1255,16 @@
 
   window.confirmEmptySection = function (type) {
     openConfirmModal({
-      title: type === "cart" ? "Empty Cart" : "Empty Pending Cart",
-      text: type === "cart"
-        ? "Are you sure you want to empty the cart?"
-        : "Are you sure you want to empty the pending cart?",
-      confirmText: "Empty",
+      title: type === "cart" ? tr("empty_cart_title") : tr("empty_pending_title"),
+      text: type === "cart" ? tr("empty_cart_confirm") : tr("empty_pending_confirm"),
+      confirmText: type === "cart" ? tr("empty_cart") : tr("empty_pending_cart"),
       danger: true,
       onConfirm: function () {
         if (type === "cart") cart = [];
         if (type === "pending") pendingCart = [];
         saveAll();
         renderCartSystem();
-        showToast(type === "cart" ? "Cart emptied" : "Pending cart emptied");
+        showToast(type === "cart" ? tr("cart_emptied") : tr("pending_emptied"));
       }
     });
   };
@@ -941,7 +1292,7 @@
     const selected = cart.filter(item => item.checked);
 
     if (!selected.length) {
-      showToast("Please select offers first");
+      showToast(tr("select_offers_first"));
       return;
     }
 
@@ -950,7 +1301,7 @@
 
     saveAll();
     renderCartSystem();
-    showToast("Selected offers moved to pending");
+    showToast(tr("moved_to_pending"));
   };
 
   async function syncOrdersFromServer() {
@@ -988,31 +1339,52 @@
 
   window.syncOrdersFromServer = syncOrdersFromServer;
 
+  function buildGiftLine(order) {
+    if (!order) return "";
+
+    if (order.has_promotional_gift || order.gift_label) {
+      return `🎁 ${tr("gift")}: ${order.gift_label || tr("free_gift_first_order")}`;
+    }
+
+    return "";
+  }
+
   function buildGuestOrderMessage(order) {
+    const user = getUserData();
+    const giftLine = buildGiftLine(order);
+
     const lines = (order.items || []).map((item, idx) => {
       const imageUrl = getOriginImage(item.image);
       return [
-        `🔹 Offer ${idx + 1}`,
-        `Offer Name: ${item.title}`,
-        `Devices in Offer: ${item.devices_count || "1"}`,
-        `Quantity: ${item.quantity}`,
-        `Down Payment: ${item.down_payment || "0 KD Down Payment"}`,
-        `Monthly Installment: ${item.monthly || item.price || ""}`,
-        `Months: ${item.duration || ""}`,
-        `Total Price: ${item.total_price || ""}`,
-        `Image: ${imageUrl}`
+        `🔹 ${tr("offer")} ${idx + 1}`,
+        `${tr("offer_name")}: ${item.title}`,
+        `${tr("devices_in_offer")}: ${item.devices_count || "1"}`,
+        `${tr("quantity")}: ${item.quantity}`,
+        `${tr("down_payment")}: ${item.down_payment || `0 KD ${tr("down_payment")}`}`,
+        `${tr("monthly_installment")}: ${item.monthly || item.price || ""}`,
+        `${tr("months")}: ${item.duration || ""}`,
+        `${tr("total_price")}: ${item.total_price || ""}`,
+        `${tr("image")}: ${imageUrl}`
       ].join("\n");
     }).join("\n\n");
+
+    const customerBlock = user && user.email
+      ? [
+          `${tr("customer_name")}: ${user.full_name || user.email || ""}`,
+          `${tr("customer_email")}: ${user.email || ""}`
+        ].join("\n")
+      : "";
 
     return `${getGreeting()}
 
 #ORDER
-Order Reference: ${order.id}
-Order Date: ${order.date}
+${tr("order_reference")}: ${order.id}
+${customerBlock ? customerBlock + "\n" : ""}${tr("order_date")}: ${order.date}
+${giftLine ? giftLine + "\n" : ""}
 
 ${lines}
 
-Please confirm this order and proceed with processing.`;
+${tr("please_confirm_order")}`;
   }
 
   window.sendSelectedOrder = async function (type) {
@@ -1020,7 +1392,7 @@ Please confirm this order and proceed with processing.`;
     const selected = source.filter(item => item.checked);
 
     if (!selected.length) {
-      showToast("Please select offers first");
+      showToast(tr("select_offers_first"));
       return;
     }
 
@@ -1060,7 +1432,7 @@ Please confirm this order and proceed with processing.`;
               window.openAuthModal();
             }
           }
-          showToast(data.message || "Failed to create order");
+          showToast(data.message || tr("failed_create_order"));
           return;
         }
 
@@ -1077,13 +1449,15 @@ Please confirm this order and proceed with processing.`;
         saveAll();
         renderCartSystem();
 
-        openWhatsApp(data.whatsapp_message || buildGuestOrderMessage(serverOrder));
+        const serverMessage = data.whatsapp_message || buildGuestOrderMessage(serverOrder);
+        openWhatsApp(serverMessage);
+
         await syncOrdersFromServer();
-        showToast("Order created successfully");
+        showToast(tr("order_created_successfully"));
         return;
       } catch (e) {
         console.error(e);
-        showToast(e.message || "Failed to send order");
+        showToast(e.message || tr("failed_send_order"));
         return;
       }
     }
@@ -1091,7 +1465,7 @@ Please confirm this order and proceed with processing.`;
     const guestOrder = normalizeOrder({
       id: orderId,
       date: orderDate,
-      status: "Pending Delivery",
+      status: tr("pending_delivery"),
       rejection_reason: "",
       server_order: false,
       is_first_order: false,
@@ -1116,7 +1490,7 @@ Please confirm this order and proceed with processing.`;
 
     const message = buildGuestOrderMessage(guestOrder);
     openWhatsApp(message);
-    showToast("Order prepared successfully");
+    showToast(tr("order_prepared_successfully"));
   };
 
   window.trackOrder = function (index) {
@@ -1133,13 +1507,13 @@ Please confirm this order and proceed with processing.`;
     const text = `${getGreeting()}
 
 #ORDER_STATUS
-Order Reference: ${order.id}
-Order Date: ${order.date}
+${tr("order_reference")}: ${order.id}
+${tr("order_date")}: ${order.date}
 
-Offers:
+${tr("offers_label")}:
 ${offers}
 
-Please update me with the current status of this order.`;
+${tr("please_update_status")}`;
 
     openWhatsApp(text);
   };
@@ -1154,9 +1528,9 @@ Please update me with the current status of this order.`;
     if (!canCancel) return;
 
     openConfirmModal({
-      title: "Cancel Order",
-      text: "Are you sure you want to cancel this order?",
-      confirmText: "Cancel Order",
+      title: tr("cancel_order_title"),
+      text: tr("cancel_order_confirm"),
+      confirmText: tr("cancel_order_btn"),
       danger: true,
       onConfirm: async function () {
         if (order.server_order) {
@@ -1172,7 +1546,7 @@ Please update me with the current status of this order.`;
             });
 
             if (!res.ok || !data.ok) {
-              showToast(data.message || "Failed to cancel order");
+              showToast(data.message || tr("failed_cancel_order"));
               return;
             }
 
@@ -1182,7 +1556,7 @@ Please update me with the current status of this order.`;
             await syncOrdersFromServer();
           } catch (e) {
             console.error(e);
-            showToast(e.message || "Failed to cancel order");
+            showToast(e.message || tr("failed_cancel_order"));
             return;
           }
         } else {
@@ -1196,17 +1570,17 @@ Please update me with the current status of this order.`;
         const text = `${getGreeting()}
 
 #CANCEL_ORDER
-Order Reference: ${order.id}
-Order Date: ${order.date}
+${tr("order_reference")}: ${order.id}
+${tr("order_date")}: ${order.date}
 
-Offers:
+${tr("offers_label")}:
 ${offers}
 
-I want to cancel this order.
-Please confirm the cancellation.`;
+${tr("i_want_cancel")}
+${tr("please_confirm_cancel")}`;
 
         openWhatsApp(text);
-        showToast("Order cancelled successfully");
+        showToast(tr("order_cancelled_successfully"));
       }
     });
   };
@@ -1222,9 +1596,10 @@ Please confirm the cancellation.`;
 
     if (!modal || !title || !text || !cancel || !ok) return;
 
-    title.textContent = config.title || "Confirm";
-    text.textContent = config.text || "Are you sure?";
-    ok.textContent = config.confirmText || "Confirm";
+    title.textContent = config.title || tr("confirm");
+    text.textContent = config.text || tr("are_you_sure");
+    ok.textContent = config.confirmText || tr("confirm");
+    cancel.textContent = tr("cancel");
 
     ok.classList.toggle("danger", !!config.danger);
 
