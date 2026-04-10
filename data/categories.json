@@ -1,0 +1,42 @@
+[
+  {
+    "slug": "phones",
+    "visible": true,
+    "nav_order": 1,
+    "names": {
+      "en": "Phones",
+      "ph": "Phones",
+      "hi": "फ़ोन"
+    }
+  },
+  {
+    "slug": "tablets",
+    "visible": true,
+    "nav_order": 2,
+    "names": {
+      "en": "Tablets",
+      "ph": "Tablets",
+      "hi": "टैबलेट"
+    }
+  },
+  {
+    "slug": "laptops",
+    "visible": true,
+    "nav_order": 3,
+    "names": {
+      "en": "Laptops",
+      "ph": "Laptops",
+      "hi": "लैपटॉप"
+    }
+  },
+  {
+    "slug": "accessories",
+    "visible": true,
+    "nav_order": 4,
+    "names": {
+      "en": "Accessories",
+      "ph": "Accessories",
+      "hi": "एक्सेसरीज़"
+    }
+  }
+]
