@@ -1130,32 +1130,39 @@
     }
 
     async function bootPage() {
-      await Promise.all([loadTranslations(), loadCategories()]);
-      applyStaticTranslations();
-      await loadHotOffers();
+  try {
+    await Promise.all([loadTranslations(), loadCategories()]);
+    applyStaticTranslations();
+    document.documentElement.classList.remove("lang-preload");
+    document.documentElement.classList.add("lang-ready");
+    await loadHotOffers();
 
-      const languageSelect = document.getElementById("languageSelect");
-      if (languageSelect && !languageSelect.dataset.bound) {
-        languageSelect.dataset.bound = "1";
-        languageSelect.value = APP_LANGUAGE;
-        languageSelect.addEventListener("change", function () {
-          const lang = this.value || "en";
-          APP_LANGUAGE = lang;
-          localStorage.setItem("site_language", lang);
+    const languageSelect = document.getElementById("languageSelect");
+    if (languageSelect && !languageSelect.dataset.bound) {
+      languageSelect.dataset.bound = "1";
+      languageSelect.value = APP_LANGUAGE;
+      languageSelect.addEventListener("change", function () {
+        const lang = this.value || "en";
+        APP_LANGUAGE = lang;
+        localStorage.setItem("site_language", lang);
 
-          applyStaticTranslations();
-          if (hotOffersData.length) {
-            applyHotFilters();
-          }
-          updatePromoBanner();
+        applyStaticTranslations();
+        if (hotOffersData.length) {
+          applyHotFilters();
+        }
+        updatePromoBanner();
 
-          document.dispatchEvent(new CustomEvent("site-language-changed", {
-            detail: { language: lang, source: "desktop-header" }
-          }));
-        });
-      }
+        document.dispatchEvent(new CustomEvent("site-language-changed", {
+          detail: { language: lang, source: "desktop-header" }
+        }));
+      });
     }
-
+  } catch (e) {
+    document.documentElement.classList.remove("lang-preload");
+    document.documentElement.classList.add("lang-ready");
+    throw e;
+  }
+}
     document.addEventListener("DOMContentLoaded", function () {
       setupHotInfiniteObserver();
       bootPage();
