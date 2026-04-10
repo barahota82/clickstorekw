@@ -812,11 +812,18 @@
     document.addEventListener("site-language-changed", function (e) {
       const lang = e?.detail?.language || getUiLanguage();
       localStorage.setItem(STORAGE_KEYS.language, lang);
+
       normalizeFloatingCartButton();
       updateAuthLabel();
-      applyCartTranslations();
-      renderCartSystem();
-    });
+      
+     applyCartTranslations();
+      
+     setTimeout(() => {
+    renderCartSystem();
+    }, 0);
+
+    updateAllBadges();
+   });
   }
 
   function bindHeaderScrollEffect() {
