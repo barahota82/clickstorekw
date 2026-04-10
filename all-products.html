@@ -184,6 +184,28 @@
       height: 2px;
     }
 
+    .language-switcher {
+      margin-left: 8px;
+      flex: 0 0 auto;
+    }
+
+    .language-select {
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      padding: 0 10px;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .language-select option {
+      color: #111827;
+      background: #fff;
+    }
+
     @media (max-width: 640px) {
       .promo-banner .promo-banner-inner {
         font-size: 13px;
@@ -217,7 +239,7 @@
         <div class="brand-static">
           <img src="/images/logo.png" alt="Click Company Logo" class="logo">
           <div class="brand-text">
-            <h1>CLICK COMPANY</h1>
+            <h1 id="siteTitle">CLICK COMPANY</h1>
             <span id="loopText">You Can Depend on Us</span>
           </div>
         </div>
@@ -225,19 +247,27 @@
 
       <nav class="nav-links">
         <div class="nav-row main-row">
-          <a href="/index.html" class="desktop-only">Home</a>
-          <a href="/phones.html">Phones</a>
-          <a href="/tablets.html">Tablets</a>
-          <a href="/laptops.html">Laptops</a>
-          <a href="/accessories.html">Accessories</a>
-          <a href="/index.html#hot-offers" class="hot-link">Hot Offers</a>
+          <a href="/index.html" class="desktop-only" id="homeNavLink">Home</a>
+          <a href="/phones.html" id="phonesNavLink">Phones</a>
+          <a href="/tablets.html" id="tabletsNavLink">Tablets</a>
+          <a href="/laptops.html" id="laptopsNavLink">Laptops</a>
+          <a href="/accessories.html" id="accessoriesNavLink">Accessories</a>
+          <a href="/index.html#hot-offers" class="hot-link" id="hotOffersNavLink">Hot Offers</a>
+
+          <div class="language-switcher desktop-only">
+            <select id="languageSelect" class="language-select" aria-label="Language">
+              <option value="en">EN</option>
+              <option value="ph">PH</option>
+              <option value="hi">HI</option>
+            </select>
+          </div>
 
           <button class="registration-top-btn desktop-only" type="button" onclick="openAuthModal()">
             <span id="desktopAuthLabel">Login</span>
           </button>
 
           <button class="cart-btn" onclick="openCart()">
-            Cart <span class="cart-badge" id="cart-count-top">0</span>
+            <span id="cartLabel">Cart</span> <span class="cart-badge" id="cart-count-top">0</span>
           </button>
         </div>
       </nav>
@@ -253,19 +283,19 @@
 
   <section class="page-head">
     <div class="container">
-      <h2>All Products</h2>
-      <p>Choose from all categories and add what you want to your cart.</p>
+      <h2 id="pageTitle">All Products</h2>
+      <p id="pageDescription">Choose from all categories and add what you want to your cart.</p>
 
       <div class="filter-bar">
-        <button class="filter-btn active" data-filter="all" onclick="filterProducts('all', this)">All</button>
-        <button class="filter-btn" data-filter="phones" onclick="filterProducts('phones', this)">Phones</button>
-        <button class="filter-btn" data-filter="tablets" onclick="filterProducts('tablets', this)">Tablets</button>
-        <button class="filter-btn" data-filter="laptops" onclick="filterProducts('laptops', this)">Laptops</button>
-        <button class="filter-btn" data-filter="accessories" onclick="filterProducts('accessories', this)">Accessories</button>
+        <button class="filter-btn active" data-filter="all" onclick="filterProducts('all', this)" id="filterAllBtn">All</button>
+        <button class="filter-btn" data-filter="phones" onclick="filterProducts('phones', this)" id="filterPhonesBtn">Phones</button>
+        <button class="filter-btn" data-filter="tablets" onclick="filterProducts('tablets', this)" id="filterTabletsBtn">Tablets</button>
+        <button class="filter-btn" data-filter="laptops" onclick="filterProducts('laptops', this)" id="filterLaptopsBtn">Laptops</button>
+        <button class="filter-btn" data-filter="accessories" onclick="filterProducts('accessories', this)" id="filterAccessoriesBtn">Accessories</button>
       </div>
 
       <div class="catalog-filter-wrap">
-        <label for="brandFilter" class="catalog-filter-label">Filter by Brand</label>
+        <label for="brandFilter" class="catalog-filter-label" id="brandFilterLabel">Filter by Brand</label>
         <select id="brandFilter" class="catalog-filter" onchange="applyBrandFilter()">
           <option value="all">All Brands</option>
         </select>
@@ -280,7 +310,7 @@
     </div>
 
     <div id="infiniteLoaderWrap" class="infinite-loader-wrap">
-      <div class="infinite-loader">Loading more</div>
+      <div class="infinite-loader" id="infiniteLoaderText">Loading more</div>
     </div>
 
     <div id="scrollSentinel"></div>
@@ -289,7 +319,7 @@
   <footer>
     <div class="container footer-box">
       <div>©️ 2017–<span id="year"></span> Click Company. All rights reserved.</div>
-      <div>You Can Depend on Us</div>
+      <div id="footerTagline">You Can Depend on Us</div>
     </div>
   </footer>
 
@@ -303,16 +333,16 @@
 
   <aside class="cart-panel" id="cartPanel">
     <div class="cart-header">
-      <h3>Your Cart</h3>
+      <h3 id="yourCartTitle">Your Cart</h3>
       <button class="cart-close" onclick="closeCart()">×</button>
     </div>
 
     <div class="cart-items" id="cartItems">
-      <div class="cart-empty-text">Your cart is empty.</div>
+      <div class="cart-empty-text" id="cartEmptyText">Your cart is empty.</div>
     </div>
 
     <div class="cart-footer">
-      <button class="send-order-btn" type="button">Send Order via WhatsApp</button>
+      <button class="send-order-btn" type="button" id="sendOrderBtn">Send Order via WhatsApp</button>
     </div>
   </aside>
 
@@ -324,8 +354,12 @@
       }
     });
   </script>
-  
+
   <script>
+    let APP_LANGUAGE = localStorage.getItem("site_language") || "en";
+    let TRANSLATIONS = {};
+    let CATEGORIES = [];
+
     let allProductsData = [];
     let renderedBrands = new Set();
     let currentCategoryFilter = "all";
@@ -336,6 +370,107 @@
     let infiniteObserver = null;
     let isAppendingProducts = false;
     let hasMoreProductsToLoad = false;
+
+    function t(key) {
+      const langPack = TRANSLATIONS[APP_LANGUAGE] || TRANSLATIONS.en || {};
+      return langPack[key] || key;
+    }
+
+    function getCategoryRow(slug) {
+      return CATEGORIES.find(item => String(item.slug || "").trim().toLowerCase() === String(slug || "").trim().toLowerCase()) || null;
+    }
+
+    function getCategoryDisplayName(slug) {
+      if (slug === "all") {
+        if (APP_LANGUAGE === "ph") return "Lahat";
+        if (APP_LANGUAGE === "hi") return "सभी";
+        return "All";
+      }
+      const row = getCategoryRow(slug);
+      if (!row) return String(slug || "");
+      return String(
+        row.names?.[APP_LANGUAGE] ||
+        row.names?.en ||
+        row.slug ||
+        ""
+      ).trim();
+    }
+
+    function getPageDescription() {
+      if (APP_LANGUAGE === "en") return "Choose from all categories and add what you want to your cart.";
+      if (APP_LANGUAGE === "ph") return "Pumili mula sa lahat ng category at idagdag ang gusto mo sa cart.";
+      if (APP_LANGUAGE === "hi") return "सभी कैटेगरी में से चुनें और जो चाहिए उसे कार्ट में जोड़ें।";
+      return "Choose from all categories and add what you want to your cart.";
+    }
+
+    function applyStaticTranslations() {
+      document.documentElement.lang = APP_LANGUAGE === "hi" ? "hi" : "en";
+
+      const homeNavLink = document.getElementById("homeNavLink");
+      const phonesNavLink = document.getElementById("phonesNavLink");
+      const tabletsNavLink = document.getElementById("tabletsNavLink");
+      const laptopsNavLink = document.getElementById("laptopsNavLink");
+      const accessoriesNavLink = document.getElementById("accessoriesNavLink");
+      const hotOffersNavLink = document.getElementById("hotOffersNavLink");
+      const cartLabel = document.getElementById("cartLabel");
+      const brandFilterLabel = document.getElementById("brandFilterLabel");
+      const loadingState = document.getElementById("loading-state");
+      const yourCartTitle = document.getElementById("yourCartTitle");
+      const cartEmptyText = document.getElementById("cartEmptyText");
+      const sendOrderBtn = document.getElementById("sendOrderBtn");
+      const footerTagline = document.getElementById("footerTagline");
+      const infiniteLoaderText = document.getElementById("infiniteLoaderText");
+      const pageTitle = document.getElementById("pageTitle");
+      const pageDescription = document.getElementById("pageDescription");
+      const languageSelect = document.getElementById("languageSelect");
+      const filterAllBtn = document.getElementById("filterAllBtn");
+      const filterPhonesBtn = document.getElementById("filterPhonesBtn");
+      const filterTabletsBtn = document.getElementById("filterTabletsBtn");
+      const filterLaptopsBtn = document.getElementById("filterLaptopsBtn");
+      const filterAccessoriesBtn = document.getElementById("filterAccessoriesBtn");
+
+      if (homeNavLink) homeNavLink.textContent = t("home");
+      if (phonesNavLink) phonesNavLink.textContent = getCategoryDisplayName("phones") || "Phones";
+      if (tabletsNavLink) tabletsNavLink.textContent = getCategoryDisplayName("tablets") || "Tablets";
+      if (laptopsNavLink) laptopsNavLink.textContent = getCategoryDisplayName("laptops") || "Laptops";
+      if (accessoriesNavLink) accessoriesNavLink.textContent = getCategoryDisplayName("accessories") || "Accessories";
+      if (hotOffersNavLink) hotOffersNavLink.textContent = t("hot_offers");
+      if (cartLabel) cartLabel.textContent = t("cart");
+      if (brandFilterLabel) brandFilterLabel.textContent = t("filter_by_brand");
+      if (loadingState) loadingState.textContent = t("loading_products");
+      if (yourCartTitle) yourCartTitle.textContent = t("your_cart");
+      if (cartEmptyText) cartEmptyText.textContent = t("your_cart_empty");
+      if (sendOrderBtn) sendOrderBtn.textContent = t("send_order_whatsapp");
+      if (footerTagline) footerTagline.textContent = t("depend_on_us");
+      if (infiniteLoaderText) infiniteLoaderText.textContent = t("loading_more");
+      if (pageTitle) pageTitle.textContent = APP_LANGUAGE === "hi" ? "सभी प्रोडक्ट" : (APP_LANGUAGE === "ph" ? "Lahat ng Produkto" : "All Products");
+      if (pageDescription) pageDescription.textContent = getPageDescription();
+      if (languageSelect) languageSelect.value = APP_LANGUAGE;
+      if (filterAllBtn) filterAllBtn.textContent = getCategoryDisplayName("all");
+      if (filterPhonesBtn) filterPhonesBtn.textContent = getCategoryDisplayName("phones") || "Phones";
+      if (filterTabletsBtn) filterTabletsBtn.textContent = getCategoryDisplayName("tablets") || "Tablets";
+      if (filterLaptopsBtn) filterLaptopsBtn.textContent = getCategoryDisplayName("laptops") || "Laptops";
+      if (filterAccessoriesBtn) filterAccessoriesBtn.textContent = getCategoryDisplayName("accessories") || "Accessories";
+
+      document.title = `${pageTitle ? pageTitle.textContent : "All Products"} - ${t("site_title")}`;
+
+      populateBrandFilter();
+      updateEmptyStateText();
+    }
+
+    function updateEmptyStateText() {
+      const empty = document.getElementById("empty-state");
+      if (!empty) return;
+
+      if (!allProductsData.length) {
+        empty.textContent = t("no_products_yet");
+        return;
+      }
+
+      if (!filteredProductsData.length) {
+        empty.textContent = t("no_products_for_brand");
+      }
+    }
 
     function normalizeBrandValue(value) {
       const raw = String(value || "").trim();
@@ -371,16 +506,16 @@
       if (!raw) return "";
       if (/month/i.test(raw)) return raw;
       const number = extractNumber(raw);
-      return number ? `${number} Months` : raw;
+      return number ? `${number} ${t("months_suffix")}` : raw;
     }
 
     function formatDownPayment(value) {
       const raw = String(value || "").trim();
-      if (!raw) return "0 KD Down Payment";
+      if (!raw) return `0 KD ${t("down_payment_suffix")}`;
       if (/down payment/i.test(raw)) return raw;
-      if (/kd/i.test(raw)) return `${raw} Down Payment`;
+      if (/kd/i.test(raw)) return `${raw} ${t("down_payment_suffix")}`;
       const number = extractNumber(raw);
-      return number ? `${number} KD Down Payment` : "0 KD Down Payment";
+      return number ? `${number} KD ${t("down_payment_suffix")}` : `0 KD ${t("down_payment_suffix")}`;
     }
 
     function normalizeDevicesCount(value, title) {
@@ -424,7 +559,7 @@
       const currentValue = select.value || "all";
       const brands = Array.from(renderedBrands).filter(Boolean).sort((a, b) => a.localeCompare(b));
 
-      select.innerHTML = '<option value="all">All Brands</option>';
+      select.innerHTML = `<option value="all">${t("all_brands")}</option>`;
 
       brands.forEach(brand => {
         const option = document.createElement("option");
@@ -502,7 +637,7 @@
               <div class="months">${durationText}</div>
               <div class="months">${downPaymentText}</div>
             </div>
-            <button class="btn">+ Add To Cart</button>
+            <button class="btn">${t("add_to_cart")}</button>
           </div>
         </div>
       `;
@@ -542,7 +677,7 @@
       if (!filteredProductsData.length) {
         if (empty) {
           empty.style.display = "";
-          empty.textContent = "No products available for this filter.";
+          updateEmptyStateText();
         }
         updateInfiniteScrollState();
         return;
@@ -649,6 +784,64 @@
       resetInfiniteObserver();
     }
 
+    async function loadTranslations() {
+      try {
+        const res = await fetch("/data/translations.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load translations.json");
+        const data = await res.json();
+        if (!data || typeof data !== "object") throw new Error("translations.json must be an object");
+        TRANSLATIONS = data;
+      } catch (e) {
+        console.error("Failed to load translations:", e);
+        TRANSLATIONS = {
+          en: {
+            site_title: "Click Company",
+            home: "Home",
+            hot_offers: "Hot Offers",
+            login: "Login",
+            cart: "Cart",
+            your_cart: "Your Cart",
+            your_cart_empty: "Your cart is empty.",
+            send_order_whatsapp: "Send Order via WhatsApp",
+            filter_by_brand: "Filter by Brand",
+            all_brands: "All Brands",
+            loading_products: "Loading products...",
+            no_products_yet: "No products available yet.",
+            no_products_for_brand: "No products available for this brand.",
+            failed_load_products: "Failed to load products.",
+            add_to_cart: "+ Add To Cart",
+            months_suffix: "Months",
+            down_payment_suffix: "Down Payment",
+            free_gift_guest: "Register now and get a FREE gift with your first delivered order.",
+            free_gift_user: "You are registered. Your FREE gift will be included with your first delivered order.",
+            depend_on_us: "You Can Depend on Us",
+            best_deals: "Best Deals in Kuwait",
+            easy_installments: "Easy Monthly Installments",
+            fast_delivery: "Fast Delivery",
+            loading_more: "Loading more"
+          }
+        };
+      }
+    }
+
+    async function loadCategories() {
+      try {
+        const res = await fetch("/data/categories.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load categories.json");
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("categories.json must be an array");
+        CATEGORIES = data.filter(item => item && typeof item === "object");
+      } catch (e) {
+        console.error("Failed to load categories:", e);
+        CATEGORIES = [
+          { slug: "phones", names: { en: "Phones", ph: "Phones", hi: "फ़ोन" } },
+          { slug: "tablets", names: { en: "Tablets", ph: "Tablets", hi: "टैबलेट" } },
+          { slug: "laptops", names: { en: "Laptops", ph: "Laptops", hi: "लैपटॉप" } },
+          { slug: "accessories", names: { en: "Accessories", ph: "Accessories", hi: "एक्सेसरीज़" } }
+        ];
+      }
+    }
+
     async function loadCategory(categoryName) {
       try {
         const res = await fetch(`/products/${categoryName}/data.json`, { cache: "no-store" });
@@ -683,7 +876,7 @@
         if (loading) loading.remove();
         if (empty) {
           empty.style.display = "";
-          empty.textContent = "Failed to load products.";
+          empty.textContent = t("failed_load_products");
         }
       }
     }
@@ -714,34 +907,95 @@
       setupInfiniteObserver();
     }
 
+    function syncLanguageAndRefreshPage(newLanguage) {
+      const nextLanguage = String(newLanguage || localStorage.getItem("site_language") || "en").trim().toLowerCase() || "en";
+      APP_LANGUAGE = nextLanguage;
+      localStorage.setItem("site_language", APP_LANGUAGE);
+
+      applyStaticTranslations();
+
+      if (allProductsData.length) {
+        renderProducts(allProductsData);
+      }
+
+      updatePromoBanner();
+    }
+
+    async function bootPage() {
+      await Promise.all([loadTranslations(), loadCategories()]);
+      applyStaticTranslations();
+      await load();
+
+      const languageSelect = document.getElementById("languageSelect");
+      if (languageSelect && !languageSelect.dataset.bound) {
+        languageSelect.dataset.bound = "1";
+        languageSelect.value = APP_LANGUAGE;
+        languageSelect.addEventListener("change", function () {
+          const lang = this.value || "en";
+          APP_LANGUAGE = lang;
+          localStorage.setItem("site_language", lang);
+
+          applyStaticTranslations();
+          if (allProductsData.length) {
+            renderProducts(allProductsData);
+          }
+          updatePromoBanner();
+
+          document.dispatchEvent(new CustomEvent("site-language-changed", {
+            detail: { language: lang, source: "desktop-header" }
+          }));
+        });
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
       setupInfiniteObserver();
+      bootPage();
     });
 
-    load();
+    document.addEventListener("site-language-changed", function (e) {
+      const lang = e?.detail?.language || localStorage.getItem("site_language") || "en";
+      syncLanguageAndRefreshPage(lang);
+    });
   </script>
 
   <script>
-    const texts = [
-      "You Can Depend on Us",
-      "Best Deals in Kuwait",
-      "Easy Monthly Installments",
-      "Fast Delivery"
-    ];
+    let textIndex = 0;
 
-    let i = 0;
-    const el = document.getElementById("loopText");
+    function getLoopTexts() {
+      return [
+        t("depend_on_us"),
+        t("best_deals"),
+        t("easy_installments"),
+        t("fast_delivery")
+      ];
+    }
 
-    setInterval(() => {
+    function startLoopText() {
+      const el = document.getElementById("loopText");
       if (!el) return;
-      el.style.opacity = 0;
 
-      setTimeout(() => {
-        i = (i + 1) % texts.length;
-        el.textContent = texts[i];
-        el.style.opacity = 1;
-      }, 400);
-    }, 3000);
+      const texts = getLoopTexts();
+      if (texts.length) {
+        el.textContent = texts[textIndex % texts.length];
+      }
+
+      setInterval(() => {
+        const currentEl = document.getElementById("loopText");
+        if (!currentEl) return;
+
+        currentEl.style.opacity = 0;
+
+        setTimeout(() => {
+          const currentTexts = getLoopTexts();
+          textIndex = (textIndex + 1) % currentTexts.length;
+          currentEl.textContent = currentTexts[textIndex];
+          currentEl.style.opacity = 1;
+        }, 400);
+      }, 3000);
+    }
+
+    document.addEventListener("DOMContentLoaded", startLoopText);
   </script>
 
   <script>
@@ -793,7 +1047,7 @@
         if (currentRequestId !== promoBannerRequestId) return;
 
         if (!statusData || !statusData.logged_in) {
-          showPromoBanner("Register now and get a FREE gift with your first delivered order.");
+          showPromoBanner(t("free_gift_guest"));
           promoBannerResolvedOnce = true;
           return;
         }
@@ -810,10 +1064,10 @@
             if (consumedOffer) {
               hidePromoBanner();
             } else {
-              showPromoBanner("You are registered. Your FREE gift will be included with your first delivered order.");
+              showPromoBanner(t("free_gift_user"));
             }
           } else {
-            showPromoBanner("You are registered. Your FREE gift will be included with your first delivered order.");
+            showPromoBanner(t("free_gift_user"));
           }
 
           promoBannerResolvedOnce = true;
@@ -822,7 +1076,7 @@
 
           if (currentRequestId !== promoBannerRequestId) return;
 
-          showPromoBanner("You are registered. Your FREE gift will be included with your first delivered order.");
+          showPromoBanner(t("free_gift_user"));
           promoBannerResolvedOnce = true;
         }
       } catch (e) {
@@ -830,7 +1084,7 @@
 
         if (currentRequestId !== promoBannerRequestId) return;
 
-        showPromoBanner("Register now and get a FREE gift with your first delivered order.");
+        showPromoBanner(t("free_gift_guest"));
         promoBannerResolvedOnce = true;
       }
     }
@@ -841,6 +1095,11 @@
     });
 
     document.addEventListener("customer-auth-updated", function () {
+      if (!promoBannerResolvedOnce) return;
+      updatePromoBanner();
+    });
+
+    document.addEventListener("site-language-changed", function () {
       if (!promoBannerResolvedOnce) return;
       updatePromoBanner();
     });
