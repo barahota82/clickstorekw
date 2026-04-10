@@ -256,8 +256,8 @@
           <a href="/accessories.html" id="accessoriesNavLink">Accessories</a>
           <a href="/index.html#hot-offers" class="hot-link" id="hotOffersNavLink">Hot Offers</a>
 
-          <div class="language-switcher">
-            <select id="languageSelect" class="language-select">
+          <div class="language-switcher desktop-only">
+            <select id="languageSelect" class="language-select" aria-label="Language">
               <option value="en">EN</option>
               <option value="ph">PH</option>
               <option value="hi">HI</option>
@@ -385,6 +385,13 @@
       ).trim();
     }
 
+    function getBrowseDescription() {
+      if (APP_LANGUAGE === "en") return "Browse all phone offers.";
+      if (APP_LANGUAGE === "ph") return "Tingnan ang lahat ng phone offers.";
+      if (APP_LANGUAGE === "hi") return "सभी फ़ोन ऑफ़र देखें।";
+      return "Browse all phone offers.";
+    }
+
     function applyStaticTranslations() {
       document.documentElement.lang = APP_LANGUAGE === "hi" ? "hi" : "en";
 
@@ -423,19 +430,28 @@
       if (languageSelect) languageSelect.value = APP_LANGUAGE;
 
       const currentCategoryName = getCategoryDisplayName(CURRENT_CATEGORY_SLUG) || "Phones";
-      if (categoryTitle) categoryTitle.textContent = currentCategoryName;
 
-      if (categoryDescription) {
-        if (APP_LANGUAGE === "en") {
-          categoryDescription.textContent = "Browse all phone offers.";
-        } else {
-          categoryDescription.textContent = t("browse_all_offers");
-        }
-      }
+      if (categoryTitle) categoryTitle.textContent = currentCategoryName;
+      if (categoryDescription) categoryDescription.textContent = getBrowseDescription();
 
       document.title = `${currentCategoryName} - ${t("site_title")}`;
 
       populateBrandFilter();
+      updateEmptyStateText();
+    }
+
+    function updateEmptyStateText() {
+      const empty = document.getElementById("empty-state");
+      if (!empty) return;
+
+      if (!productsData.length) {
+        empty.textContent = t("no_products_yet");
+        return;
+      }
+
+      if (!filteredProductsData.length) {
+        empty.textContent = t("no_products_for_brand");
+      }
     }
 
     function normalizeBrandValue(value) {
@@ -621,7 +637,7 @@
       if (!filteredProductsData.length) {
         if (empty) {
           empty.style.display = "";
-          empty.textContent = t("no_products_for_brand");
+          updateEmptyStateText();
         }
         updateInfiniteScrollState();
         return;
@@ -722,19 +738,61 @@
     }
 
     async function loadTranslations() {
-      const res = await fetch("/data/translations.json", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load translations.json");
-      const data = await res.json();
-      if (!data || typeof data !== "object") throw new Error("translations.json must be an object");
-      TRANSLATIONS = data;
+      try {
+        const res = await fetch("/data/translations.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load translations.json");
+        const data = await res.json();
+        if (!data || typeof data !== "object") throw new Error("translations.json must be an object");
+        TRANSLATIONS = data;
+      } catch (e) {
+        console.error("Failed to load translations:", e);
+        TRANSLATIONS = {
+          en: {
+            site_title: "Click Company",
+            home: "Home",
+            hot_offers: "Hot Offers",
+            login: "Login",
+            cart: "Cart",
+            your_cart: "Your Cart",
+            your_cart_empty: "Your cart is empty.",
+            send_order_whatsapp: "Send Order via WhatsApp",
+            filter_by_brand: "Filter by Brand",
+            all_brands: "All Brands",
+            loading_products: "Loading products...",
+            no_products_yet: "No products available yet.",
+            no_products_for_brand: "No products available for this brand.",
+            failed_load_products: "Failed to load products.",
+            add_to_cart: "+ Add To Cart",
+            months_suffix: "Months",
+            down_payment_suffix: "Down Payment",
+            free_gift_guest: "Register now and get a FREE gift with your first delivered order.",
+            free_gift_user: "You are registered. Your FREE gift will be included with your first delivered order.",
+            depend_on_us: "You Can Depend on Us",
+            best_deals: "Best Deals in Kuwait",
+            easy_installments: "Easy Monthly Installments",
+            fast_delivery: "Fast Delivery",
+            loading_more: "Loading more"
+          }
+        };
+      }
     }
 
     async function loadCategories() {
-      const res = await fetch("/data/categories.json", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load categories.json");
-      const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("categories.json must be an array");
-      CATEGORIES = data.filter(item => item && typeof item === "object");
+      try {
+        const res = await fetch("/data/categories.json", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load categories.json");
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("categories.json must be an array");
+        CATEGORIES = data.filter(item => item && typeof item === "object");
+      } catch (e) {
+        console.error("Failed to load categories:", e);
+        CATEGORIES = [
+          { slug: "phones", names: { en: "Phones", ph: "Phones", hi: "फ़ोन" } },
+          { slug: "tablets", names: { en: "Tablets", ph: "Tablets", hi: "टैबलेट" } },
+          { slug: "laptops", names: { en: "Laptops", ph: "Laptops", hi: "लैपटॉप" } },
+          { slug: "accessories", names: { en: "Accessories", ph: "Accessories", hi: "एक्सेसरीज़" } }
+        ];
+      }
     }
 
     async function load() {
@@ -793,33 +851,44 @@
       setupInfiniteObserver();
     }
 
+    function syncLanguageAndRefreshPage(newLanguage) {
+      const nextLanguage = String(newLanguage || localStorage.getItem("site_language") || "en").trim().toLowerCase() || "en";
+      APP_LANGUAGE = nextLanguage;
+      localStorage.setItem("site_language", APP_LANGUAGE);
+
+      applyStaticTranslations();
+
+      if (productsData.length) {
+        renderProducts(productsData);
+      }
+
+      updatePromoBanner();
+    }
+
     async function bootPage() {
-      try {
-        await Promise.all([loadTranslations(), loadCategories()]);
+      await Promise.all([loadTranslations(), loadCategories()]);
+      applyStaticTranslations();
+      await load();
 
-        const languageSelect = document.getElementById("languageSelect");
-        if (languageSelect) {
-          languageSelect.value = APP_LANGUAGE;
-          languageSelect.addEventListener("change", function () {
-            APP_LANGUAGE = this.value || "en";
-            localStorage.setItem("site_language", APP_LANGUAGE);
+      const languageSelect = document.getElementById("languageSelect");
+      if (languageSelect && !languageSelect.dataset.bound) {
+        languageSelect.dataset.bound = "1";
+        languageSelect.value = APP_LANGUAGE;
+        languageSelect.addEventListener("change", function () {
+          const lang = this.value || "en";
+          APP_LANGUAGE = lang;
+          localStorage.setItem("site_language", lang);
 
-            applyStaticTranslations();
-            if (productsData.length) {
-              renderProducts(productsData);
-            }
-            updatePromoBanner();
+          applyStaticTranslations();
+          if (productsData.length) {
+            renderProducts(productsData);
+          }
+          updatePromoBanner();
 
-            document.dispatchEvent(new CustomEvent("site-language-changed", {
-              detail: { language: APP_LANGUAGE, source: "desktop-header" }
-            }));
-          });
-        }
-
-        applyStaticTranslations();
-        await load();
-      } catch (e) {
-        console.error("Failed to boot phones page:", e);
+          document.dispatchEvent(new CustomEvent("site-language-changed", {
+            detail: { language: lang, source: "desktop-header" }
+          }));
+        });
       }
     }
 
@@ -827,36 +896,50 @@
       setupInfiniteObserver();
       bootPage();
     });
+
+    document.addEventListener("site-language-changed", function (e) {
+      const lang = e?.detail?.language || localStorage.getItem("site_language") || "en";
+      syncLanguageAndRefreshPage(lang);
+    });
   </script>
 
   <script>
-    const texts = [
-      "You Can Depend on Us",
-      "Best Deals in Kuwait",
-      "Easy Monthly Installments",
-      "Fast Delivery"
-    ];
+    let textIndex = 0;
 
-    let i = 0;
-    const el = document.getElementById("loopText");
+    function getLoopTexts() {
+      return [
+        t("depend_on_us"),
+        t("best_deals"),
+        t("easy_installments"),
+        t("fast_delivery")
+      ];
+    }
 
-    setInterval(() => {
+    function startLoopText() {
+      const el = document.getElementById("loopText");
       if (!el) return;
-      el.style.opacity = 0;
 
-      setTimeout(() => {
-        const currentTexts = [
-          t("depend_on_us"),
-          t("best_deals"),
-          t("easy_installments"),
-          t("fast_delivery")
-        ];
+      const texts = getLoopTexts();
+      if (texts.length) {
+        el.textContent = texts[textIndex % texts.length];
+      }
 
-        i = (i + 1) % currentTexts.length;
-        el.textContent = currentTexts[i];
-        el.style.opacity = 1;
-      }, 400);
-    }, 3000);
+      setInterval(() => {
+        const currentEl = document.getElementById("loopText");
+        if (!currentEl) return;
+
+        currentEl.style.opacity = 0;
+
+        setTimeout(() => {
+          const currentTexts = getLoopTexts();
+          textIndex = (textIndex + 1) % currentTexts.length;
+          currentEl.textContent = currentTexts[textIndex];
+          currentEl.style.opacity = 1;
+        }, 400);
+      }, 3000);
+    }
+
+    document.addEventListener("DOMContentLoaded", startLoopText);
   </script>
 
   <script>
@@ -956,6 +1039,11 @@
     });
 
     document.addEventListener("customer-auth-updated", function () {
+      if (!promoBannerResolvedOnce) return;
+      updatePromoBanner();
+    });
+
+    document.addEventListener("site-language-changed", function () {
       if (!promoBannerResolvedOnce) return;
       updatePromoBanner();
     });
