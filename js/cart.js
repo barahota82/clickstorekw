@@ -707,35 +707,35 @@
       bar.id = "mobileAppBarGlobal";
       bar.className = "mobile-app-bar-global";
       bar.innerHTML = `
-        <div class="mobile-app-lang-wrap">
-          <select id="mobileLanguageSelect" class="mobile-language-select" aria-label="Language">
-            <option value="en">EN</option>
-            <option value="ph">PH</option>
-            <option value="hi">HI</option>
-          </select>
-        </div>
-
         <button type="button" class="mobile-app-item active" data-mobile-nav="home" onclick="goHomePage()">
           <span class="mobile-app-icon">🏠</span>
           <span class="mobile-app-label" id="mobileNavHomeLabel">${tr("home")}</span>
-        </button>
+       </button>
 
-        <button type="button" class="mobile-app-item" data-mobile-nav="cart" onclick="openCart()">
-          <span class="mobile-app-icon">🛒</span>
-          <span class="mobile-app-label" id="mobileNavCartLabel">${tr("cart")}</span>
-          <span class="mobile-app-badge" id="cart-count-floating">0</span>
-        </button>
+      <button type="button" class="mobile-app-item" data-mobile-nav="cart" onclick="openCart()">
+        <span class="mobile-app-icon">🛒</span>
+        <span class="mobile-app-label" id="mobileNavCartLabel">${tr("cart")}</span>
+        <span class="mobile-app-badge" id="cart-count-floating">0</span>
+     </button>
 
-        <button type="button" class="mobile-app-item" data-mobile-nav="whatsapp" onclick="openWhatsAppDirect()">
-          <span class="mobile-app-icon">💬</span>
-          <span class="mobile-app-label" id="mobileNavWhatsappLabel">${tr("whatsapp")}</span>
-        </button>
+     <button type="button" class="mobile-app-item" data-mobile-nav="whatsapp" onclick="openWhatsAppDirect()">
+        <span class="mobile-app-icon">💬</span>
+        <span class="mobile-app-label" id="mobileNavWhatsappLabel">${tr("whatsapp")}</span>
+    </button>
 
-        <button type="button" class="mobile-app-item" data-mobile-nav="auth" onclick="openAuthModal()">
-          <span class="mobile-app-icon">👤</span>
-          <span class="mobile-app-label" id="mobileAuthLabel">${tr("login")}</span>
-        </button>
-      `;
+    <div class="mobile-app-lang-wrap">
+     <select id="mobileLanguageSelect" class="mobile-language-select" aria-label="Language">
+       <option value="en">EN</option>
+       <option value="ph">PH</option>
+       <option value="hi">HI</option>
+     </select>
+   </div>
+
+   <button type="button" class="mobile-app-item" data-mobile-nav="auth" onclick="openAuthModal()">
+     <span class="mobile-app-icon">👤</span>
+     <span class="mobile-app-label" id="mobileAuthLabel">${tr("login")}</span>
+   </button>
+ `;
       document.body.appendChild(bar);
     }
 
