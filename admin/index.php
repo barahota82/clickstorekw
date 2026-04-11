@@ -750,7 +750,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
           <p class="section-desc no-margin">
             الواجهة الحالية مركزة على: إضافة المنتج من الصورة واسم الملف، ومراجعة ربط أجهزة الصورة بالمخزن، وإدارة الطلبات،
-            مع دمج إدارة الفئات والبراندات والمنتجات والعروض داخل نفس لوحة التحكم.
+            مع دمج إدارة الفئات والبراندات والمنتجات والعروض والمخزن داخل نفس لوحة التحكم.
           </p>
         </div>
 
@@ -1181,10 +1181,17 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-stock" class="admin-panel" data-panel-permission="stock_manage">
           <h3 class="panel-title">Stock Management</h3>
-          <div class="placeholder-panels">
-            <div class="placeholder-card"><strong>stock_catalog</strong><span>تعريف الأصناف الفعلية في المخزن.</span></div>
-            <div class="placeholder-card"><strong>product_stock_links</strong><span>ربط المنتج المعروض بالمخزن.</span></div>
-            <div class="placeholder-card"><strong>Review Logic</strong><span>إدارة المراجعة والتأكيد للأصناف المستخرجة.</span></div>
+          <p class="panel-desc">
+            هذه الشاشة مدمجة داخل لوحة التحكم لإدارة stock catalog، الحركات، وكميات المنتجات من نفس النظام.
+          </p>
+
+          <div class="embedded-admin-wrap">
+            <iframe
+              class="embedded-admin-frame"
+              src="/admin/stock-management.php"
+              title="Stock Management"
+              loading="lazy">
+            </iframe>
           </div>
         </div>
 
