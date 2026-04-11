@@ -750,7 +750,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
           <p class="section-desc no-margin">
             الواجهة الحالية مركزة على: إضافة المنتج من الصورة واسم الملف، ومراجعة ربط أجهزة الصورة بالمخزن، وإدارة الطلبات،
-            مع دمج إدارة الفئات والبراندات والمنتجات والعروض والمخزن داخل نفس لوحة التحكم.
+            مع دمج إدارة الفئات والبراندات والمنتجات والعروض والمخزن والمستخدمين داخل نفس لوحة التحكم.
           </p>
         </div>
 
@@ -1197,10 +1197,17 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-users" class="admin-panel" data-panel-permission="users_view">
           <h3 class="panel-title">User Permissions</h3>
-          <div class="placeholder-panels">
-            <div class="placeholder-card"><strong>Roles</strong><span>إدارة الأدوار مثل Super Admin و Viewer.</span></div>
-            <div class="placeholder-card"><strong>Permissions</strong><span>تحديد الصلاحيات لكل مستخدم أو دور.</span></div>
-            <div class="placeholder-card"><strong>Users API</strong><span>تمهيد لربط users-list و user-save و user-delete.</span></div>
+          <p class="panel-desc">
+            هذه الشاشة مدمجة داخل لوحة التحكم لإدارة المستخدمين والأدوار والصلاحيات المباشرة من نفس النظام.
+          </p>
+
+          <div class="embedded-admin-wrap">
+            <iframe
+              class="embedded-admin-frame"
+              src="/admin/user-permissions.php"
+              title="User Permissions"
+              loading="lazy">
+            </iframe>
           </div>
         </div>
 
