@@ -1,85 +1,98 @@
-async function fetchJson(url, options = {}) {
-  const res = await fetch(url, {
-    credentials: 'same-origin',
-    ...options
-  });
-
-  return res.json();
-}
-
 async function loadCategories() {
-  const data = await fetchJson('api/get-categories.php');
+    const res = await fetch('api/get-categories.php');
+    const data = await res.json();
 
-  if (!data.ok) return;
+    const container = document.getElementById('categories');
+    const select = document.getElementById('category_select');
 
-  const list = document.getElementById('categoriesList');
-  const select = document.getElementById('brandCategory');
+    container.innerHTML = '';
+    select.innerHTML = '';
 
-  list.innerHTML = '';
-  select.innerHTML = '<option value="">Select Category</option>';
+    data.categories.forEach(cat => {
 
-  data.categories.forEach(cat => {
-    // عرض
-    list.innerHTML += `
-      <div class="item">
-        <strong>${cat.name_en}</strong><br>
-        <small>${cat.slug}</small>
-      </div>
-    `;
+        const div = document.createElement('div');
 
-    // dropdown
-    select.innerHTML += `
-      <option value="${cat.id}">
-        ${cat.name_en}
-      </option>
-    `;
-  });
+        div.innerHTML = `
+            <b>${cat.slug}</b><br>
+            EN: <input id="en_${cat.id}" value="${cat.name_en}">
+            <button onclick="saveCategory(${cat.id})">Save</button>
+            <hr>
+        `;
+
+        container.appendChild(div);
+
+        const option = document.createElement('option');
+        option.value = cat.id;
+        option.textContent = cat.name_en;
+        select.appendChild(option);
+    });
+
+    loadBrands();
 }
 
 async function addCategory() {
-  const name_en = document.getElementById('catNameEn').value.trim();
-  const name_ph = document.getElementById('catNamePh').value.trim();
-  const name_hi = document.getElementById('catNameHi').value.trim();
+    const name = document.getElementById('cat_name').value;
 
-  if (!name_en) {
-    alert("Name required");
-    return;
-  }
+    await fetch('api/add-category.php', {
+        method: 'POST',
+        body: JSON.stringify({ name_en: name })
+    });
 
-  const res = await fetchJson('api/add-category.php', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name_en,name_ph,name_hi})
-  });
-
-  if (res.ok) {
-    alert("Added");
     loadCategories();
-  } else {
-    alert(res.message);
-  }
+}
+
+async function saveCategory(id) {
+    const name = document.getElementById(`en_${id}`).value;
+
+    await fetch('api/update-category.php', {
+        method: 'POST',
+        body: JSON.stringify({
+            id: id,
+            name_en: name,
+            name_ph: name,
+            name_hi: name,
+            visible: 1,
+            nav_order: 1
+        })
+    });
+
+    alert('Saved');
+}
+
+async function loadBrands() {
+    const category_id = document.getElementById('category_select').value;
+
+    const res = await fetch(`api/get-brands.php?category_id=${category_id}`);
+    const data = await res.json();
+
+    const container = document.getElementById('brands');
+    container.innerHTML = '';
+
+    data.brands.forEach(b => {
+        const div = document.createElement('div');
+
+        div.innerHTML = `
+            ${b.name}
+            <button onclick="updateBrand(${b.id})">Edit</button>
+        `;
+
+        container.appendChild(div);
+    });
 }
 
 async function addBrand() {
-  const category_id = document.getElementById('brandCategory').value;
-  const name = document.getElementById('brandName').value.trim();
+    const name = document.getElementById('brand_name').value;
+    const category_id = document.getElementById('category_select').value;
 
-  if (!category_id || !name) {
-    alert("Missing data");
-    return;
-  }
+    await fetch('api/add-brand.php', {
+        method: 'POST',
+        body: JSON.stringify({
+            name: name,
+            category_id: category_id
+        })
+    });
 
-  const res = await fetchJson('api/add-brand.php', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({category_id,name})
-  });
-
-  if (res.ok) {
-    alert("Brand added");
-  } else {
-    alert(res.message);
-  }
+    loadBrands();
 }
 
-document.addEventListener('DOMContentLoaded', loadCategories);
+loadCategories();
