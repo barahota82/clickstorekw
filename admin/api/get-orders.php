@@ -53,6 +53,7 @@ $sql = "
         o.order_number,
         o.status,
         o.rejection_reason,
+        o.customer_id,
         o.customer_name_snapshot,
         o.customer_email_snapshot,
         o.customer_whatsapp_snapshot,
@@ -169,6 +170,8 @@ foreach ($orders as $order) {
         $summary['pending']++;
     }
 
+    $isGuest = ((int)($order['customer_id'] ?? 0) <= 0);
+
     $mapped[] = [
         'id' => (int)$order['id'],
         'order_number' => (string)$order['order_number'],
@@ -178,6 +181,9 @@ foreach ($orders as $order) {
         'customer_name' => (string)($order['customer_name_snapshot'] ?? ''),
         'customer_email' => (string)($order['customer_email_snapshot'] ?? ''),
         'customer_whatsapp' => (string)($order['customer_whatsapp_snapshot'] ?? ''),
+        'customer_id' => isset($order['customer_id']) ? (int)$order['customer_id'] : null,
+        'is_guest' => $isGuest,
+        'customer_type_label' => $isGuest ? 'Guest' : 'Registered',
         'subtotal_amount' => (float)$order['subtotal_amount'],
         'discount_amount' => (float)$order['discount_amount'],
         'delivery_amount' => (float)$order['delivery_amount'],
