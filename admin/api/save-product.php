@@ -123,6 +123,10 @@ $originalImageName = (string)($image['name'] ?? '');
 $slugBase = save_product_slugify($originalImageName);
 
 if ($slugBase === '') {
+    $slugBase = save_product_slugify($title);
+}
+
+if ($slugBase === '') {
     $slugBase = 'product-' . time();
 }
 
@@ -153,7 +157,6 @@ try {
 
     $categorySlug = save_product_slugify((string)$categoryBrand['category_slug']);
     $brandSlug = save_product_slugify((string)$categoryBrand['brand_slug']);
-    $categoryName = (string)$categoryBrand['category_name'];
     $brandName = (string)$categoryBrand['brand_name'];
 
     if ($categorySlug === '' || $brandSlug === '') {
@@ -203,8 +206,6 @@ try {
         'slug' => $slug,
         'title' => $title,
         'category_slug' => $categorySlug,
-        'category_name' => $categoryName,
-        'brand_slug' => $brandSlug,
         'brand_name' => $brandName,
         'devices_count' => $devicesCount,
         'down_payment' => $downPayment,
@@ -381,6 +382,7 @@ try {
         'sku' => $sku,
         'image_path' => $relativeImagePath,
         'json_file_path' => $relativeJsonPath,
+        'saved_json' => $jsonPayload,
         'stock_review' => [
             'devices_count' => (int)($stockLinkResult['devices_count'] ?? $devicesCount),
             'linked' => $stockLinkResult['linked'] ?? [],
