@@ -31,7 +31,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
   <style>
     .admin-main-tabs {
       display: grid;
-      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      grid-template-columns: repeat(5, minmax(180px, 1fr));
       gap: 12px;
       margin-top: 24px;
     }
@@ -635,6 +635,19 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       min-width: 180px;
     }
 
+    .embedded-admin-wrap {
+      width: 100%;
+      display: block;
+    }
+
+    .embedded-admin-frame {
+      width: 100%;
+      min-height: 980px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      background: #0a1120;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -736,7 +749,8 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <div>
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
           <p class="section-desc no-margin">
-            الواجهة الحالية مركزة على: إضافة المنتج من الصورة واسم الملف، ومراجعة ربط أجهزة الصورة بالمخزن، وإدارة الطلبات.
+            الواجهة الحالية مركزة على: إضافة المنتج من الصورة واسم الملف، ومراجعة ربط أجهزة الصورة بالمخزن، وإدارة الطلبات،
+            مع دمج إدارة الفئات والبراندات والمنتجات والعروض داخل نفس لوحة التحكم.
           </p>
         </div>
 
@@ -763,6 +777,8 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       <div class="admin-main-tabs">
         <button class="admin-tab-btn active" data-tab="tab-add-product" data-permission="products_create" id="tabBtnAddProduct" type="button">Add Product</button>
         <button class="admin-tab-btn" data-tab="tab-edit-delete" data-permission="products_edit" id="tabBtnEditDelete" type="button">Edit / Delete Product</button>
+        <button class="admin-tab-btn" data-tab="tab-catalog-structure" data-permission="brands_order" id="tabBtnCatalogStructure" type="button">Categories / Brands</button>
+        <button class="admin-tab-btn" data-tab="tab-products-manager" data-permission="products_edit" id="tabBtnProductsManager" type="button">Products Manager</button>
         <button class="admin-tab-btn" data-tab="tab-hot-offers" data-permission="hot_offers_order" id="tabBtnHotOffers" type="button">Hot Offers</button>
         <button class="admin-tab-btn" data-tab="tab-brand-order" data-permission="brands_order" id="tabBtnBrandOrder" type="button">Brand Ordering</button>
         <button class="admin-tab-btn" data-tab="tab-product-order" data-permission="products_order" id="tabBtnProductOrder" type="button">Product Ordering</button>
@@ -775,9 +791,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-add-product" class="admin-panel active" data-panel-permission="products_create">
           <h3 class="panel-title">Add Product</h3>
-          <p class="panel-desc">
-
-          </p>
+          <p class="panel-desc"></p>
 
           <div class="top-grid">
             <div class="sub-card">
@@ -967,9 +981,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-edit-delete" class="admin-panel" data-panel-permission="products_edit">
           <h3 class="panel-title">Edit / Delete Product</h3>
-          <p class="panel-desc">
-              
-          </p>
+          <p class="panel-desc"></p>
 
           <div class="sub-card">
             <h4 class="sub-title">Filters</h4>
@@ -1087,12 +1099,51 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
           </div>
         </div>
 
+        <div id="tab-catalog-structure" class="admin-panel" data-panel-permission="brands_order">
+          <h3 class="panel-title">Categories / Brands</h3>
+          <p class="panel-desc">
+            هذه الشاشة مدمجة داخل لوحة التحكم نفسها لإدارة الفئات والبراندات من نفس النظام، مع بقاء قاعدة البيانات هي المصدر الأساسي.
+          </p>
+
+          <div class="embedded-admin-wrap">
+            <iframe
+              class="embedded-admin-frame"
+              src="/admin/categories.php"
+              title="Categories and Brands Management"
+              loading="lazy">
+            </iframe>
+          </div>
+        </div>
+
+        <div id="tab-products-manager" class="admin-panel" data-panel-permission="products_edit">
+          <h3 class="panel-title">Products Manager</h3>
+          <p class="panel-desc">
+            هذه الشاشة مدمجة داخل لوحة التحكم لإدارة المنتجات من نفس الداشبورد بدون الخروج إلى صفحة منفصلة.
+          </p>
+
+          <div class="embedded-admin-wrap">
+            <iframe
+              class="embedded-admin-frame"
+              src="/admin/products.php"
+              title="Products Manager"
+              loading="lazy">
+            </iframe>
+          </div>
+        </div>
+
         <div id="tab-hot-offers" class="admin-panel" data-panel-permission="hot_offers_order">
           <h3 class="panel-title">Hot Offers</h3>
-          <div class="placeholder-panels">
-            <div class="placeholder-card"><strong>Hot Offers</strong><span>سيتم ترتيب وعرض المنتجات المميزة هنا.</span></div>
-            <div class="placeholder-card"><strong>Visibility</strong><span>التحكم في إظهار وإخفاء العروض الساخنة.</span></div>
-            <div class="placeholder-card"><strong>Ordering</strong><span>ترتيب مستقل للعروض الساخنة.</span></div>
+          <p class="panel-desc">
+            هذه الشاشة مدمجة داخل لوحة التحكم لإدارة العروض الساخنة، ترتيبها، وتفعيلها وتعطيلها من نفس النظام.
+          </p>
+
+          <div class="embedded-admin-wrap">
+            <iframe
+              class="embedded-admin-frame"
+              src="/admin/hot-offers.php"
+              title="Hot Offers Manager"
+              loading="lazy">
+            </iframe>
           </div>
         </div>
 
@@ -1134,9 +1185,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-stats" class="admin-panel" data-panel-permission="orders_view">
           <h3 class="panel-title">Statistics / Orders</h3>
-          <p class="panel-desc">
-
-          </p>
+          <p class="panel-desc"></p>
 
           <div class="summary-cards">
             <div class="summary-card">
