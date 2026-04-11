@@ -5,6 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Click Company</title>
 
+  <script>
+  (function () {
+    try {
+      var lang = localStorage.getItem("site_language") || "en";
+      document.documentElement.setAttribute("data-site-language", lang);
+      document.documentElement.classList.add("lang-preload");
+    } catch (e) {
+      document.documentElement.classList.add("lang-preload");
+    }
+  })();
+</script>
+
+<style>
+  html.lang-preload body {
+    visibility: hidden;
+  }
+
+  html.lang-ready body {
+    visibility: visible;
+  }
+</style>
+
   <link rel="stylesheet" href="/css/style.css?v=20260404" />
 
   <style>
@@ -854,58 +876,65 @@
     }
 
     async function bootCategoryPage() {
-      try {
-        await Promise.all([loadCategories(), loadTranslations()]);
+  try {
+    await Promise.all([loadCategories(), loadTranslations()]);
 
-        const slug = getCategorySlugFromUrl();
-        CURRENT_CATEGORY = CATEGORIES.find(item => String(item.slug || "").trim().toLowerCase() === slug && item.visible === true) || null;
+    const slug = getCategorySlugFromUrl();
+    CURRENT_CATEGORY = CATEGORIES.find(item => String(item.slug || "").trim().toLowerCase() === slug && item.visible === true) || null;
 
-        const languageSelect = document.getElementById("languageSelect");
-        if (languageSelect) {
-          languageSelect.value = APP_LANGUAGE;
-          languageSelect.addEventListener("change", function () {
-            APP_LANGUAGE = this.value || "en";
-            LAST_APPLIED_LANGUAGE = APP_LANGUAGE;
-            localStorage.setItem("site_language", APP_LANGUAGE);
-
-            applyStaticTranslations();
-            renderProducts(productsData);
-            updatePromoBanner();
-
-            document.dispatchEvent(new CustomEvent("site-language-changed", {
-              detail: { language: APP_LANGUAGE, source: "desktop-header" }
-            }));
-          });
-        }
-
-        if (!CURRENT_CATEGORY) {
-          document.title = t("site_title");
-          const loading = document.getElementById("loading-state");
-          const empty = document.getElementById("empty-state");
-          if (loading) loading.remove();
-          if (empty) {
-            empty.style.display = "";
-            empty.textContent = t("category_not_found");
-          }
-          applyStaticTranslations();
-          return;
-        }
+    const languageSelect = document.getElementById("languageSelect");
+    if (languageSelect) {
+      languageSelect.value = APP_LANGUAGE;
+      languageSelect.addEventListener("change", function () {
+        APP_LANGUAGE = this.value || "en";
+        LAST_APPLIED_LANGUAGE = APP_LANGUAGE;
+        localStorage.setItem("site_language", APP_LANGUAGE);
 
         applyStaticTranslations();
-        await loadProductsForCurrentCategory();
-      } catch (e) {
-        console.error("Failed to boot category page:", e);
+        renderProducts(productsData);
+        updatePromoBanner();
 
-        const loading = document.getElementById("loading-state");
-        const empty = document.getElementById("empty-state");
-
-        if (loading) loading.remove();
-        if (empty) {
-          empty.style.display = "";
-          empty.textContent = t("failed_load_products");
-        }
-      }
+        document.dispatchEvent(new CustomEvent("site-language-changed", {
+          detail: { language: APP_LANGUAGE, source: "desktop-header" }
+        }));
+      });
     }
+
+    if (!CURRENT_CATEGORY) {
+      document.title = t("site_title");
+      const loading = document.getElementById("loading-state");
+      const empty = document.getElementById("empty-state");
+      if (loading) loading.remove();
+      if (empty) {
+        empty.style.display = "";
+        empty.textContent = t("category_not_found");
+      }
+      applyStaticTranslations();
+      document.documentElement.classList.remove("lang-preload");
+      document.documentElement.classList.add("lang-ready");
+      return;
+    }
+
+    applyStaticTranslations();
+    document.documentElement.classList.remove("lang-preload");
+    document.documentElement.classList.add("lang-ready");
+    await loadProductsForCurrentCategory();
+  } catch (e) {
+    console.error("Failed to boot category page:", e);
+
+    document.documentElement.classList.remove("lang-preload");
+    document.documentElement.classList.add("lang-ready");
+
+    const loading = document.getElementById("loading-state");
+    const empty = document.getElementById("empty-state");
+
+    if (loading) loading.remove();
+    if (empty) {
+      empty.style.display = "";
+      empty.textContent = t("failed_load_products");
+    }
+  }
+}
 
     document.addEventListener("DOMContentLoaded", function () {
       setupInfiniteObserver();
