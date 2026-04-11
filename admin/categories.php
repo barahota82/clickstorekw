@@ -1,50 +1,36 @@
 <?php require_once __DIR__ . '/check-auth.php'; ?>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Categories Management</title>
-<style>
-body {
-    font-family: Arial;
-    background: #111;
-    color: #fff;
-    padding: 20px;
-}
-h1 {
-    margin-bottom: 20px;
-}
-input {
-    padding: 8px;
-    margin: 5px;
-    width: 200px;
-}
-button {
-    padding: 8px 15px;
-    cursor: pointer;
-}
-.category {
-    background: #222;
-    padding: 15px;
-    margin-bottom: 10px;
-}
-</style>
+<title>Categories</title>
+<link rel="stylesheet" href="assets/admin.css">
 </head>
-
 <body>
 
-<h1>📂 Categories Management</h1>
+<h2>Categories</h2>
 
 <div>
-    <input id="name_en" placeholder="Name EN">
-    <input id="name_ph" placeholder="Name PH">
-    <input id="name_hi" placeholder="Name HI">
-    <button onclick="addCategory()">Add Category</button>
+    <input id="cat_name" placeholder="Category Name">
+    <button onclick="addCategory()">Add</button>
 </div>
 
 <hr>
 
 <div id="categories"></div>
+
+<hr>
+
+<h3>Brands</h3>
+
+<select id="category_select" onchange="loadBrands()"></select>
+
+<div>
+    <input id="brand_name" placeholder="Brand Name">
+    <button onclick="addBrand()">Add Brand</button>
+</div>
+
+<div id="brands"></div>
 
 <script src="categories.js"></script>
 
