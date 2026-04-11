@@ -1416,6 +1416,33 @@ function groupOrderItems(items) {
   return Array.from(map.values());
 }
 
+function renderCustomerTypeBadge(order) {
+  const isGuest = !!order.is_guest;
+  const label = isGuest ? 'Guest' : 'Registered';
+  const cssClass = isGuest ? 'status-chip status-cancelled' : 'status-chip status-delivered';
+
+  return `<div style="margin-top:8px;"><span class="${cssClass}" style="min-width:auto; padding:6px 10px; font-size:11px;">${escapeHtml(label)}</span></div>`;
+}
+
+function renderCustomerCell(order) {
+  const name = escapeHtml(order.customer_name || '-');
+  const email = escapeHtml(order.customer_email || '-');
+  const whatsapp = escapeHtml(order.customer_whatsapp || '-');
+  const isGuest = !!order.is_guest;
+
+  return `
+    <div style="display:flex; flex-direction:column; gap:6px;">
+      <div style="font-weight:800; color:#fff;">${name}</div>
+      <div style="font-size:12px; color:#8fa6c9;">${isGuest ? 'طلب ضيف من الموقع' : 'عميل مسجل'}</div>
+      ${renderCustomerTypeBadge(order)}
+      <div style="font-size:12px; color:#8fa6c9; line-height:1.7;">
+        <div><strong>Email:</strong> ${email}</div>
+        <div><strong>WhatsApp:</strong> ${whatsapp}</div>
+      </div>
+    </div>
+  `;
+}
+
 function renderAdminOrdersTable(orders, apiPermissions = null) {
   const tbody = getEl('adminOrdersTableBody');
   const emptyBox = getEl('ordersEmptyBox');
@@ -1477,7 +1504,7 @@ function renderAdminOrdersTable(orders, apiPermissions = null) {
     return `
       <tr>
         <td>${escapeHtml(order.order_number || '')}</td>
-        <td>${escapeHtml(order.customer_name || '')}</td>
+        <td>${renderCustomerCell(order)}</td>
         <td>${escapeHtml(order.customer_email || '')}</td>
         <td>${escapeHtml(order.customer_whatsapp || '')}</td>
         <td>${escapeHtml(order.created_at || '')}</td>
