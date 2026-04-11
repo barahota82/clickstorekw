@@ -1416,12 +1416,142 @@ function groupOrderItems(items) {
   return Array.from(map.values());
 }
 
+function ensureCustomerProfileModal() {
+  if (document.getElementById('customerProfileModal')) return;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .customer-link-btn{
+      background:none;
+      border:none;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      padding:0;
+      text-align:right;
+      font-size:14px;
+    }
+    .customer-link-btn:hover{
+      color:#93c5fd;
+      text-decoration:underline;
+    }
+    .customer-profile-modal{
+      position:fixed;
+      inset:0;
+      background:rgba(2,6,23,0.82);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:10000;
+      padding:20px;
+    }
+    .customer-profile-modal.active{
+      display:flex;
+    }
+    .customer-profile-box{
+      width:min(760px, 100%);
+      max-height:85vh;
+      overflow:auto;
+      background:#0f172a;
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:20px;
+      padding:20px;
+    }
+    .customer-profile-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    .customer-profile-title{
+      color:#fff;
+      font-size:20px;
+      font-weight:800;
+      margin:0;
+    }
+    .customer-profile-close{
+      border:none;
+      background:rgba(255,255,255,0.08);
+      color:#fff;
+      width:42px;
+      height:42px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:22px;
+    }
+    .customer-profile-grid{
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
+      gap:14px;
+      margin-top:10px;
+    }
+    .customer-profile-card{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:16px;
+      padding:14px;
+    }
+    .customer-profile-card strong{
+      display:block;
+      color:#c8d4ea;
+      margin-bottom:6px;
+      font-size:13px;
+    }
+    .customer-profile-card span{
+      color:#fff;
+      font-size:14px;
+      line-height:1.8;
+      word-break:break-word;
+    }
+    .customer-profile-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin:12px 0 16px;
+    }
+    @media (max-width: 700px){
+      .customer-profile-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const modal = document.createElement('div');
+  modal.id = 'customerProfileModal';
+  modal.className = 'customer-profile-modal';
+  modal.innerHTML = `
+    <div class="customer-profile-box">
+      <div class="customer-profile-head">
+        <h3 class="customer-profile-title" id="customerProfileTitle">Customer Profile</h3>
+        <button type="button" class="customer-profile-close" id="customerProfileCloseBtn">×</button>
+      </div>
+      <div id="customerProfileContent">
+        <div class="empty-box">لم يتم تحميل بيانات العميل بعد.</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const closeBtn = document.getElementById('customerProfileCloseBtn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeCustomerProfile);
+  }
+
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) {
+      closeCustomerProfile();
+    }
+  });
+}
+
 function renderCustomerTypeBadge(order) {
   const isGuest = !!order.is_guest;
   const label = isGuest ? 'Guest' : 'Registered';
   const cssClass = isGuest ? 'status-chip status-cancelled' : 'status-chip status-delivered';
 
-  return `<div style="margin-top:8px;"><span class="${cssClass}" style="min-width:auto; padding:6px 10px; font-size:11px;">${escapeHtml(label)}</span></div>`;
+  return `<span class="${cssClass}" style="min-width:auto; padding:6px 10px; font-size:11px;">${escapeHtml(label)}</span>`;
 }
 
 function renderCustomerCell(order) {
@@ -1429,12 +1559,29 @@ function renderCustomerCell(order) {
   const email = escapeHtml(order.customer_email || '-');
   const whatsapp = escapeHtml(order.customer_whatsapp || '-');
   const isGuest = !!order.is_guest;
+  const shortTypeText = isGuest ? 'طلب ضيف من الموقع' : 'عميل مسجل';
+
+  const safePayload = encodeURIComponent(JSON.stringify({
+    order_number: order.order_number || '',
+    customer_name: order.customer_name || '',
+    customer_email: order.customer_email || '',
+    customer_whatsapp: order.customer_whatsapp || '',
+    customer_id: order.customer_id ?? null,
+    is_guest: !!order.is_guest,
+    customer_type_label: order.customer_type_label || (isGuest ? 'Guest' : 'Registered'),
+    created_at: order.created_at || '',
+    status: order.status || '',
+    raw_status: order.raw_status || '',
+    is_first_order: !!order.is_first_order,
+    has_promotional_gift: !!order.has_promotional_gift,
+    gift_label: order.gift_label || ''
+  }));
 
   return `
     <div style="display:flex; flex-direction:column; gap:6px;">
-      <div style="font-weight:800; color:#fff;">${name}</div>
-      <div style="font-size:12px; color:#8fa6c9;">${isGuest ? 'طلب ضيف من الموقع' : 'عميل مسجل'}</div>
-      ${renderCustomerTypeBadge(order)}
+      <button type="button" class="customer-link-btn" onclick="openCustomerProfileFromEncoded('${safePayload}')">${name}</button>
+      <div style="font-size:12px; color:#8fa6c9;">${shortTypeText}</div>
+      <div style="margin-top:2px;">${renderCustomerTypeBadge(order)}</div>
       <div style="font-size:12px; color:#8fa6c9; line-height:1.7;">
         <div><strong>Email:</strong> ${email}</div>
         <div><strong>WhatsApp:</strong> ${whatsapp}</div>
@@ -1442,6 +1589,103 @@ function renderCustomerCell(order) {
     </div>
   `;
 }
+
+function renderCustomerProfile(order) {
+  const content = getEl('customerProfileContent');
+  const title = getEl('customerProfileTitle');
+  if (!content || !title) return;
+
+  title.textContent = `Customer Profile - ${order.customer_name || '-'}`;
+
+  const giftText = order.has_promotional_gift
+    ? (order.gift_label || 'Free gift for first order')
+    : 'No';
+
+  content.innerHTML = `
+    <div class="customer-profile-badges">
+      ${renderCustomerTypeBadge(order)}
+      <span class="status-chip ${getAdminOrderStatusClass(order.raw_status || '')}" style="min-width:auto; padding:6px 10px; font-size:11px;">
+        ${escapeHtml(formatAdminOrderStatus(order.raw_status || '', ''))}
+      </span>
+    </div>
+
+    <div class="customer-profile-grid">
+      <div class="customer-profile-card">
+        <strong>Customer Name</strong>
+        <span>${escapeHtml(order.customer_name || '-')}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>Customer Type</strong>
+        <span>${escapeHtml(order.customer_type_label || (order.is_guest ? 'Guest' : 'Registered'))}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>Email</strong>
+        <span>${escapeHtml(order.customer_email || '-')}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>WhatsApp</strong>
+        <span>${escapeHtml(order.customer_whatsapp || '-')}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>Order Number</strong>
+        <span>${escapeHtml(order.order_number || '-')}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>Order Date</strong>
+        <span>${escapeHtml(order.created_at || '-')}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>Current Status</strong>
+        <span>${escapeHtml(formatAdminOrderStatus(order.raw_status || '', ''))}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>Customer ID</strong>
+        <span>${order.customer_id ? escapeHtml(String(order.customer_id)) : '-'}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>First Order</strong>
+        <span>${order.is_first_order ? 'Yes' : 'No'}</span>
+      </div>
+
+      <div class="customer-profile-card">
+        <strong>Promotional Gift</strong>
+        <span>${escapeHtml(giftText)}</span>
+      </div>
+    </div>
+  `;
+}
+
+window.openCustomerProfileFromEncoded = function (encodedPayload) {
+  ensureCustomerProfileModal();
+
+  let order = null;
+
+  try {
+    order = JSON.parse(decodeURIComponent(encodedPayload || ''));
+  } catch (e) {
+    adminSetStatus('dashboardStatus', 'error', 'تعذر فتح بيانات العميل.');
+    return;
+  }
+
+  const modal = getEl('customerProfileModal');
+  if (!modal || !order) return;
+
+  renderCustomerProfile(order);
+  modal.classList.add('active');
+};
+
+window.closeCustomerProfile = function () {
+  const modal = getEl('customerProfileModal');
+  if (modal) modal.classList.remove('active');
+};
 
 function renderAdminOrdersTable(orders, apiPermissions = null) {
   const tbody = getEl('adminOrdersTableBody');
@@ -1731,6 +1975,7 @@ function bindOrderHistoryModal() {
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeOrderHistory();
+      closeCustomerProfile();
     }
   });
 }
@@ -1933,6 +2178,7 @@ function initializeAdminUI() {
 
   bindOrdersManagementButtons();
   bindOrderHistoryModal();
+  ensureCustomerProfileModal();
 
   updateProductJsonPreview();
   clearStockReview();
