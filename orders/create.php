@@ -8,7 +8,6 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/../config.php';
 
 require_post();
-require_customer_auth_json();
 
 $data = get_request_json();
 $items = $data['items'] ?? [];
@@ -18,35 +17,61 @@ if (!is_array($items) || count($items) === 0) {
     json_response(false, ['message' => 'No items selected'], 422);
 }
 
-$customerId = current_customer_id();
 $pdo = db();
 
-$customerStmt = $pdo->prepare("SELECT * FROM customers WHERE id = ? LIMIT 1");
-$customerStmt->execute([$customerId]);
-$customer = $customerStmt->fetch();
+$customerId = current_customer_id();
+$isGuestOrder = $customerId <= 0;
 
-if (!$customer) {
-    json_response(false, ['message' => 'Customer not found'], 404);
+$guestName = trim((string)($data['guest_name'] ?? ''));
+$guestEmail = trim((string)($data['guest_email'] ?? ''));
+$guestWhatsapp = trim((string)($data['guest_whatsapp'] ?? ''));
+
+$customer = null;
+
+if ($isGuestOrder) {
+    if ($guestName === '' || $guestWhatsapp === '') {
+        json_response(false, [
+            'message' => 'Guest name and WhatsApp are required'
+        ], 422);
+    }
+} else {
+    $customerStmt = $pdo->prepare("SELECT * FROM customers WHERE id = ? LIMIT 1");
+    $customerStmt->execute([$customerId]);
+    $customer = $customerStmt->fetch();
+
+    if (!$customer) {
+        json_response(false, ['message' => 'Customer not found'], 404);
+    }
+
+    $guestName = (string)$customer['full_name'];
+    $guestEmail = (string)($customer['email'] ?? '');
+    $guestWhatsapp = (string)($customer['whatsapp_full'] ?? '');
 }
 
 if ($orderNumber === '') {
     $orderNumber = generate_order_number();
 }
 
-$countStmt = $pdo->prepare("
-    SELECT COUNT(*) AS total_orders
-    FROM orders
-    WHERE customer_id = ?
-      AND status IN ('pending', 'sent', 'completed')
-");
-$countStmt->execute([$customerId]);
-$countRow = $countStmt->fetch();
+$isFirstOrder = 0;
+$hasGift = 0;
+$giftLabel = '';
 
-$isFirstOrder = ((int)($countRow['total_orders'] ?? 0) === 0) ? 1 : 0;
+if (!$isGuestOrder && $customerId > 0) {
+    $countStmt = $pdo->prepare("
+        SELECT COUNT(*) AS total_orders
+        FROM orders
+        WHERE customer_id = ?
+          AND status IN ('pending', 'approved', 'on_the_way', 'completed')
+    ");
+    $countStmt->execute([$customerId]);
+    $countRow = $countStmt->fetch();
 
-$giftEnabled = get_setting_bool('first_order_gift_enabled', true);
-$giftLabel = trim((string)get_setting('first_order_gift_label', 'Free gift for first order'));
-$hasGift = ($giftEnabled && $isFirstOrder === 1) ? 1 : 0;
+    $isFirstOrder = ((int)($countRow['total_orders'] ?? 0) === 0) ? 1 : 0;
+
+    $giftEnabled = get_setting_bool('first_order_gift_enabled', true);
+    $giftLabel = trim((string)get_setting('first_order_gift_label', 'Free gift for first order'));
+    $hasGift = ($giftEnabled && $isFirstOrder === 1) ? 1 : 0;
+}
 
 $subtotal = 0.000;
 $normalizedItems = [];
@@ -143,23 +168,24 @@ try {
             :is_first_order,
             :has_promotional_gift,
             :gift_label,
-            NULL,
+            :notes,
             NOW(),
             NOW()
         )
     ");
 
     $orderStmt->execute([
-        'customer_id' => $customerId,
-        'customer_name_snapshot' => (string)$customer['full_name'],
-        'customer_email_snapshot' => (string)$customer['email'],
-        'customer_whatsapp_snapshot' => (string)($customer['whatsapp_full'] ?? ''),
+        'customer_id' => $isGuestOrder ? null : $customerId,
+        'customer_name_snapshot' => $guestName,
+        'customer_email_snapshot' => $guestEmail !== '' ? $guestEmail : null,
+        'customer_whatsapp_snapshot' => $guestWhatsapp !== '' ? $guestWhatsapp : null,
         'order_number' => $orderNumber,
         'subtotal_amount' => $subtotal,
         'total_amount' => $totalAmount,
         'is_first_order' => $isFirstOrder,
         'has_promotional_gift' => $hasGift,
         'gift_label' => $hasGift ? $giftLabel : null,
+        'notes' => $isGuestOrder ? 'Guest order from website' : null,
     ]);
 
     $orderId = (int)$pdo->lastInsertId();
@@ -232,11 +258,14 @@ try {
             NULL,
             'pending',
             NULL,
-            'Order created from website',
+            :notes,
             NOW()
         )
     ");
-    $logStmt->execute(['order_id' => $orderId]);
+    $logStmt->execute([
+        'order_id' => $orderId,
+        'notes' => $isGuestOrder ? 'Guest order created from website' : 'Order created from website'
+    ]);
 
     $pdo->commit();
 
@@ -283,9 +312,9 @@ try {
         "",
         "#ORDER",
         "Order Reference: {$orderNumber}",
-        "Customer Name: " . (string)$customer['full_name'],
-        "Customer Email: " . (string)$customer['email'],
-        "Customer WhatsApp: " . (string)($customer['whatsapp_full'] ?? ''),
+        "Customer Name: " . $guestName,
+        "Customer Email: " . ($guestEmail !== '' ? $guestEmail : '-'),
+        "Customer WhatsApp: " . ($guestWhatsapp !== '' ? $guestWhatsapp : '-'),
         "Order Date: " . date('Y-m-d h:i A'),
     ];
 
