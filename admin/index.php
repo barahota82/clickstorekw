@@ -1149,19 +1149,33 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-brand-order" class="admin-panel" data-panel-permission="brands_order">
           <h3 class="panel-title">Brand Ordering</h3>
-          <div class="placeholder-panels">
-            <div class="placeholder-card"><strong>Ordering by Category</strong><span>كل فئة لها ترتيب مستقل للبراندات.</span></div>
-            <div class="placeholder-card"><strong>Drag & Drop</strong><span>سيتم تجهيز الترتيب المرئي لاحقًا.</span></div>
-            <div class="placeholder-card"><strong>Brand Priority</strong><span>حفظ ترتيب البراند بطريقة منظمة.</span></div>
+          <p class="panel-desc">
+            هذه الشاشة مدمجة داخل لوحة التحكم لحفظ ترتيب البراندات لكل Category مباشرة في قاعدة البيانات.
+          </p>
+
+          <div class="embedded-admin-wrap">
+            <iframe
+              class="embedded-admin-frame"
+              src="/admin/brand-ordering.php"
+              title="Brand Ordering Manager"
+              loading="lazy">
+            </iframe>
           </div>
         </div>
 
         <div id="tab-product-order" class="admin-panel" data-panel-permission="products_order">
           <h3 class="panel-title">Product Ordering</h3>
-          <div class="placeholder-panels">
-            <div class="placeholder-card"><strong>Manual Product Order</strong><span>ترتيب المنتجات داخل البراند أو القسم.</span></div>
-            <div class="placeholder-card"><strong>Priority</strong><span>المنتجات الأهم أولاً.</span></div>
-            <div class="placeholder-card"><strong>Display Logic</strong><span>تجهيز منطق العرض للواجهة لاحقًا.</span></div>
+          <p class="panel-desc">
+            هذه الشاشة مدمجة داخل لوحة التحكم لحفظ ترتيب المنتجات، مع تحديث ملفات JSON تلقائيًا بعد الحفظ.
+          </p>
+
+          <div class="embedded-admin-wrap">
+            <iframe
+              class="embedded-admin-frame"
+              src="/admin/product-ordering.php"
+              title="Product Ordering Manager"
+              loading="lazy">
+            </iframe>
           </div>
         </div>
 
