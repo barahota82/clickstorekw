@@ -99,7 +99,10 @@
       i_want_cancel: "I want to cancel this order.",
       please_confirm_cancel: "Please confirm the cancellation.",
       request_timeout: "Request timeout. Please try again.",
-      unexpected_server_response: "Unexpected server response."
+      unexpected_server_response: "Unexpected server response.",
+      guest_name_prompt: "Enter your full name",
+      guest_whatsapp_prompt: "Enter your WhatsApp number",
+      guest_email_prompt: "Enter your email (optional)"
     },
     ph: {
       home: "Home",
@@ -184,7 +187,10 @@
       i_want_cancel: "Gusto kong kanselahin ang order na ito.",
       please_confirm_cancel: "Pakikumpirma ang pagkansela.",
       request_timeout: "Nag-timeout ang request. Pakisubukang muli.",
-      unexpected_server_response: "Hindi inaasahang tugon ng server."
+      unexpected_server_response: "Hindi inaasahang tugon ng server.",
+      guest_name_prompt: "Ilagay ang buong pangalan",
+      guest_whatsapp_prompt: "Ilagay ang WhatsApp number",
+      guest_email_prompt: "Ilagay ang email (optional)"
     },
     hi: {
       home: "होम",
@@ -269,7 +275,10 @@
       i_want_cancel: "मैं इस ऑर्डर को रद्द करना चाहता हूँ।",
       please_confirm_cancel: "कृपया रद्दीकरण की पुष्टि करें।",
       request_timeout: "अनुरोध का समय समाप्त हो गया। कृपया पुनः प्रयास करें।",
-      unexpected_server_response: "अनपेक्षित सर्वर प्रतिक्रिया।"
+      unexpected_server_response: "अनपेक्षित सर्वर प्रतिक्रिया।",
+      guest_name_prompt: "पूरा नाम दर्ज करें",
+      guest_whatsapp_prompt: "व्हाट्सऐप नंबर दर्ज करें",
+      guest_email_prompt: "ईमेल दर्ज करें (वैकल्पिक)"
     }
   };
 
@@ -284,16 +293,15 @@
   document.addEventListener("DOMContentLoaded", async function () {
     await loadWhatsAppSettings();
     await syncCustomerSession();
-    
-   if (isMobile()) {
-     const langTop = document.getElementById("languageSelect");
-     if (langTop) {
-       langTop.style.display = "none";
 
-       const parent = langTop.closest(".language-switcher") || langTop.parentElement;
-       if (parent) parent.style.display = "none";
-     }
-   }
+    if (isMobile()) {
+      const langTop = document.getElementById("languageSelect");
+      if (langTop) {
+        langTop.style.display = "none";
+        const parent = langTop.closest(".language-switcher") || langTop.parentElement;
+        if (parent) parent.style.display = "none";
+      }
+    }
 
     cart = cart.map(normalizeItem);
     pendingCart = pendingCart.map(normalizeItem);
@@ -319,27 +327,27 @@
   }
 
   function tr(key) {
-  const lang = getUiLanguage();
-  return CART_I18N[lang]?.[key] || CART_I18N.en?.[key] || key;
-}
-
-function getMobileAuthText() {
-  const user = getUserData();
-
-  if (!user || !user.email) {
-    return tr("login");
+    const lang = getUiLanguage();
+    return CART_I18N[lang]?.[key] || CART_I18N.en?.[key] || key;
   }
 
-  const firstName = String(user.full_name || user.name || tr("customer"))
-    .trim()
-    .split(/\s+/)[0];
+  function getMobileAuthText() {
+    const user = getUserData();
 
-  if (!firstName) {
-    return tr("customer");
+    if (!user || !user.email) {
+      return tr("login");
+    }
+
+    const firstName = String(user.full_name || user.name || tr("customer"))
+      .trim()
+      .split(/\s+/)[0];
+
+    if (!firstName) {
+      return tr("customer");
+    }
+
+    return firstName.length > 8 ? `${firstName.slice(0, 8)}…` : firstName;
   }
-
-  return firstName.length > 8 ? `${firstName.slice(0, 8)}…` : firstName;
-}
 
   function safeParse(value, fallback) {
     try {
@@ -843,15 +851,14 @@ function getMobileAuthText() {
 
       normalizeFloatingCartButton();
       updateAuthLabel();
-      
-     applyCartTranslations();
-      
-     setTimeout(() => {
-    renderCartSystem();
-    }, 0);
+      applyCartTranslations();
 
-    updateAllBadges();
-   });
+      setTimeout(() => {
+        renderCartSystem();
+      }, 0);
+
+      updateAllBadges();
+    });
   }
 
   function bindHeaderScrollEffect() {
@@ -904,20 +911,20 @@ function getMobileAuthText() {
   }
 
   function updateAuthLabel() {
-  const user = getUserData();
-  const desktopValue = user && user.email ? (user.full_name || user.email) : tr("login");
-  const mobileValue = getMobileAuthText();
+    const user = getUserData();
+    const desktopValue = user && user.email ? (user.full_name || user.email) : tr("login");
+    const mobileValue = getMobileAuthText();
 
-  if (typeof window.setTopAuthLabel === "function") {
-    window.setTopAuthLabel(desktopValue);
+    if (typeof window.setTopAuthLabel === "function") {
+      window.setTopAuthLabel(desktopValue);
+    }
+
+    const desktopLabel = document.getElementById("desktopAuthLabel");
+    const mobileLabel = document.getElementById("mobileAuthLabel");
+
+    if (desktopLabel) desktopLabel.textContent = desktopValue;
+    if (mobileLabel) mobileLabel.textContent = mobileValue;
   }
-
-  const desktopLabel = document.getElementById("desktopAuthLabel");
-  const mobileLabel = document.getElementById("mobileAuthLabel");
-
-  if (desktopLabel) desktopLabel.textContent = desktopValue;
-  if (mobileLabel) mobileLabel.textContent = mobileValue;
-}
 
   window.openAuthModal = function () {
     const modal = document.getElementById("authModalGlobal");
@@ -1385,7 +1392,7 @@ function getMobileAuthText() {
     return "";
   }
 
-  function buildGuestOrderMessage(order) {
+  function buildGuestOrderMessage(order, guest = null) {
     const user = getUserData();
     const giftLine = buildGiftLine(order);
 
@@ -1404,12 +1411,15 @@ function getMobileAuthText() {
       ].join("\n");
     }).join("\n\n");
 
-    const customerBlock = user && user.email
-      ? [
-          `${tr("customer_name")}: ${user.full_name || user.email || ""}`,
-          `${tr("customer_email")}: ${user.email || ""}`
-        ].join("\n")
-      : "";
+    const finalName = guest?.guest_name || user?.full_name || user?.email || "";
+    const finalEmail = guest?.guest_email || user?.email || "";
+    const finalWhatsapp = guest?.guest_whatsapp || "";
+
+    const customerBlock = [
+      finalName ? `${tr("customer_name")}: ${finalName}` : "",
+      finalEmail ? `${tr("customer_email")}: ${finalEmail}` : "",
+      finalWhatsapp ? `${tr("customer_whatsapp")}: ${finalWhatsapp}` : ""
+    ].filter(Boolean).join("\n");
 
     return `${getGreeting()}
 
@@ -1421,6 +1431,26 @@ ${giftLine ? giftLine + "\n" : ""}
 ${lines}
 
 ${tr("please_confirm_order")}`;
+  }
+
+  function askGuestOrderInfo() {
+    const guest_name = window.prompt(tr("guest_name_prompt"), "") || "";
+    if (!guest_name.trim()) {
+      return null;
+    }
+
+    const guest_whatsapp = window.prompt(tr("guest_whatsapp_prompt"), "") || "";
+    if (!guest_whatsapp.trim()) {
+      return null;
+    }
+
+    const guest_email = window.prompt(tr("guest_email_prompt"), "") || "";
+
+    return {
+      guest_name: guest_name.trim(),
+      guest_whatsapp: guest_whatsapp.trim(),
+      guest_email: guest_email.trim()
+    };
   }
 
   window.sendSelectedOrder = async function (type) {
@@ -1436,97 +1466,84 @@ ${tr("please_confirm_order")}`;
     const orderId = buildOrderId();
     const orderDate = new Date().toLocaleString();
 
-    if (user && user.email) {
-      try {
-        const payload = {
-          order_number: orderId,
-          items: selected.map(item => ({
-            title: item.title,
-            image: item.image,
-            quantity: item.quantity,
-            monthly: item.monthly,
-            down_payment: item.down_payment,
-            duration: item.duration,
-            total_price: item.total_price,
-            devices_count: item.devices_count
-          }))
-        };
+    let guestInfo = null;
 
-        const { res, data } = await fetchJson("/orders/create.php", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok || !data.ok) {
-          if (data.message && /auth|login|sign in|unauth/i.test(data.message)) {
-            clearUserData();
-            customerSession = { logged_in: false, customer: null };
-            if (typeof window.openAuthModal === "function") {
-              window.openAuthModal();
-            }
-          }
-          showToast(data.message || tr("failed_create_order"));
-          return;
-        }
-
-        const serverOrder = normalizeOrder(data.order);
-
-        orders = [serverOrder, ...orders.filter(order => order.id !== serverOrder.id)];
-
-        if (type === "cart") {
-          cart = cart.filter(item => !item.checked);
-        } else {
-          pendingCart = pendingCart.filter(item => !item.checked);
-        }
-
-        saveAll();
-        renderCartSystem();
-
-        const serverMessage = data.whatsapp_message || buildGuestOrderMessage(serverOrder);
-        openWhatsApp(serverMessage);
-
-        await syncOrdersFromServer();
-        showToast(tr("order_created_successfully"));
-        return;
-      } catch (e) {
-        console.error(e);
-        showToast(e.message || tr("failed_send_order"));
+    if (!user || !user.email) {
+      guestInfo = askGuestOrderInfo();
+      if (!guestInfo) {
+        showToast(tr("failed_create_order"));
         return;
       }
     }
 
-    const guestOrder = normalizeOrder({
-      id: orderId,
-      date: orderDate,
-      status: tr("pending_delivery"),
-      rejection_reason: "",
-      server_order: false,
-      is_first_order: false,
-      has_promotional_gift: false,
-      gift_label: "",
-      items: selected.map(item => ({
-        ...item,
-        checked: false
-      }))
-    });
+    try {
+      const payload = {
+        order_number: orderId,
+        items: selected.map(item => ({
+          title: item.title,
+          image: item.image,
+          quantity: item.quantity,
+          monthly: item.monthly,
+          down_payment: item.down_payment,
+          duration: item.duration,
+          total_price: item.total_price,
+          devices_count: item.devices_count
+        }))
+      };
 
-    orders.unshift(guestOrder);
+      if (guestInfo) {
+        payload.guest_name = guestInfo.guest_name;
+        payload.guest_email = guestInfo.guest_email;
+        payload.guest_whatsapp = guestInfo.guest_whatsapp;
+      }
 
-    if (type === "cart") {
-      cart = cart.filter(item => !item.checked);
-    } else {
-      pendingCart = pendingCart.filter(item => !item.checked);
+      const { res, data } = await fetchJson("/orders/create.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok || !data.ok) {
+        if (data.message && /auth|login|sign in|unauth/i.test(data.message)) {
+          clearUserData();
+          customerSession = { logged_in: false, customer: null };
+          if (typeof window.openAuthModal === "function") {
+            window.openAuthModal();
+          }
+        }
+        showToast(data.message || tr("failed_create_order"));
+        return;
+      }
+
+      const serverOrder = normalizeOrder(data.order);
+
+      orders = [serverOrder, ...orders.filter(order => order.id !== serverOrder.id)];
+
+      if (type === "cart") {
+        cart = cart.filter(item => !item.checked);
+      } else {
+        pendingCart = pendingCart.filter(item => !item.checked);
+      }
+
+      saveAll();
+      renderCartSystem();
+
+      const serverMessage = data.whatsapp_message || buildGuestOrderMessage(serverOrder, guestInfo);
+      openWhatsApp(serverMessage);
+
+      if (user && user.email) {
+        await syncOrdersFromServer();
+      }
+
+      showToast(tr("order_created_successfully"));
+      return;
+    } catch (e) {
+      console.error(e);
+      showToast(e.message || tr("failed_send_order"));
+      return;
     }
-
-    saveAll();
-    renderCartSystem();
-
-    const message = buildGuestOrderMessage(guestOrder);
-    openWhatsApp(message);
-    showToast(tr("order_prepared_successfully"));
   };
 
   window.trackOrder = function (index) {
