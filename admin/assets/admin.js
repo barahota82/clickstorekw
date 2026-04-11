@@ -646,11 +646,16 @@ function resolveSelectedCategoryRow() {
   return getBootstrapCategories().find(cat => String(cat.id) === categoryId) || null;
 }
 
+function buildPreviewSlug() {
+  if (!currentProductImageFile?.name) return '';
+  return toSlug(currentProductImageFile.name || '');
+}
+
 function buildPreviewImagePath() {
   const categoryRow = resolveSelectedCategoryRow();
   const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
   const ext = String(currentProductImageFile?.name || '').split('.').pop().toLowerCase();
-  const slug = toSlug(currentProductImageFile?.name || '');
+  const slug = buildPreviewSlug();
 
   if (!categoryRow || !brandName || !ext || !slug) return '';
 
@@ -664,8 +669,10 @@ function buildPreviewImagePath() {
 function buildProductJsonPreviewObject() {
   const categoryRow = resolveSelectedCategoryRow();
   const previewImage = buildPreviewImagePath();
+  const previewSlug = buildPreviewSlug();
 
   return {
+    slug: previewSlug,
     title: String(getEl('ocrTitle')?.value || '').trim(),
     category: categoryRow ? String(categoryRow.slug || '').toLowerCase() : '',
     brand: String(getEl('ocrBrandFromFilename')?.value || '').trim(),
@@ -1150,7 +1157,15 @@ async function saveProduct() {
       clearStockReview();
     }
 
-    updateProductJsonPreview();
+    if (data.saved_json && typeof data.saved_json === 'object') {
+      const preview = getEl('productJsonPreview');
+      if (preview) {
+        preview.value = JSON.stringify(data.saved_json, null, 2);
+      }
+    } else {
+      updateProductJsonPreview();
+    }
+
     adminSetStatus(
       'dashboardStatus',
       'success',
