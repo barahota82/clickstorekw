@@ -1,39 +1,36 @@
 <?php
 require_once '../../config.php';
+require_once '../helpers/categories_sync.php';
+
 require_admin_auth_json();
 
 $data = get_request_json();
 
-$name_en = trim($data['name_en']);
-$name_ph = trim($data['name_ph']);
-$name_hi = trim($data['name_hi']);
+$name_en = trim($data['name_en'] ?? '');
 
 if (!$name_en) {
-    json_response(['error' => 'Name EN required'], 400);
+    json_response(false, ['message' => 'Name required'], 422);
 }
 
 $slug = strtolower(preg_replace('/[^a-z0-9]+/', '-', $name_en));
 
-$file = '../../data/categories.json';
-$categories = file_exists($file)
-    ? json_decode(file_get_contents($file), true)
-    : [];
+$pdo = db();
 
-foreach ($categories as $cat) {
-    if ($cat['slug'] === $slug) {
-        json_response(['error' => 'Category exists'], 400);
-    }
+$check = $pdo->prepare("SELECT id FROM categories WHERE slug = ?");
+$check->execute([$slug]);
+
+if ($check->fetch()) {
+    json_response(false, ['message' => 'Category exists'], 409);
 }
 
-$categories[] = [
-    'slug' => $slug,
-    'name' => [
-        'en' => $name_en,
-        'ph' => $name_ph,
-        'hi' => $name_hi
-    ]
-];
+$stmt = $pdo->prepare("
+    INSERT INTO categories
+    (name, slug, display_name, is_active, visible, nav_order, name_en)
+    VALUES (?, ?, ?, 1, 1, 9999, ?)
+");
 
-file_put_contents($file, json_encode($categories, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+$stmt->execute([$slug, $slug, $name_en, $name_en]);
 
-json_response(['success' => true]);
+generate_categories_json();
+
+json_response(true, ['message' => 'Category added']);
