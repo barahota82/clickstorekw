@@ -5,6 +5,7 @@ require_once dirname(__DIR__, 2) . '/config.php';
 require_once dirname(__DIR__) . '/helpers/filename_parser.php';
 require_once dirname(__DIR__) . '/helpers/stock_helper.php';
 require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
+require_once dirname(__DIR__) . '/helpers/products_sync.php';
 require_once __DIR__ . '/link-product-stock.php';
 
 if (!function_exists('save_product_slugify')) {
@@ -68,11 +69,12 @@ if (!function_exists('save_product_json_payload')) {
     function save_product_json_payload(array $data): array
     {
         return [
-            'title' => $data['title'],
-            'category' => $data['category_slug'],
-            'brand' => $data['brand_name'],
+            'slug' => (string)$data['slug'],
+            'title' => (string)$data['title'],
+            'category' => (string)$data['category_slug'],
+            'brand' => (string)$data['brand_name'],
             'devices_count' => (int)$data['devices_count'],
-            'image' => $data['image_path'],
+            'image' => (string)$data['image_path'],
             'down_payment' => (float)$data['down_payment'],
             'monthly' => (float)$data['monthly_amount'],
             'duration' => (int)$data['duration_months'],
@@ -198,6 +200,7 @@ try {
     }
 
     $jsonPayload = save_product_json_payload([
+        'slug' => $slug,
         'title' => $title,
         'category_slug' => $categorySlug,
         'category_name' => $categoryName,
@@ -263,7 +266,7 @@ try {
             :duration_months,
             :is_available,
             :is_hot_offer,
-            NULL,
+            :product_order,
             :json_file_path,
             1,
             :created_by,
@@ -273,7 +276,9 @@ try {
         )
     ");
 
-    $adminUserId = admin_current_user_id() > 0 ? admin_current_user_id() : null;
+    $adminUserId = function_exists('admin_current_user_id') && admin_current_user_id() > 0
+        ? admin_current_user_id()
+        : ((int)($_SESSION['admin_user_id'] ?? 0) ?: null);
 
     $insertProduct->execute([
         'category_id' => $categoryId,
@@ -288,6 +293,7 @@ try {
         'duration_months' => $durationMonths,
         'is_available' => $isAvailable,
         'is_hot_offer' => $isHotOffer,
+        'product_order' => 9999,
         'json_file_path' => $relativeJsonPath,
         'created_by' => $adminUserId,
         'updated_by' => $adminUserId,
@@ -319,7 +325,7 @@ try {
         $checkHot = $pdo->prepare("SELECT id FROM hot_offers WHERE product_id = :product_id LIMIT 1");
         $checkHot->execute(['product_id' => $productId]);
 
-        if (!$checkHot->fetch()) {
+        if (!$checkHot->fetch(PDO::FETCH_ASSOC)) {
             $insertHot = $pdo->prepare("
                 INSERT INTO hot_offers (
                     product_id,
@@ -329,7 +335,7 @@ try {
                     updated_at
                 ) VALUES (
                     :product_id,
-                    NULL,
+                    9999,
                     1,
                     NOW(),
                     NOW()
@@ -343,13 +349,17 @@ try {
 
     $pdo->commit();
 
-    admin_activity_log(
-        'create_product',
-        'products',
-        'product',
-        $productId,
-        'Created product | title: ' . $title . ' | slug: ' . $slug . ' | sku: ' . $sku
-    );
+    generate_products_json_for_category($categoryId);
+
+    if (function_exists('admin_activity_log')) {
+        admin_activity_log(
+            'create_product',
+            'products',
+            'product',
+            $productId,
+            'Created product | title: ' . $title . ' | slug: ' . $slug . ' | sku: ' . $sku
+        );
+    }
 
     $linkedCount = is_array($stockLinkResult['linked'] ?? null) ? count($stockLinkResult['linked']) : 0;
     $missingCount = is_array($stockLinkResult['missing'] ?? null) ? count($stockLinkResult['missing']) : 0;
