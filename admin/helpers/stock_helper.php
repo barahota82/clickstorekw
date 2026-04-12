@@ -318,3 +318,231 @@ function get_stock_review_from_devices(PDO $pdo, array $devices, ?int $brandId =
         'missing_count' => count($missing),
     ];
 }
+
+
+if (!function_exists('get_stock_item_by_product_id')) {
+    function get_stock_item_by_product_id(PDO $pdo, int $productId): ?array
+    {
+        if ($productId <= 0) {
+            return null;
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT
+                id,
+                product_id,
+                sku,
+                qty_on_hand,
+                reserved_qty,
+                available_qty,
+                reorder_level,
+                is_active,
+                created_at,
+                updated_at
+            FROM stock_items
+            WHERE product_id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$productId]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+}
+
+if (!function_exists('get_stock_item_by_id')) {
+    function get_stock_item_by_id(PDO $pdo, int $stockItemId): ?array
+    {
+        if ($stockItemId <= 0) {
+            return null;
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT
+                id,
+                product_id,
+                sku,
+                qty_on_hand,
+                reserved_qty,
+                available_qty,
+                reorder_level,
+                is_active,
+                created_at,
+                updated_at
+            FROM stock_items
+            WHERE id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$stockItemId]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+}
+
+if (!function_exists('recalculate_stock_item_available_qty')) {
+    function recalculate_stock_item_available_qty(PDO $pdo, int $stockItemId): void
+    {
+        if ($stockItemId <= 0) {
+            return;
+        }
+
+        $stmt = $pdo->prepare("
+            UPDATE stock_items
+            SET
+                available_qty = CASE
+                    WHEN (qty_on_hand - reserved_qty) < 0 THEN 0
+                    ELSE (qty_on_hand - reserved_qty)
+                END,
+                updated_at = NOW()
+            WHERE id = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$stockItemId]);
+    }
+}
+
+if (!function_exists('ensure_stock_item_for_product')) {
+    function ensure_stock_item_for_product(
+        PDO $pdo,
+        int $productId,
+        ?string $sku = null,
+        ?int $reorderLevel = null
+    ): array {
+        if ($productId <= 0) {
+            throw new RuntimeException('Product ID is required to create stock item');
+        }
+
+        $productStmt = $pdo->prepare("
+            SELECT
+                id,
+                sku,
+                is_active
+            FROM products
+            WHERE id = ?
+            LIMIT 1
+        ");
+        $productStmt->execute([$productId]);
+        $product = $productStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$product) {
+            throw new RuntimeException('Product not found while ensuring stock item');
+        }
+
+        $resolvedSku = trim((string)($sku ?? $product['sku'] ?? ''));
+        if ($resolvedSku === '') {
+            $resolvedSku = 'PRODUCT_' . $productId;
+        }
+
+        $existing = get_stock_item_by_product_id($pdo, $productId);
+
+        if ($existing) {
+            $duplicateSkuStmt = $pdo->prepare("
+                SELECT id
+                FROM stock_items
+                WHERE sku = ?
+                  AND product_id <> ?
+                LIMIT 1
+            ");
+            $duplicateSkuStmt->execute([$resolvedSku, $productId]);
+
+            if ($duplicateSkuStmt->fetch(PDO::FETCH_ASSOC)) {
+                throw new RuntimeException('Another stock item already uses the same SKU');
+            }
+
+            $fields = [];
+            $params = [];
+
+            if ((string)($existing['sku'] ?? '') !== $resolvedSku) {
+                $fields[] = 'sku = ?';
+                $params[] = $resolvedSku;
+            }
+
+            if ($reorderLevel !== null && (int)($existing['reorder_level'] ?? 0) !== max(0, $reorderLevel)) {
+                $fields[] = 'reorder_level = ?';
+                $params[] = max(0, $reorderLevel);
+            }
+
+            $targetActive = (int)($product['is_active'] ?? 1) === 1 ? 1 : 0;
+            if ((int)($existing['is_active'] ?? 1) !== $targetActive) {
+                $fields[] = 'is_active = ?';
+                $params[] = $targetActive;
+            }
+
+            if ($fields) {
+                $params[] = $productId;
+
+                $updateStmt = $pdo->prepare("
+                    UPDATE stock_items
+                    SET " . implode(', ', $fields) . ", updated_at = NOW()
+                    WHERE product_id = ?
+                    LIMIT 1
+                ");
+                $updateStmt->execute($params);
+            }
+
+            $stockItemId = (int)$existing['id'];
+            recalculate_stock_item_available_qty($pdo, $stockItemId);
+
+            return get_stock_item_by_id($pdo, $stockItemId) ?: $existing;
+        }
+
+        $duplicateSkuStmt = $pdo->prepare("
+            SELECT id
+            FROM stock_items
+            WHERE sku = ?
+            LIMIT 1
+        ");
+        $duplicateSkuStmt->execute([$resolvedSku]);
+
+        if ($duplicateSkuStmt->fetch(PDO::FETCH_ASSOC)) {
+            throw new RuntimeException('Another stock item already uses the same SKU');
+        }
+
+        $insertStmt = $pdo->prepare("
+            INSERT INTO stock_items
+            (
+                product_id,
+                sku,
+                qty_on_hand,
+                reserved_qty,
+                available_qty,
+                reorder_level,
+                is_active,
+                created_at,
+                updated_at
+            ) VALUES
+            (
+                :product_id,
+                :sku,
+                0,
+                0,
+                0,
+                :reorder_level,
+                :is_active,
+                NOW(),
+                NOW()
+            )
+        ");
+        $insertStmt->execute([
+            'product_id' => $productId,
+            'sku' => $resolvedSku,
+            'reorder_level' => max(0, (int)($reorderLevel ?? 0)),
+            'is_active' => (int)($product['is_active'] ?? 1) === 1 ? 1 : 0,
+        ]);
+
+        $stockItemId = (int)$pdo->lastInsertId();
+        recalculate_stock_item_available_qty($pdo, $stockItemId);
+
+        return get_stock_item_by_id($pdo, $stockItemId) ?: [
+            'id' => $stockItemId,
+            'product_id' => $productId,
+            'sku' => $resolvedSku,
+            'qty_on_hand' => 0,
+            'reserved_qty' => 0,
+            'available_qty' => 0,
+            'reorder_level' => max(0, (int)($reorderLevel ?? 0)),
+            'is_active' => (int)($product['is_active'] ?? 1) === 1 ? 1 : 0,
+        ];
+    }
+}
