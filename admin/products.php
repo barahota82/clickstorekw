@@ -1,8 +1,62 @@
-<?php require_once __DIR__ . '/check-auth.php'; ?>
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/check-auth.php';
+require_once __DIR__ . '/helpers/permissions_helper.php';
+
+if (!admin_has_permission('products_edit')) {
+    http_response_code(403);
+    ?>
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Products Manager</title>
+      <link rel="stylesheet" href="assets/admin.css">
+      <style>
+        body {
+          margin: 0;
+          padding: 24px;
+          font-family: Arial, sans-serif;
+          background: #0f172a;
+          color: #fff;
+        }
+        .panel {
+          max-width: 760px;
+          margin: 40px auto;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 22px;
+          padding: 24px;
+        }
+        h1 {
+          margin: 0 0 12px;
+          font-size: 28px;
+        }
+        p {
+          margin: 0;
+          color: #c8d4ea;
+          line-height: 1.9;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="panel">
+        <h1>ليس لديك صلاحية</h1>
+        <p>هذه الصفحة تحتاج صلاحية عرض وتعديل المنتجات داخل لوحة التحكم.</p>
+      </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Products Manager</title>
 <link rel="stylesheet" href="assets/admin.css">
 <style>
@@ -85,12 +139,12 @@ button{
 table{
   width:100%;
   border-collapse:collapse;
-  min-width:1050px;
+  min-width:1100px;
 }
 th,td{
   padding:12px 14px;
   border-bottom:1px solid rgba(255,255,255,0.08);
-  text-align:left;
+  text-align:right;
   vertical-align:top;
 }
 th{
@@ -156,6 +210,7 @@ th{
   background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.08);
   color:#c8d4ea;
+  line-height:1.8;
 }
 .edit-grid{
   display:grid;
@@ -182,31 +237,87 @@ th{
 .links-wrap{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:12px;
 }
 .link-card{
-  padding:12px;
-  border-radius:14px;
+  padding:14px;
+  border-radius:16px;
   border:1px solid rgba(255,255,255,0.08);
   background:rgba(255,255,255,0.04);
 }
 .link-card.missing{
-  border-color:rgba(239,68,68,0.28);
+  border-color:rgba(239,68,68,0.30);
   background:rgba(239,68,68,0.08);
 }
 .link-card.linked{
-  border-color:rgba(34,197,94,0.28);
+  border-color:rgba(34,197,94,0.30);
   background:rgba(34,197,94,0.08);
 }
+.link-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.link-title strong{
+  font-size:15px;
+  line-height:1.7;
+}
+.link-meta{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.meta-box{
+  padding:10px 12px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+}
+.meta-box small{
+  display:block;
+  color:#c8d4ea;
+  margin-bottom:4px;
+  font-size:12px;
+}
+.meta-box span{
+  color:#fff;
+  font-size:13px;
+  line-height:1.7;
+}
+.link-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  align-items:end;
+  margin-top:12px;
+}
+.helper-note{
+  margin-top:12px;
+  padding:12px 14px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  color:#c8d4ea;
+  line-height:1.8;
+  font-size:13px;
+}
+.note-inline{
+  margin:0 0 14px;
+  color:#c8d4ea;
+  font-size:13px;
+  line-height:1.8;
+}
 @media (max-width: 1100px){
-  .toolbar,.form-grid,.edit-grid{grid-template-columns:1fr;}
+  .toolbar,.form-grid,.edit-grid,.link-meta{grid-template-columns:1fr;}
 }
 </style>
 </head>
 <body>
 
 <h1 class="page-title">Products Manager</h1>
-<p class="page-desc">تحميل المنتجات، تعديلها، حذفها، ومراجعة الربط النهائي بين OCR والمخزن من نفس الشاشة.</p>
+<p class="page-desc">تحميل المنتجات حسب الفئة والبراند، تعديل بياناتها، استبدال الصورة، ومراجعة الأجهزة المرتبطة بالمخزن أو غير المضافة من نفس الشاشة.</p>
 
 <div class="panel">
   <div class="toolbar">
@@ -223,6 +334,7 @@ th{
     <button type="button" class="btn-primary" id="loadProductsBtn">Load Products</button>
   </div>
 
+  <div class="helper-note">اختر الفئة ثم البراند، وبعدها حمّل القائمة. عند فتح منتج للتعديل ستظهر لك حالة الأجهزة: أخضر = موجودة بالمخزن، أحمر = غير مضافة بالمخزن.</div>
   <div id="productsStatus" class="status-box"></div>
 </div>
 
@@ -236,6 +348,7 @@ th{
           <th>Image</th>
           <th>Title</th>
           <th>SKU</th>
+          <th>Devices</th>
           <th>Price Logic</th>
           <th>Availability</th>
           <th>Hot</th>
@@ -244,7 +357,7 @@ th{
       </thead>
       <tbody id="productsTableBody">
         <tr>
-          <td colspan="8"><div class="empty-box">اختر Category وBrand ثم اضغط Load Products.</div></td>
+          <td colspan="9"><div class="empty-box">اختر Category و Brand ثم اضغط Load Products.</div></td>
         </tr>
       </tbody>
     </table>
@@ -253,6 +366,7 @@ th{
 
 <div class="panel">
   <h2 style="margin:0 0 14px;">Edit Product</h2>
+  <p class="note-inline">حفظ التعديلات سيحدّث قاعدة البيانات وملفات JSON، وسيعيد فحص الربط مع المخزن بناءً على الصورة الجديدة إن وُجدت، أو على العرض الحالي إن لم تغيّر الصورة.</p>
 
   <div class="edit-grid">
     <div>
@@ -336,15 +450,15 @@ th{
       </div>
 
       <div style="margin-top:16px;">
-        <h3 style="margin:0 0 12px; font-size:16px;">Stock Links / OCR Review</h3>
+        <h3 style="margin:0 0 12px; font-size:16px;">Stock Review / Product Links</h3>
         <div id="productStockLinksWrap" class="links-wrap">
-          <div class="empty-box">اختر منتجًا أولًا لتحميل الروابط.</div>
+          <div class="empty-box">اختر منتجًا أولًا لتحميل مراجعة الأجهزة والربط مع المخزن.</div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<script src="products-manager.js"></script>
+<script src="products-manager.js?v=20260412-1"></script>
 </body>
 </html>
