@@ -6,64 +6,8 @@ require_once dirname(__DIR__) . '/helpers/filename_parser.php';
 require_once dirname(__DIR__) . '/helpers/stock_helper.php';
 require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once dirname(__DIR__) . '/helpers/products_sync.php';
+require_once dirname(__DIR__) . '/helpers/product_storage_helper.php';
 require_once __DIR__ . '/link-product-stock.php';
-
-if (!function_exists('save_product_slugify')) {
-    function save_product_slugify(string $value): string
-    {
-        $value = strtolower(trim($value));
-        $value = preg_replace('/\.[^.]+$/', '', $value);
-        $value = str_replace(['_', '+'], ' ', $value);
-        $value = str_replace('.', ' ', $value);
-        $value = preg_replace('/[^a-z0-9\-\s]+/', ' ', (string)$value);
-        $value = preg_replace('/\s+/', '-', (string)$value);
-        $value = preg_replace('/-+/', '-', (string)$value);
-        $value = trim((string)$value, '-');
-
-        return $value;
-    }
-}
-
-if (!function_exists('save_product_make_dir')) {
-    function save_product_make_dir(string $dir): void
-    {
-        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
-            throw new RuntimeException('Failed to create directory: ' . $dir);
-        }
-    }
-}
-
-if (!function_exists('save_product_fetch_category_brand')) {
-    function save_product_fetch_category_brand(PDO $pdo, int $categoryId, int $brandId): array
-    {
-        $stmt = $pdo->prepare("
-            SELECT 
-                c.id AS category_id,
-                c.display_name AS category_name,
-                c.slug AS category_slug,
-                b.id AS brand_id,
-                b.name AS brand_name,
-                b.slug AS brand_slug
-            FROM categories c
-            INNER JOIN brands b ON b.category_id = c.id
-            WHERE c.id = :category_id
-              AND b.id = :brand_id
-            LIMIT 1
-        ");
-        $stmt->execute([
-            'category_id' => $categoryId,
-            'brand_id' => $brandId,
-        ]);
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if (!$row) {
-            throw new RuntimeException('Invalid category or brand');
-        }
-
-        return $row;
-    }
-}
 
 if (!function_exists('save_product_json_payload')) {
     function save_product_json_payload(array $data): array
@@ -113,22 +57,24 @@ if (($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
 }
 
 $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-$ext = strtolower((string)pathinfo((string)$image['name'], PATHINFO_EXTENSION));
+$uploadedExt = strtolower((string)pathinfo((string)($image['name'] ?? ''), PATHINFO_EXTENSION));
 
-if (!in_array($ext, $allowedExtensions, true)) {
+if (!in_array($uploadedExt, $allowedExtensions, true)) {
     json_response(false, ['message' => 'Unsupported image type'], 422);
 }
 
 $originalImageName = (string)($image['name'] ?? '');
-$slugBase = save_product_slugify($originalImageName);
+$slug = product_storage_slugify($originalImageName);
 
-if ($slugBase === '') {
-    $slugBase = save_product_slugify($title);
+if ($slug === '') {
+    $slug = product_storage_slugify($title);
 }
 
-if ($slugBase === '') {
-    $slugBase = 'product-' . time();
+if ($slug === '') {
+    $slug = 'product-' . time();
 }
+
+$sku = strtoupper(str_replace('-', '_', $slug));
 
 $parsedDevices = parse_devices_from_filename($originalImageName);
 $parsedDevices = stock_catalog_limit_devices(is_array($parsedDevices) ? $parsedDevices : [], 4);
@@ -150,88 +96,56 @@ $devicesCount = min(4, max(1, count($parsedDevices)));
 $pdo = db();
 
 $absoluteImagePath = '';
-$absoluteJsonPath = '';
+$relativeImagePath = '';
+$categoryDataJsonRel = '';
+$productId = 0;
+$stockLinkResult = [
+    'devices_count' => $devicesCount,
+    'linked' => [],
+    'missing' => [],
+];
 
 try {
-    $categoryBrand = save_product_fetch_category_brand($pdo, $categoryId, $brandId);
+    $categoryBrand = product_storage_fetch_category_brand($pdo, $categoryId, $brandId);
 
-    $categorySlug = save_product_slugify((string)$categoryBrand['category_slug']);
-    $brandSlug = save_product_slugify((string)$categoryBrand['brand_slug']);
-    $brandName = (string)$categoryBrand['brand_name'];
+    $categorySlug = product_storage_slugify((string)$categoryBrand['category_slug']);
+    $brandSlug = product_storage_slugify((string)$categoryBrand['brand_slug']);
+    $brandName = trim((string)($categoryBrand['brand_name'] ?? ''));
 
-    if ($categorySlug === '' || $brandSlug === '') {
-        throw new RuntimeException('Invalid category slug or brand slug');
+    if ($categorySlug === '' || $brandSlug === '' || $brandName === '') {
+        throw new RuntimeException('Invalid category or brand data');
     }
 
-    $slug = $slugBase;
-    $sku = strtoupper(str_replace('-', '_', $slug));
+    $paths = product_storage_build_paths($categorySlug, $brandSlug, $slug);
+    $absoluteImagePath = (string)$paths['image_abs'];
+    $relativeImagePath = (string)$paths['image_rel'];
+    $categoryDataJsonRel = (string)$paths['category_data_json_rel'];
 
-    $imageDir = dirname(__DIR__, 2) . '/images/' . $categorySlug . '/' . $brandSlug . '/';
-    $jsonDir = dirname(__DIR__, 2) . '/products/' . $categorySlug . '/' . $brandSlug . '/';
-
-    save_product_make_dir($imageDir);
-    save_product_make_dir($jsonDir);
-
-    $absoluteImagePath = $imageDir . $slug . '.' . $ext;
-    $relativeImagePath = '/images/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.' . $ext;
-
-    $absoluteJsonPath = $jsonDir . $slug . '.json';
-    $relativeJsonPath = '/products/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.json';
-
-    if (file_exists($absoluteImagePath) || file_exists($absoluteJsonPath)) {
-        json_response(false, ['message' => 'A product file with the same slug already exists'], 409);
-    }
-
-    if (!move_uploaded_file((string)$image['tmp_name'], $absoluteImagePath)) {
-        json_response(false, ['message' => 'Failed to save uploaded image'], 500);
+    if (file_exists($absoluteImagePath)) {
+        json_response(false, ['message' => 'An image with the same slug already exists'], 409);
     }
 
     $checkSku = $pdo->prepare("SELECT id FROM products WHERE sku = :sku LIMIT 1");
     $checkSku->execute(['sku' => $sku]);
 
-    if ($checkSku->fetch()) {
-        @unlink($absoluteImagePath);
+    if ($checkSku->fetch(PDO::FETCH_ASSOC)) {
         json_response(false, ['message' => 'SKU already exists'], 409);
     }
 
     $checkSlug = $pdo->prepare("SELECT id FROM products WHERE slug = :slug LIMIT 1");
     $checkSlug->execute(['slug' => $slug]);
 
-    if ($checkSlug->fetch()) {
-        @unlink($absoluteImagePath);
+    if ($checkSlug->fetch(PDO::FETCH_ASSOC)) {
         json_response(false, ['message' => 'Slug already exists'], 409);
     }
 
-    $jsonPayload = save_product_json_payload([
-        'slug' => $slug,
-        'title' => $title,
-        'category_slug' => $categorySlug,
-        'brand_name' => $brandName,
-        'devices_count' => $devicesCount,
-        'down_payment' => $downPayment,
-        'monthly_amount' => $monthlyAmount,
-        'duration_months' => $durationMonths,
-        'is_available' => $isAvailable,
-        'is_hot_offer' => $isHotOffer,
-        'image_path' => $relativeImagePath,
-    ]);
-
-    $jsonEncoded = json_encode(
-        $jsonPayload,
-        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
-    );
-
-    if ($jsonEncoded === false) {
-        @unlink($absoluteImagePath);
-        json_response(false, ['message' => 'Failed to encode JSON file'], 500);
-    }
-
-    if (file_put_contents($absoluteJsonPath, $jsonEncoded) === false) {
-        @unlink($absoluteImagePath);
-        json_response(false, ['message' => 'Failed to write JSON file'], 500);
-    }
+    product_storage_convert_to_webp((string)$image['tmp_name'], $absoluteImagePath, true, 85);
 
     $pdo->beginTransaction();
+
+    $adminUserId = function_exists('admin_current_user_id') && admin_current_user_id() > 0
+        ? admin_current_user_id()
+        : ((int)($_SESSION['admin_user_id'] ?? 0) ?: null);
 
     $insertProduct = $pdo->prepare("
         INSERT INTO products (
@@ -277,10 +191,6 @@ try {
         )
     ");
 
-    $adminUserId = function_exists('admin_current_user_id') && admin_current_user_id() > 0
-        ? admin_current_user_id()
-        : ((int)($_SESSION['admin_user_id'] ?? 0) ?: null);
-
     $insertProduct->execute([
         'category_id' => $categoryId,
         'brand_id' => $brandId,
@@ -295,7 +205,7 @@ try {
         'is_available' => $isAvailable,
         'is_hot_offer' => $isHotOffer,
         'product_order' => 9999,
-        'json_file_path' => $relativeJsonPath,
+        'json_file_path' => $categoryDataJsonRel,
         'created_by' => $adminUserId,
         'updated_by' => $adminUserId,
     ]);
@@ -325,80 +235,29 @@ try {
     ]);
 
     if ($isHotOffer === 1) {
-        $checkHot = $pdo->prepare("SELECT id FROM hot_offers WHERE product_id = :product_id LIMIT 1");
-        $checkHot->execute(['product_id' => $productId]);
-
-        if (!$checkHot->fetch(PDO::FETCH_ASSOC)) {
-            $insertHot = $pdo->prepare("
-                INSERT INTO hot_offers (
-                    product_id,
-                    sort_order,
-                    is_active,
-                    created_at,
-                    updated_at
-                ) VALUES (
-                    :product_id,
-                    9999,
-                    1,
-                    NOW(),
-                    NOW()
-                )
-            ");
-            $insertHot->execute(['product_id' => $productId]);
-        }
+        $insertHot = $pdo->prepare("
+            INSERT INTO hot_offers (
+                product_id,
+                sort_order,
+                is_active,
+                created_at,
+                updated_at
+            ) VALUES (
+                :product_id,
+                9999,
+                1,
+                NOW(),
+                NOW()
+            )
+        ");
+        $insertHot->execute(['product_id' => $productId]);
     }
 
     $stockLinkResult = link_product_to_stock($pdo, $productId, $brandId, $categoryId, $originalImageName);
 
+    generate_products_json_for_category($categoryId);
+
     $pdo->commit();
-
-    try {
-        generate_products_json_for_category($categoryId);
-    } catch (Throwable $syncError) {
-        try {
-            $cleanupPdo = db();
-            $cleanupPdo->beginTransaction();
-
-            $cleanupHot = $cleanupPdo->prepare("DELETE FROM hot_offers WHERE product_id = ?");
-            $cleanupHot->execute([$productId]);
-
-            $cleanupMedia = $cleanupPdo->prepare("DELETE FROM product_media WHERE product_id = ?");
-            $cleanupMedia->execute([$productId]);
-
-            $cleanupLinks = $cleanupPdo->prepare("DELETE FROM product_stock_links WHERE product_id = ?");
-            $cleanupLinks->execute([$productId]);
-
-            $cleanupStockItem = $cleanupPdo->prepare("DELETE FROM stock_items WHERE product_id = ?");
-            $cleanupStockItem->execute([$productId]);
-
-            $cleanupProduct = $cleanupPdo->prepare("DELETE FROM products WHERE id = ? LIMIT 1");
-            $cleanupProduct->execute([$productId]);
-
-            $cleanupPdo->commit();
-        } catch (Throwable $cleanupError) {
-            if (isset($cleanupPdo) && $cleanupPdo instanceof PDO && $cleanupPdo->inTransaction()) {
-                $cleanupPdo->rollBack();
-            }
-        }
-
-        if ($absoluteImagePath !== '' && file_exists($absoluteImagePath)) {
-            @unlink($absoluteImagePath);
-        }
-
-        if ($absoluteJsonPath !== '' && file_exists($absoluteJsonPath)) {
-            @unlink($absoluteJsonPath);
-        }
-
-        try {
-            generate_products_json_for_category($categoryId);
-        } catch (Throwable $restoreError) {
-        }
-
-        json_response(false, [
-            'message' => 'فشل تحديث ملف data.json، وتم التراجع عن حفظ المنتج لحماية الموقع',
-            'error' => $syncError->getMessage()
-        ], 500);
-    }
 
     if (function_exists('admin_activity_log')) {
         admin_activity_log(
@@ -409,6 +268,20 @@ try {
             'Created product | title: ' . $title . ' | slug: ' . $slug . ' | sku: ' . $sku
         );
     }
+
+    $savedJson = save_product_json_payload([
+        'slug' => $slug,
+        'title' => $title,
+        'category_slug' => $categorySlug,
+        'brand_name' => $brandName,
+        'devices_count' => $devicesCount,
+        'down_payment' => $downPayment,
+        'monthly_amount' => $monthlyAmount,
+        'duration_months' => $durationMonths,
+        'is_available' => $isAvailable,
+        'is_hot_offer' => $isHotOffer,
+        'image_path' => $relativeImagePath,
+    ]);
 
     $linkedCount = is_array($stockLinkResult['linked'] ?? null) ? count($stockLinkResult['linked']) : 0;
     $missingCount = is_array($stockLinkResult['missing'] ?? null) ? count($stockLinkResult['missing']) : 0;
@@ -429,8 +302,8 @@ try {
         'slug' => $slug,
         'sku' => $sku,
         'image_path' => $relativeImagePath,
-        'json_file_path' => $relativeJsonPath,
-        'saved_json' => $jsonPayload,
+        'json_file_path' => $categoryDataJsonRel,
+        'saved_json' => $savedJson,
         'inventory_stock_item' => $inventoryStockItem,
         'stock_review' => [
             'devices_count' => (int)($stockLinkResult['devices_count'] ?? $devicesCount),
@@ -445,12 +318,13 @@ try {
         $pdo->rollBack();
     }
 
-    if ($absoluteImagePath !== '' && file_exists($absoluteImagePath)) {
-        @unlink($absoluteImagePath);
-    }
+    product_storage_remove_file_if_exists($absoluteImagePath);
 
-    if ($absoluteJsonPath !== '' && file_exists($absoluteJsonPath)) {
-        @unlink($absoluteJsonPath);
+    try {
+        if ($categoryId > 0) {
+            generate_products_json_for_category($categoryId);
+        }
+    } catch (Throwable $restoreError) {
     }
 
     json_response(false, [
