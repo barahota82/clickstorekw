@@ -6,6 +6,7 @@ require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once dirname(__DIR__) . '/helpers/categories_sync.php';
 require_once dirname(__DIR__) . '/helpers/products_sync.php';
 require_once dirname(__DIR__) . '/helpers/product_storage_helper.php';
+require_once dirname(__DIR__) . '/helpers/github_sync_helper.php';
 
 if (!function_exists('admin_category_slugify')) {
     function admin_category_slugify(string $value): string
@@ -47,6 +48,8 @@ if ($namePh === '') {
 if ($nameHi === '') {
     $nameHi = $nameEn;
 }
+
+github_sync_reset_report();
 
 $pdo = db();
 
@@ -108,12 +111,25 @@ try {
 
     $categoryId = (int)$pdo->lastInsertId();
 
-    generate_categories_json();
-
     $categoryPaths = product_storage_ensure_category_structure($slug);
-    generate_products_json_for_category($categoryId);
 
     $pdo->commit();
+
+    generate_categories_json();
+    generate_products_json_for_category($categoryId);
+
+    $gitkeepAbs = $categoryPaths['images_category_dir_abs'] . '/.gitkeep';
+    if (!is_file($gitkeepAbs)) {
+        file_put_contents($gitkeepAbs, "\n");
+    }
+
+    github_sync_upsert_local_file(
+        '/images/' . $slug . '/.gitkeep',
+        $gitkeepAbs,
+        'Create category image folder placeholder: ' . $slug
+    );
+
+    $githubSyncReport = github_sync_get_report();
 
     if (function_exists('admin_activity_log')) {
         admin_activity_log(
@@ -125,8 +141,13 @@ try {
         );
     }
 
+    $responseMessage = 'تمت إضافة الفئة بنجاح';
+    if (!empty($githubSyncReport['has_errors'])) {
+        $responseMessage .= '، لكن بعض ملفات GitHub لم تتم مزامنتها';
+    }
+
     json_response(true, [
-        'message' => 'تمت إضافة الفئة بنجاح',
+        'message' => $responseMessage,
         'category' => [
             'id' => $categoryId,
             'slug' => $slug,
@@ -141,6 +162,7 @@ try {
             'products_category_dir' => $categoryPaths['products_category_dir_rel'],
             'products_category_data_json' => $categoryPaths['category_data_json_rel'],
         ],
+        'github_sync' => $githubSyncReport,
     ]);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
