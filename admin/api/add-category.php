@@ -5,6 +5,7 @@ require_once dirname(__DIR__, 2) . '/config.php';
 require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once dirname(__DIR__) . '/helpers/categories_sync.php';
 require_once dirname(__DIR__) . '/helpers/products_sync.php';
+require_once dirname(__DIR__) . '/helpers/product_storage_helper.php';
 
 if (!function_exists('admin_category_slugify')) {
     function admin_category_slugify(string $value): string
@@ -55,10 +56,6 @@ $checkStmt->execute([$slug]);
 if ($checkStmt->fetch(PDO::FETCH_ASSOC)) {
     json_response(false, ['message' => 'Category already exists'], 409);
 }
-
-$imageCategoryDir = dirname(__DIR__, 2) . '/images/' . $slug;
-$productCategoryDir = dirname(__DIR__, 2) . '/products/' . $slug;
-$productCategoryDataJson = $productCategoryDir . '/data.json';
 
 try {
     $pdo->beginTransaction();
@@ -113,19 +110,8 @@ try {
 
     generate_categories_json();
 
-    products_sync_ensure_dir($imageCategoryDir);
+    $categoryPaths = product_storage_ensure_category_structure($slug);
     generate_products_json_for_category($categoryId);
-
-    if (!is_dir($productCategoryDir)) {
-        products_sync_ensure_dir($productCategoryDir);
-    }
-
-    if (!file_exists($productCategoryDataJson)) {
-        file_put_contents(
-            $productCategoryDataJson,
-            json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-        );
-    }
 
     $pdo->commit();
 
@@ -151,9 +137,9 @@ try {
             'sort_order' => $sortOrder,
             'visible' => (bool)$visible,
             'nav_order' => $navOrder,
-            'image_category_dir' => '/images/' . $slug . '/',
-            'products_category_dir' => '/products/' . $slug . '/',
-            'products_category_data_json' => '/products/' . $slug . '/data.json',
+            'image_category_dir' => $categoryPaths['images_category_dir_rel'],
+            'products_category_dir' => $categoryPaths['products_category_dir_rel'],
+            'products_category_data_json' => $categoryPaths['category_data_json_rel'],
         ],
     ]);
 } catch (Throwable $e) {
