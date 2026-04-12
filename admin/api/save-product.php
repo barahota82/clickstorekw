@@ -166,14 +166,14 @@ try {
     $slug = $slugBase;
     $sku = strtoupper(str_replace('-', '_', $slug));
 
-    $imageDir = dirname(__DIR__, 2) . '/images/products/' . $categorySlug . '/' . $brandSlug . '/';
+    $imageDir = dirname(__DIR__, 2) . '/images/' . $categorySlug . '/' . $brandSlug . '/';
     $jsonDir = dirname(__DIR__, 2) . '/products/' . $categorySlug . '/' . $brandSlug . '/';
 
     save_product_make_dir($imageDir);
     save_product_make_dir($jsonDir);
 
     $absoluteImagePath = $imageDir . $slug . '.' . $ext;
-    $relativeImagePath = '/images/products/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.' . $ext;
+    $relativeImagePath = '/images/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.' . $ext;
 
     $absoluteJsonPath = $jsonDir . $slug . '.json';
     $relativeJsonPath = '/products/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.json';
