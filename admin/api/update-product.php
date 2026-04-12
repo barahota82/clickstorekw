@@ -403,6 +403,8 @@ try {
         'id' => $productId,
     ]);
 
+    $inventoryStockItem = ensure_stock_item_for_product($pdo, $productId, (string)($product['sku'] ?? ''), null);
+
     update_product_upsert_primary_media($pdo, $productId, $newRelativeImagePath);
 
     if ($isHotOffer === 1) {
@@ -503,6 +505,7 @@ try {
         'slug' => $slug,
         'image_path' => $newRelativeImagePath,
         'json_file_path' => $newRelativeJsonPath,
+        'inventory_stock_item' => $inventoryStockItem ?? null,
         'stock_review' => [
             'product_id' => $productId,
             'devices_count' => (int)($stockLinkResult['devices_count'] ?? $devicesCount),
