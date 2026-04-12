@@ -551,6 +551,56 @@ function getBootstrapBrands() {
   return Array.isArray(window.ADMIN_BOOTSTRAP?.brands) ? window.ADMIN_BOOTSTRAP.brands : [];
 }
 
+async function refreshBootstrapCatalogData() {
+  try {
+    const { data: categoriesData } = await adminFetchJson('/admin/api/get-categories.php');
+    const categories = Array.isArray(categoriesData?.categories) ? categoriesData.categories : [];
+
+    const allBrands = [];
+    const brandSeen = new Set();
+
+    for (const category of categories) {
+      const categoryId = Number(category?.id || 0);
+      if (!categoryId) continue;
+
+      try {
+        const { data: brandsData } = await adminFetchJson(`/admin/api/get-brands.php?category_id=${encodeURIComponent(categoryId)}`);
+        const brands = Array.isArray(brandsData?.brands) ? brandsData.brands : [];
+
+        brands.forEach(brand => {
+          const brandId = String(brand?.id || '');
+          if (!brandId || brandSeen.has(brandId)) return;
+          brandSeen.add(brandId);
+          allBrands.push(brand);
+        });
+      } catch (e) {}
+    }
+
+    window.ADMIN_BOOTSTRAP = window.ADMIN_BOOTSTRAP || {};
+    window.ADMIN_BOOTSTRAP.categories = categories.map(cat => ({
+      id: Number(cat.id || 0),
+      display_name: String(cat.display_name || cat.name_en || cat.slug || ''),
+      slug: String(cat.slug || ''),
+      name_en: String(cat.name_en || cat.display_name || cat.slug || '')
+    }));
+    window.ADMIN_BOOTSTRAP.brands = allBrands.map(brand => ({
+      id: Number(brand.id || 0),
+      category_id: Number(brand.category_id || 0),
+      name: String(brand.name || brand.display_name || ''),
+      display_name: String(brand.display_name || brand.name || ''),
+      slug: String(brand.slug || '')
+    }));
+
+    populateCategorySelect('ocrCategory');
+    populateCategorySelect('editCategory');
+
+    const editCategoryValue = String(getEl('editCategory')?.value || '').trim();
+    populateBrandSelect('editBrand', editCategoryValue);
+
+    syncDetectedBrandAndPreview();
+  } catch (e) {}
+}
+
 function populateCategorySelect(selectId) {
   const select = getEl(selectId);
   if (!select) return;
@@ -1350,6 +1400,16 @@ function bindTabSwitching() {
       if (tabId === 'tab-stats') {
         loadOrdersManagement();
       }
+
+      if (tabId === 'tab-add-product' || tabId === 'tab-edit-delete') {
+        refreshBootstrapCatalogData().then(() => {
+          updateProductJsonPreview();
+
+          if (currentProductImageFile?.name && tabId === 'tab-add-product') {
+            refreshStockReviewFromFilename(currentProductImageFile.name);
+          }
+        });
+      }
     });
   });
 }
@@ -2081,6 +2141,7 @@ async function checkAuth() {
 
       showDashboard(ADMIN_STATE.user || data.user);
       applyPermissionDrivenUI();
+      await refreshBootstrapCatalogData();
       bindAddProductCategoryOnly('ocrCategory');
       bindEditCategoryBrandFilter('editCategory', 'editBrand');
       updateProductJsonPreview();
