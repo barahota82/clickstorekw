@@ -6,6 +6,7 @@ require_once dirname(__DIR__) . '/helpers/filename_parser.php';
 require_once dirname(__DIR__) . '/helpers/stock_helper.php';
 require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once dirname(__DIR__) . '/helpers/products_sync.php';
+require_once dirname(__DIR__) . '/helpers/github_sync_helper.php';
 require_once dirname(__DIR__) . '/helpers/product_storage_helper.php';
 require_once __DIR__ . '/link-product-stock.php';
 
@@ -64,6 +65,7 @@ if (!function_exists('update_product_build_stock_filename')) {
 }
 
 require_post();
+github_sync_reset_report();
 require_admin_auth_json();
 admin_require_permission_json('products_edit', 'ليس لديك صلاحية لتعديل المنتج');
 
@@ -311,16 +313,41 @@ try {
     $stockLinkResult = link_product_to_stock($pdo, $productId, $brandId, $categoryId, $stockFilename);
     $inventoryStockItem = ensure_stock_item_for_product($pdo, $productId, (string)($product['sku'] ?? ''), null);
 
+    $pdo->commit();
+
     generate_products_json_for_category($categoryId);
     if ($oldCategoryId !== $categoryId) {
         generate_products_json_for_category($oldCategoryId);
     }
 
-    $pdo->commit();
+    $absoluteImageToSync = $newAbsoluteImagePath;
+    if ($absoluteImageToSync === '' && $newRelativeImagePath !== '') {
+        $candidateAbsolute = dirname(__DIR__, 2) . $newRelativeImagePath;
+        if (is_file($candidateAbsolute)) {
+            $absoluteImageToSync = $candidateAbsolute;
+        }
+    }
+
+    if ($absoluteImageToSync !== '' && is_file($absoluteImageToSync)) {
+        github_sync_upsert_local_file(
+            $newRelativeImagePath,
+            $absoluteImageToSync,
+            'Sync product image update: ' . $slug
+        );
+    }
 
     if ($oldImageShouldBeDeletedAfterCommit && $oldAbsoluteImagePath !== '') {
         product_storage_remove_file_if_exists($oldAbsoluteImagePath);
+
+        if ($oldImagePath !== '' && $oldImagePath !== $newRelativeImagePath) {
+            github_sync_delete_file(
+                $oldImagePath,
+                'Delete old product image after update: ' . basename($oldImagePath)
+            );
+        }
     }
+
+    $githubSyncReport = github_sync_get_report();
 
     if ($oldJsonPath !== '' && $oldJsonPath !== $newDataJsonRel) {
         $oldJsonAbsolute = dirname(__DIR__, 2) . $oldJsonPath;
@@ -366,6 +393,10 @@ try {
         $message = 'تم تحديث المنتج، لكن ما زالت هناك أجهزة غير مضافة بالمخزن';
     }
 
+    if (!empty($githubSyncReport['has_errors'])) {
+        $message .= '، لكن بعض ملفات GitHub لم تتم مزامنتها';
+    }
+
     json_response(true, [
         'message' => $message,
         'product_id' => $productId,
@@ -380,7 +411,8 @@ try {
             'missing' => $stockLinkResult['missing'] ?? [],
             'linked_count' => $linkedCount,
             'missing_count' => $missingCount,
-        ]
+        ],
+        'github_sync' => $githubSyncReport,
     ]);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
