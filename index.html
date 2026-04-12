@@ -260,6 +260,43 @@
       background: #fff;
     }
 
+
+    .dynamic-nav-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      max-width: 100%;
+    }
+
+    .dynamic-nav-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    #dynamicCategoriesNav {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+    }
+
+    .dynamic-nav-link {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      opacity: 0.95;
+      flex: 0 0 auto;
+    }
+
+    .dynamic-nav-link.active {
+      color: #7dc2ff;
+    }
+
     @media (max-width: 640px) {
       .promo-banner .promo-banner-inner {
         font-size: 13px;
@@ -309,13 +346,10 @@
       </div>
 
       <nav class="nav-links">
-        <div class="nav-row main-row">
-          <a href="/index.html" class="active desktop-only" id="homeNavLink">Home</a>
-          <a href="/category.html?cat=phones" id="phonesNavLink">Phones</a>
-          <a href="/category.html?cat=tablets" id="tabletsNavLink">Tablets</a>
-          <a href="/category.html?cat=laptops" id="laptopsNavLink">Laptops</a>
-          <a href="/category.html?cat=accessories" id="accessoriesNavLink">Accessories</a>
-          <a href="#hot-offers" class="hot-link" id="hotOffersNavLink">Hot Offers</a>
+        <div class="nav-row main-row dynamic-nav-row" id="dynamicNavRow">
+          <a href="/index.html" class="active desktop-only dynamic-nav-link" id="homeNavLink">Home</a>
+          <div id="dynamicCategoriesNav"></div>
+          <a href="#hot-offers" class="hot-link dynamic-nav-link" id="hotOffersNavLink">Hot Offers</a>
 
           <div class="language-switcher desktop-only">
             <select id="languageSelect" class="language-select" aria-label="Language">
@@ -392,13 +426,7 @@
     <div class="container">
       <h2 class="section-title" id="hotOffersTitle">Hot Offers</h2>
 
-      <div class="filter-bar">
-        <button class="filter-btn active" data-filter="all" onclick="filterHot('all', this)" id="filterAllBtn">All</button>
-        <button class="filter-btn" data-filter="phones" onclick="filterHot('phones', this)" id="filterPhonesBtn">Phones</button>
-        <button class="filter-btn" data-filter="tablets" onclick="filterHot('tablets', this)" id="filterTabletsBtn">Tablets</button>
-        <button class="filter-btn" data-filter="laptops" onclick="filterHot('laptops', this)" id="filterLaptopsBtn">Laptops</button>
-        <button class="filter-btn" data-filter="accessories" onclick="filterHot('accessories', this)" id="filterAccessoriesBtn">Accessories</button>
-      </div>
+      <div class="filter-bar" id="hotCategoryFilters"></div>
 
       <div class="catalog-filter-wrap">
         <label for="hotBrandFilter" class="catalog-filter-label" id="brandFilterLabel">Filter by Brand</label>
@@ -500,6 +528,75 @@
       ).trim();
     }
 
+    function getVisibleCategories() {
+      return [...CATEGORIES]
+        .filter(item => item && item.visible === true)
+        .sort((a, b) => {
+          const aOrder = Number(a?.nav_order || 9999);
+          const bOrder = Number(b?.nav_order || 9999);
+          return aOrder - bOrder;
+        });
+    }
+
+    function isVisibleCategorySlug(slug) {
+      const target = String(slug || "").trim().toLowerCase();
+      if (!target || target === "all") return true;
+
+      return getVisibleCategories().some(item => {
+        return String(item?.slug || "").trim().toLowerCase() === target;
+      });
+    }
+
+    function renderDynamicHeader() {
+      const container = document.getElementById("dynamicCategoriesNav");
+      if (!container) return;
+
+      const items = getVisibleCategories();
+
+      container.innerHTML = items.map(category => {
+        return `
+          <a href="/category.html?cat=${encodeURIComponent(category.slug)}" class="dynamic-nav-link">
+            ${getCategoryDisplayName(category.slug)}
+          </a>
+        `;
+      }).join("");
+    }
+
+    function renderHotCategoryButtons() {
+      const container = document.getElementById("hotCategoryFilters");
+      if (!container) return;
+
+      if (!isVisibleCategorySlug(currentHotCategory)) {
+        currentHotCategory = "all";
+      }
+
+      const buttons = [
+        {
+          slug: "all",
+          label: getCategoryDisplayName("all")
+        },
+        ...getVisibleCategories().map(category => ({
+          slug: String(category.slug || "").trim(),
+          label: getCategoryDisplayName(category.slug)
+        }))
+      ];
+
+      container.innerHTML = buttons.map(item => {
+        const activeClass = currentHotCategory === item.slug ? " active" : "";
+        return `
+          <button class="filter-btn${activeClass}" data-filter="${item.slug}" type="button">
+            ${item.label}
+          </button>
+        `;
+      }).join("");
+
+      container.querySelectorAll(".filter-btn").forEach(button => {
+        button.addEventListener("click", function () {
+          filterHot(String(this.dataset.filter || "all"), this);
+        });
+      });
+    }
+
     function getHomeText(key) {
       const map = {
         hero_badge: {
@@ -591,10 +688,6 @@
       document.documentElement.lang = APP_LANGUAGE === "hi" ? "hi" : "en";
 
       const homeNavLink = document.getElementById("homeNavLink");
-      const phonesNavLink = document.getElementById("phonesNavLink");
-      const tabletsNavLink = document.getElementById("tabletsNavLink");
-      const laptopsNavLink = document.getElementById("laptopsNavLink");
-      const accessoriesNavLink = document.getElementById("accessoriesNavLink");
       const hotOffersNavLink = document.getElementById("hotOffersNavLink");
       const cartLabel = document.getElementById("cartLabel");
       const brandFilterLabel = document.getElementById("brandFilterLabel");
@@ -607,10 +700,6 @@
       const languageSelect = document.getElementById("languageSelect");
 
       if (homeNavLink) homeNavLink.textContent = t("home");
-      if (phonesNavLink) phonesNavLink.textContent = getCategoryDisplayName("phones") || "Phones";
-      if (tabletsNavLink) tabletsNavLink.textContent = getCategoryDisplayName("tablets") || "Tablets";
-      if (laptopsNavLink) laptopsNavLink.textContent = getCategoryDisplayName("laptops") || "Laptops";
-      if (accessoriesNavLink) accessoriesNavLink.textContent = getCategoryDisplayName("accessories") || "Accessories";
       if (hotOffersNavLink) hotOffersNavLink.textContent = t("hot_offers");
       if (cartLabel) cartLabel.textContent = t("cart");
       if (brandFilterLabel) brandFilterLabel.textContent = t("filter_by_brand");
@@ -641,11 +730,6 @@
       const miniCard2Text = document.getElementById("miniCard2Text");
       const startOrderBtn = document.getElementById("startOrderBtn");
       const hotOffersTitle = document.getElementById("hotOffersTitle");
-      const filterAllBtn = document.getElementById("filterAllBtn");
-      const filterPhonesBtn = document.getElementById("filterPhonesBtn");
-      const filterTabletsBtn = document.getElementById("filterTabletsBtn");
-      const filterLaptopsBtn = document.getElementById("filterLaptopsBtn");
-      const filterAccessoriesBtn = document.getElementById("filterAccessoriesBtn");
 
       if (heroBadge) heroBadge.textContent = getHomeText("hero_badge");
       if (heroTitle) heroTitle.textContent = getHomeText("hero_title");
@@ -664,12 +748,9 @@
       if (miniCard2Text) miniCard2Text.textContent = getHomeText("card2_text");
       if (startOrderBtn) startOrderBtn.textContent = getHomeText("start_order");
       if (hotOffersTitle) hotOffersTitle.textContent = t("hot_offers");
-      if (filterAllBtn) filterAllBtn.textContent = getCategoryDisplayName("all");
-      if (filterPhonesBtn) filterPhonesBtn.textContent = getCategoryDisplayName("phones") || "Phones";
-      if (filterTabletsBtn) filterTabletsBtn.textContent = getCategoryDisplayName("tablets") || "Tablets";
-      if (filterLaptopsBtn) filterLaptopsBtn.textContent = getCategoryDisplayName("laptops") || "Laptops";
-      if (filterAccessoriesBtn) filterAccessoriesBtn.textContent = getCategoryDisplayName("accessories") || "Accessories";
 
+      renderDynamicHeader();
+      renderHotCategoryButtons();
       populateHotBrandFilter();
       updateHotEmptyText();
     }
@@ -805,7 +886,7 @@
     function filterHot(category, buttonEl) {
       currentHotCategory = category;
 
-      document.querySelectorAll("#hot-offers .filter-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll("#hotCategoryFilters .filter-btn").forEach(btn => btn.classList.remove("active"));
       if (buttonEl) buttonEl.classList.add("active");
 
       const brandSelect = document.getElementById("hotBrandFilter");
@@ -949,6 +1030,10 @@
       const brandSelect = document.getElementById("hotBrandFilter");
       const previousBrandValue = brandSelect ? brandSelect.value : "all";
 
+      if (!isVisibleCategorySlug(currentHotCategory)) {
+        currentHotCategory = "all";
+      }
+
       const categoryMatched = sortHotProducts(
         hotOffersData.filter(item => {
           const itemCategory = String(item.category || "").trim();
@@ -1005,7 +1090,22 @@
       const empty = document.getElementById("hot-offers-empty");
 
       try {
-        const categories = ["phones", "tablets", "laptops", "accessories"];
+        const categories = getVisibleCategories()
+          .map(item => String(item.slug || "").trim().toLowerCase())
+          .filter(Boolean);
+
+        if (!categories.length) {
+          hotOffersData = [];
+          if (loading) loading.remove();
+          if (empty) {
+            empty.style.display = "";
+            updateHotEmptyText();
+          }
+          renderHotCategoryButtons();
+          showHotInfiniteLoader(false);
+          return;
+        }
+
         const results = await Promise.all(categories.map(loadCategoryHotData));
 
         hotOffersData = results
@@ -1109,10 +1209,10 @@
       } catch (e) {
         console.error("Failed to load categories:", e);
         CATEGORIES = [
-          { slug: "phones", names: { en: "Phones", ph: "Phones", hi: "फ़ोन" } },
-          { slug: "tablets", names: { en: "Tablets", ph: "Tablets", hi: "टैबलेट" } },
-          { slug: "laptops", names: { en: "Laptops", ph: "Laptops", hi: "लैपटॉप" } },
-          { slug: "accessories", names: { en: "Accessories", ph: "Accessories", hi: "एक्सेसरीज़" } }
+          { slug: "phones", visible: true, nav_order: 1, names: { en: "Phones", ph: "Phones", hi: "फ़ोन" } },
+          { slug: "tablets", visible: true, nav_order: 2, names: { en: "Tablets", ph: "Tablets", hi: "टैबलेट" } },
+          { slug: "laptops", visible: true, nav_order: 3, names: { en: "Laptops", ph: "Laptops", hi: "लैपटॉप" } },
+          { slug: "accessories", visible: true, nav_order: 4, names: { en: "Accessories", ph: "Accessories", hi: "एक्सेसरीज़" } }
         ];
       }
     }
