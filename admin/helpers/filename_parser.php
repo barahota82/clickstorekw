@@ -9,6 +9,24 @@ function normalize_filename_text(string $text): string
     return trim((string)$text);
 }
 
+if (!function_exists('filename_capacity_label')) {
+    function filename_capacity_label(string $number, string $unit = 'GB'): string
+    {
+        $number = trim($number);
+        $unit = strtoupper(trim($unit));
+
+        if ($number === '') {
+            return '';
+        }
+
+        if ($unit === 'TB') {
+            return strtoupper($number) . 'TB';
+        }
+
+        return strtoupper($number) . 'GB';
+    }
+}
+
 function parse_devices_from_filename(string $filename): array
 {
     $base = pathinfo($filename, PATHINFO_FILENAME);
@@ -29,62 +47,80 @@ function parse_devices_from_filename(string $filename): array
         $ram = null;
         $network = null;
 
-        preg_match_all('/\b(64|128|256|512)\s*gb\b/i', $normalized, $gbMatches);
-        preg_match('/\b1\s*tb\b/i', $normalized, $tbMatch);
-        preg_match('/\b(4g|5g)\b/i', $normalized, $networkMatch);
+        if (preg_match('/\b(4g|5g)\b/i', $normalized, $networkMatch)) {
+            $network = strtoupper((string)$networkMatch[1]);
+        }
 
-        $gbValues = [];
-        if (!empty($gbMatches[1]) && is_array($gbMatches[1])) {
-            foreach ($gbMatches[1] as $value) {
-                $gbValues[] = strtoupper(trim((string)$value)) . 'GB';
+        $normalizedForStorage = $normalized;
+
+        /*
+        |--------------------------------------------------------------
+        | Explicit RAM patterns
+        |--------------------------------------------------------------
+        | Supports:
+        |   20GB RAM
+        |   RAM 20GB
+        |   20 RAM
+        |   RAM 20
+        */
+        if (preg_match('/\b(\d+(?:\.\d+)?)\s*(tb|gb)\s*ram\b/i', $normalized, $ramMatch)) {
+            $ram = filename_capacity_label((string)$ramMatch[1], (string)$ramMatch[2]) . ' RAM';
+            $normalizedForStorage = preg_replace('/' . preg_quote((string)$ramMatch[0], '/') . '/i', ' ', $normalizedForStorage, 1) ?? $normalizedForStorage;
+        } elseif (preg_match('/\bram\s*(\d+(?:\.\d+)?)\s*(tb|gb)\b/i', $normalized, $ramMatch)) {
+            $ram = filename_capacity_label((string)$ramMatch[1], (string)$ramMatch[2]) . ' RAM';
+            $normalizedForStorage = preg_replace('/' . preg_quote((string)$ramMatch[0], '/') . '/i', ' ', $normalizedForStorage, 1) ?? $normalizedForStorage;
+        } elseif (preg_match('/\b(\d+(?:\.\d+)?)\s*ram\b/i', $normalized, $ramMatch)) {
+            $ram = filename_capacity_label((string)$ramMatch[1], 'GB') . ' RAM';
+            $normalizedForStorage = preg_replace('/' . preg_quote((string)$ramMatch[0], '/') . '/i', ' ', $normalizedForStorage, 1) ?? $normalizedForStorage;
+        } elseif (preg_match('/\bram\s*(\d+(?:\.\d+)?)\b/i', $normalized, $ramMatch)) {
+            $ram = filename_capacity_label((string)$ramMatch[1], 'GB') . ' RAM';
+            $normalizedForStorage = preg_replace('/' . preg_quote((string)$ramMatch[0], '/') . '/i', ' ', $normalizedForStorage, 1) ?? $normalizedForStorage;
+        }
+
+        /*
+        |--------------------------------------------------------------
+        | Storage detection after removing explicit RAM phrase
+        |--------------------------------------------------------------
+        */
+        preg_match_all('/\b(\d+(?:\.\d+)?)\s*(tb|gb)\b/i', $normalizedForStorage, $storageMatches, PREG_SET_ORDER);
+        $storageValues = [];
+
+        foreach ($storageMatches as $match) {
+            $label = filename_capacity_label((string)$match[1], (string)$match[2]);
+            if ($label !== '') {
+                $storageValues[] = $label;
             }
         }
 
-        if (!empty($tbMatch[0])) {
-            array_unshift($gbValues, '1TB');
+        if (!empty($storageValues)) {
+            $storage = (string)$storageValues[0];
         }
 
-        if (count($gbValues) >= 2) {
-            $storage = $gbValues[0];
-            $ram = $gbValues[1] . ' RAM';
-        } elseif (count($gbValues) === 1) {
-            if (
-                preg_match('/\b(ram)\s*(64|128|256|512)\s*gb\b/i', $normalized, $ramAfterRamWord) ||
-                preg_match('/\b(64|128|256|512)\s*gb\s*ram\b/i', $normalized, $ramWithWord)
-            ) {
-                $ramNumber = $ramAfterRamWord[2] ?? $ramWithWord[1] ?? '';
-                if ($ramNumber !== '') {
-                    $ram = strtoupper($ramNumber) . 'GB RAM';
-                }
-            } else {
-                $storage = $gbValues[0];
-            }
-        }
-
+        /*
+        |--------------------------------------------------------------
+        | If RAM was not explicit, infer from second capacity token
+        |--------------------------------------------------------------
+        | Examples:
+        |   256GB 20GB 5G  => storage 256GB, ram 20GB RAM
+        |   1TB 16GB       => storage 1TB,   ram 16GB RAM
+        */
         if ($ram === null) {
-            if (preg_match('/\b(2|3|4|6|8|12|16|18|24|32)\s*gb\s*ram\b/i', $normalized, $ramMatch)) {
-                $ram = $ramMatch[1] . 'GB RAM';
-            } elseif (preg_match('/\bram\s*(2|3|4|6|8|12|16|18|24|32)\b/i', $normalized, $ramMatch)) {
-                $ram = $ramMatch[1] . 'GB RAM';
-            } elseif (preg_match('/\b(2|3|4|6|8|12|16|18|24|32)\s*ram\b/i', $normalized, $ramMatch)) {
-                $ram = $ramMatch[1] . 'GB RAM';
-            } elseif (
-                $storage !== null &&
-                preg_match_all('/\b(2|3|4|6|8|12|16|18|24|32)\s*gb\b/i', $normalized, $smallGbMatches) &&
-                !empty($smallGbMatches[1])
-            ) {
-                foreach ($smallGbMatches[1] as $candidate) {
-                    $candidateValue = strtoupper(trim((string)$candidate)) . 'GB';
-                    if ($candidateValue !== $storage) {
-                        $ram = $candidateValue . ' RAM';
-                        break;
-                    }
+            preg_match_all('/\b(\d+(?:\.\d+)?)\s*(tb|gb)\b/i', $normalized, $capacityMatches, PREG_SET_ORDER);
+            $capacityValues = [];
+
+            foreach ($capacityMatches as $match) {
+                $label = filename_capacity_label((string)$match[1], (string)$match[2]);
+                if ($label !== '') {
+                    $capacityValues[] = $label;
                 }
             }
-        }
 
-        if (!empty($networkMatch[1])) {
-            $network = strtoupper($networkMatch[1]);
+            if (count($capacityValues) >= 2) {
+                $storage = (string)$capacityValues[0];
+                $ram = (string)$capacityValues[1] . ' RAM';
+            } elseif (count($capacityValues) === 1 && $storage === null) {
+                $storage = (string)$capacityValues[0];
+            }
         }
 
         $devices[] = [
