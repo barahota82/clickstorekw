@@ -6,61 +6,8 @@ require_once dirname(__DIR__) . '/helpers/filename_parser.php';
 require_once dirname(__DIR__) . '/helpers/stock_helper.php';
 require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once dirname(__DIR__) . '/helpers/products_sync.php';
+require_once dirname(__DIR__) . '/helpers/product_storage_helper.php';
 require_once __DIR__ . '/link-product-stock.php';
-
-if (!function_exists('update_product_slugify')) {
-    function update_product_slugify(string $value): string
-    {
-        $value = strtolower(trim($value));
-        $value = preg_replace('/\.[^.]+$/', '', $value);
-        $value = str_replace(['_', '+'], ' ', $value);
-        $value = str_replace('.', ' ', $value);
-        $value = preg_replace('/[^a-z0-9\-\s]+/', ' ', (string)$value);
-        $value = preg_replace('/\s+/', '-', (string)$value);
-        $value = preg_replace('/-+/', '-', (string)$value);
-        return trim((string)$value, '-');
-    }
-}
-
-if (!function_exists('update_product_make_dir')) {
-    function update_product_make_dir(string $dir): void
-    {
-        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
-            throw new RuntimeException('Failed to create directory: ' . $dir);
-        }
-    }
-}
-
-if (!function_exists('update_product_fetch_category_brand')) {
-    function update_product_fetch_category_brand(PDO $pdo, int $categoryId, int $brandId): array
-    {
-        $stmt = $pdo->prepare("
-            SELECT
-                c.id AS category_id,
-                c.display_name AS category_name,
-                c.slug AS category_slug,
-                b.id AS brand_id,
-                b.name AS brand_name,
-                b.slug AS brand_slug
-            FROM categories c
-            INNER JOIN brands b ON b.category_id = c.id
-            WHERE c.id = :category_id
-              AND b.id = :brand_id
-            LIMIT 1
-        ");
-        $stmt->execute([
-            'category_id' => $categoryId,
-            'brand_id' => $brandId,
-        ]);
-
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$row) {
-            throw new RuntimeException('Invalid category or brand');
-        }
-
-        return $row;
-    }
-}
 
 if (!function_exists('update_product_json_payload')) {
     function update_product_json_payload(array $data): array
@@ -76,35 +23,16 @@ if (!function_exists('update_product_json_payload')) {
             'monthly' => (float)$data['monthly_amount'],
             'duration' => (int)$data['duration_months'],
             'available' => (bool)$data['is_available'],
-            'hot_offer' => (bool)$data['is_hot_offer'],
+            'hot_offer' => (bool)$data['is_hot_offer']
         ];
     }
 }
 
-if (!function_exists('update_product_detect_ext_from_path')) {
-    function update_product_detect_ext_from_path(string $path, string $fallback = 'jpg'): string
-    {
-        $ext = strtolower(trim((string)pathinfo($path, PATHINFO_EXTENSION)));
-        return $ext !== '' ? $ext : $fallback;
-    }
-}
-
-if (!function_exists('update_product_build_review_filename')) {
-    function update_product_build_review_filename(PDO $pdo, array $product, string $currentTitle, ?string $uploadedImageName = null): string
+if (!function_exists('update_product_build_stock_filename')) {
+    function update_product_build_stock_filename(PDO $pdo, array $product, ?string $uploadedImageName = null): string
     {
         if ($uploadedImageName !== null && trim($uploadedImageName) !== '') {
             return trim($uploadedImageName);
-        }
-
-        $imagePath = trim((string)($product['image_path'] ?? ''));
-        $ext = update_product_detect_ext_from_path($imagePath, 'jpg');
-
-        $normalizedTitle = preg_replace('/\s*\/\s*/u', ' + ', $currentTitle);
-        $normalizedTitle = preg_replace('/\s+/u', ' ', (string)$normalizedTitle);
-        $normalizedTitle = trim((string)$normalizedTitle);
-
-        if ($normalizedTitle !== '' && str_contains($normalizedTitle, '+')) {
-            return $normalizedTitle . '.' . $ext;
         }
 
         $linksStmt = $pdo->prepare("
@@ -114,7 +42,7 @@ if (!function_exists('update_product_build_review_filename')) {
             ORDER BY device_index ASC, id ASC
         ");
         $linksStmt->execute([
-            'product_id' => (int)$product['id'],
+            'product_id' => (int)$product['id']
         ]);
         $names = $linksStmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -122,79 +50,22 @@ if (!function_exists('update_product_build_review_filename')) {
             return trim((string)$item);
         }, is_array($names) ? $names : [])));
 
-        if (count($names) >= 2) {
-            return implode(' + ', $names) . '.' . $ext;
-        }
-
-        if ($imagePath !== '') {
-            return basename($imagePath);
-        }
-
         if (!empty($names)) {
-            return $names[0] . '.' . $ext;
+            return implode(' + ', $names) . '.jpg';
         }
 
-        if ($normalizedTitle !== '') {
-            return $normalizedTitle . '.' . $ext;
+        $existingImagePath = trim((string)($product['image_path'] ?? ''));
+        if ($existingImagePath !== '') {
+            return basename($existingImagePath);
         }
 
-        return 'product-' . (int)($product['id'] ?? 0) . '.' . $ext;
-    }
-}
-
-if (!function_exists('update_product_upsert_primary_media')) {
-    function update_product_upsert_primary_media(PDO $pdo, int $productId, string $filePath): void
-    {
-        $checkStmt = $pdo->prepare("
-            SELECT id
-            FROM product_media
-            WHERE product_id = :product_id
-              AND is_primary = 1
-            LIMIT 1
-        ");
-        $checkStmt->execute(['product_id' => $productId]);
-        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($existing) {
-            $updateStmt = $pdo->prepare("
-                UPDATE product_media
-                SET file_path = :file_path
-                WHERE id = :id
-                LIMIT 1
-            ");
-            $updateStmt->execute([
-                'file_path' => $filePath,
-                'id' => (int)$existing['id'],
-            ]);
-            return;
-        }
-
-        $insertStmt = $pdo->prepare("
-            INSERT INTO product_media
-            (
-                product_id,
-                file_path,
-                sort_order,
-                is_primary,
-                created_at
-            ) VALUES (
-                :product_id,
-                :file_path,
-                1,
-                1,
-                NOW()
-            )
-        ");
-        $insertStmt->execute([
-            'product_id' => $productId,
-            'file_path' => $filePath,
-        ]);
+        return trim((string)($product['title'] ?? 'product')) . '.jpg';
     }
 }
 
 require_post();
 require_admin_auth_json();
-admin_require_permission_json('products_edit', 'ليس لديك صلاحية لتعديل المنتج.');
+admin_require_permission_json('products_edit', 'ليس لديك صلاحية لتعديل المنتج');
 
 $productId = (int)($_POST['id'] ?? 0);
 $title = trim((string)($_POST['title'] ?? ''));
@@ -227,139 +98,101 @@ if (!$product) {
 }
 
 $oldCategoryId = (int)$product['category_id'];
-$oldImagePath = (string)($product['image_path'] ?? '');
-$oldJsonPath = (string)($product['json_file_path'] ?? '');
-$slug = trim((string)($product['slug'] ?? ''));
+$oldImagePath = trim((string)($product['image_path'] ?? ''));
+$oldJsonPath = trim((string)($product['json_file_path'] ?? ''));
 
-if ($slug === '') {
-    $slug = update_product_slugify($title);
+$uploadedImageName = null;
+$newAbsoluteImagePath = '';
+$newRelativeImagePath = $oldImagePath;
+$newDataJsonRel = $oldJsonPath !== '' ? $oldJsonPath : '';
+$oldAbsoluteImagePath = $oldImagePath !== '' ? dirname(__DIR__, 2) . $oldImagePath : '';
+$oldImageShouldBeDeletedAfterCommit = false;
+$newImageCreated = false;
+
+try {
+    $categoryBrand = product_storage_fetch_category_brand($pdo, $categoryId, $brandId);
+
+    $categorySlug = product_storage_slugify((string)$categoryBrand['category_slug']);
+    $brandSlug = product_storage_slugify((string)$categoryBrand['brand_slug']);
+    $brandName = trim((string)($categoryBrand['brand_name'] ?? ''));
+
+    if ($categorySlug === '' || $brandSlug === '' || $brandName === '') {
+        throw new RuntimeException('Invalid category or brand data');
+    }
+
+    $slug = trim((string)($product['slug'] ?? ''));
+    if ($slug === '') {
+        $slug = product_storage_slugify((string)($product['title'] ?? ''));
+    }
+    if ($slug === '') {
+        $slug = product_storage_slugify($title);
+    }
     if ($slug === '') {
         $slug = 'product-' . $productId;
     }
-}
 
-$uploadedImageName = null;
-$newRelativeImagePath = $oldImagePath;
-$newRelativeJsonPath = $oldJsonPath;
-$newAbsoluteJsonPath = '';
-$newUploadedAbsoluteImage = '';
-$copiedImageAbsolutePath = '';
-$copiedImageRelativePath = '';
-$oldAbsoluteImagePath = '';
-$shouldDeleteOldImageAfterCommit = false;
+    $paths = product_storage_build_paths($categorySlug, $brandSlug, $slug);
+    $targetAbsoluteImagePath = (string)$paths['image_abs'];
+    $targetRelativeImagePath = (string)$paths['image_rel'];
+    $targetDataJsonRel = (string)$paths['category_data_json_rel'];
 
-try {
-    $categoryBrand = update_product_fetch_category_brand($pdo, $categoryId, $brandId);
-
-    $categorySlug = update_product_slugify((string)$categoryBrand['category_slug']);
-    $brandSlug = update_product_slugify((string)$categoryBrand['brand_slug']);
-    $brandName = (string)$categoryBrand['brand_name'];
-
-    if ($categorySlug === '' || $brandSlug === '') {
-        throw new RuntimeException('Invalid category slug or brand slug');
-    }
-
-    $targetImageDir = dirname(__DIR__, 2) . '/images/' . $categorySlug . '/' . $brandSlug . '/';
-    $targetJsonDir = dirname(__DIR__, 2) . '/products/' . $categorySlug . '/' . $brandSlug . '/';
-
-    update_product_make_dir($targetImageDir);
-    update_product_make_dir($targetJsonDir);
-
-    if (isset($_FILES['image']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
-        $image = $_FILES['image'];
-
-        if (($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            json_response(false, ['message' => 'Image upload failed'], 422);
-        }
-
-        $uploadedImageName = (string)($image['name'] ?? '');
-        $ext = strtolower((string)pathinfo($uploadedImageName, PATHINFO_EXTENSION));
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-
-        if (!in_array($ext, $allowedExtensions, true)) {
-            json_response(false, ['message' => 'Unsupported image type'], 422);
-        }
-
-        $newUploadedAbsoluteImage = $targetImageDir . $slug . '.' . $ext;
-        $newRelativeImagePath = '/images/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.' . $ext;
-
-        if (
-            is_file($newUploadedAbsoluteImage) &&
-            $newRelativeImagePath !== $oldImagePath
-        ) {
-            json_response(false, ['message' => 'Target image path already exists'], 409);
-        }
-
-        if (!move_uploaded_file((string)$image['tmp_name'], $newUploadedAbsoluteImage)) {
-            json_response(false, ['message' => 'Failed to save uploaded image'], 500);
-        }
+    if ($oldImagePath !== '' && $oldImagePath === $targetRelativeImagePath && is_file($oldAbsoluteImagePath)) {
+        $newAbsoluteImagePath = $oldAbsoluteImagePath;
+        $newRelativeImagePath = $oldImagePath;
     } else {
-        $oldAbsoluteImagePath = ($oldImagePath !== '' && str_starts_with($oldImagePath, '/'))
-            ? dirname(__DIR__, 2) . $oldImagePath
-            : '';
+        if (isset($_FILES['image']) && is_uploaded_file($_FILES['image']['tmp_name'])) {
+            $image = $_FILES['image'];
 
-        $existingExt = update_product_detect_ext_from_path($oldImagePath, 'webp');
-        $targetAbsoluteImage = $targetImageDir . $slug . '.' . $existingExt;
-        $targetRelativeImage = '/images/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.' . $existingExt;
+            if (($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                json_response(false, ['message' => 'Image upload failed'], 422);
+            }
 
-        if ($targetRelativeImage === $oldImagePath) {
-            $newRelativeImagePath = $oldImagePath;
+            $uploadedImageName = trim((string)($image['name'] ?? ''));
+            $uploadedExt = strtolower((string)pathinfo($uploadedImageName, PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+
+            if (!in_array($uploadedExt, $allowedExtensions, true)) {
+                json_response(false, ['message' => 'Unsupported image type'], 422);
+            }
+
+            product_storage_convert_to_webp((string)$image['tmp_name'], $targetAbsoluteImagePath, true, 85);
+            $newAbsoluteImagePath = $targetAbsoluteImagePath;
+            $newRelativeImagePath = $targetRelativeImagePath;
+            $newImageCreated = true;
         } elseif ($oldAbsoluteImagePath !== '' && is_file($oldAbsoluteImagePath)) {
-            if (is_file($targetAbsoluteImage) && $targetAbsoluteImage !== $oldAbsoluteImagePath) {
-                throw new RuntimeException('Target image path already exists');
-            }
+            if (
+                realpath($oldAbsoluteImagePath) !== realpath($targetAbsoluteImagePath) ||
+                strtolower((string)pathinfo($oldAbsoluteImagePath, PATHINFO_EXTENSION)) !== 'webp'
+            ) {
+                if (file_exists($targetAbsoluteImagePath)) {
+                    product_storage_remove_file_if_exists($targetAbsoluteImagePath);
+                }
 
-            if (!copy($oldAbsoluteImagePath, $targetAbsoluteImage)) {
-                throw new RuntimeException('Failed to copy existing image to the new category/brand path');
+                product_storage_convert_to_webp($oldAbsoluteImagePath, $targetAbsoluteImagePath, false, 85);
+                $newAbsoluteImagePath = $targetAbsoluteImagePath;
+                $newRelativeImagePath = $targetRelativeImagePath;
+                $newImageCreated = true;
+                $oldImageShouldBeDeletedAfterCommit = $oldAbsoluteImagePath !== '' && realpath($oldAbsoluteImagePath) !== realpath($targetAbsoluteImagePath);
+            } else {
+                $newAbsoluteImagePath = $oldAbsoluteImagePath;
+                $newRelativeImagePath = $oldImagePath;
             }
-
-            $copiedImageAbsolutePath = $targetAbsoluteImage;
-            $copiedImageRelativePath = $targetRelativeImage;
-            $newRelativeImagePath = $targetRelativeImage;
-            $shouldDeleteOldImageAfterCommit = true;
         } else {
-            $newRelativeImagePath = $oldImagePath;
+            if (
+                $oldImagePath !== '' &&
+                $oldCategoryId === $categoryId &&
+                (int)$product['brand_id'] === $brandId
+            ) {
+                $newRelativeImagePath = $oldImagePath;
+                $newAbsoluteImagePath = '';
+            } else {
+                throw new RuntimeException('Current image file is missing on the server. Please upload the image again.');
+            }
         }
     }
 
-    $newAbsoluteJsonPath = $targetJsonDir . $slug . '.json';
-    $newRelativeJsonPath = '/products/' . $categorySlug . '/' . $brandSlug . '/' . $slug . '.json';
-
-    if (
-        is_file($newAbsoluteJsonPath) &&
-        $newRelativeJsonPath !== $oldJsonPath
-    ) {
-        throw new RuntimeException('Target JSON file path already exists');
-    }
-
-    $stockFilename = update_product_build_review_filename($pdo, $product, $title, $uploadedImageName);
-
-    $jsonPayload = update_product_json_payload([
-        'slug' => $slug,
-        'title' => $title,
-        'category_slug' => $categorySlug,
-        'brand_name' => $brandName,
-        'devices_count' => $devicesCount,
-        'image_path' => $newRelativeImagePath,
-        'down_payment' => $downPayment,
-        'monthly_amount' => $monthlyAmount,
-        'duration_months' => $durationMonths,
-        'is_available' => $isAvailable,
-        'is_hot_offer' => $isHotOffer,
-    ]);
-
-    $jsonEncoded = json_encode(
-        $jsonPayload,
-        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
-    );
-
-    if ($jsonEncoded === false) {
-        throw new RuntimeException('Failed to encode JSON file');
-    }
-
-    if (file_put_contents($newAbsoluteJsonPath, $jsonEncoded) === false) {
-        throw new RuntimeException('Failed to write JSON file');
-    }
+    $newDataJsonRel = $targetDataJsonRel;
+    $stockFilename = update_product_build_stock_filename($pdo, $product, $uploadedImageName);
 
     $pdo->beginTransaction();
 
@@ -398,14 +231,43 @@ try {
         'duration_months' => $durationMonths,
         'is_available' => $isAvailable,
         'is_hot_offer' => $isHotOffer,
-        'json_file_path' => $newRelativeJsonPath,
+        'json_file_path' => $newDataJsonRel,
         'updated_by' => $adminUserId,
-        'id' => $productId,
+        'id' => $productId
     ]);
 
-    $inventoryStockItem = ensure_stock_item_for_product($pdo, $productId, (string)($product['sku'] ?? ''), null);
+    $updateMedia = $pdo->prepare("
+        UPDATE product_media
+        SET file_path = :file_path
+        WHERE product_id = :product_id
+          AND is_primary = 1
+    ");
+    $updateMedia->execute([
+        'file_path' => $newRelativeImagePath,
+        'product_id' => $productId
+    ]);
 
-    update_product_upsert_primary_media($pdo, $productId, $newRelativeImagePath);
+    if ($updateMedia->rowCount() === 0) {
+        $insertMedia = $pdo->prepare("
+            INSERT INTO product_media (
+                product_id,
+                file_path,
+                sort_order,
+                is_primary,
+                created_at
+            ) VALUES (
+                :product_id,
+                :file_path,
+                1,
+                1,
+                NOW()
+            )
+        ");
+        $insertMedia->execute([
+            'product_id' => $productId,
+            'file_path' => $newRelativeImagePath
+        ]);
+    }
 
     if ($isHotOffer === 1) {
         $checkHot = $pdo->prepare("SELECT id FROM hot_offers WHERE product_id = :product_id LIMIT 1");
@@ -421,8 +283,7 @@ try {
             $enableHot->execute(['product_id' => $productId]);
         } else {
             $insertHot = $pdo->prepare("
-                INSERT INTO hot_offers
-                (
+                INSERT INTO hot_offers (
                     product_id,
                     sort_order,
                     is_active,
@@ -448,31 +309,23 @@ try {
     }
 
     $stockLinkResult = link_product_to_stock($pdo, $productId, $brandId, $categoryId, $stockFilename);
-
-    $pdo->commit();
+    $inventoryStockItem = ensure_stock_item_for_product($pdo, $productId, (string)($product['sku'] ?? ''), null);
 
     generate_products_json_for_category($categoryId);
     if ($oldCategoryId !== $categoryId) {
         generate_products_json_for_category($oldCategoryId);
     }
 
-    if ($oldJsonPath !== '' && $oldJsonPath !== $newRelativeJsonPath) {
+    $pdo->commit();
+
+    if ($oldImageShouldBeDeletedAfterCommit && $oldAbsoluteImagePath !== '') {
+        product_storage_remove_file_if_exists($oldAbsoluteImagePath);
+    }
+
+    if ($oldJsonPath !== '' && $oldJsonPath !== $newDataJsonRel) {
         $oldJsonAbsolute = dirname(__DIR__, 2) . $oldJsonPath;
-        if (is_file($oldJsonAbsolute)) {
+        if (is_file($oldJsonAbsolute) && basename($oldJsonAbsolute) !== 'data.json') {
             @unlink($oldJsonAbsolute);
-        }
-    }
-
-    if ($shouldDeleteOldImageAfterCommit && $oldAbsoluteImagePath !== '' && $oldAbsoluteImagePath !== $copiedImageAbsolutePath) {
-        if (is_file($oldAbsoluteImagePath)) {
-            @unlink($oldAbsoluteImagePath);
-        }
-    }
-
-    if ($newUploadedAbsoluteImage !== '' && $oldImagePath !== '' && $oldImagePath !== $newRelativeImagePath) {
-        $oldImageAbsolute = dirname(__DIR__, 2) . $oldImagePath;
-        if (is_file($oldImageAbsolute)) {
-            @unlink($oldImageAbsolute);
         }
     }
 
@@ -485,6 +338,20 @@ try {
             'Updated product | title: ' . $title . ' | id: ' . $productId
         );
     }
+
+    $savedJson = update_product_json_payload([
+        'slug' => $slug,
+        'title' => $title,
+        'category_slug' => $categorySlug,
+        'brand_name' => $brandName,
+        'devices_count' => $devicesCount,
+        'image_path' => $newRelativeImagePath,
+        'down_payment' => $downPayment,
+        'monthly_amount' => $monthlyAmount,
+        'duration_months' => $durationMonths,
+        'is_available' => $isAvailable,
+        'is_hot_offer' => $isHotOffer,
+    ]);
 
     $linkedCount = is_array($stockLinkResult['linked'] ?? null) ? count($stockLinkResult['linked']) : 0;
     $missingCount = is_array($stockLinkResult['missing'] ?? null) ? count($stockLinkResult['missing']) : 0;
@@ -504,36 +371,38 @@ try {
         'product_id' => $productId,
         'slug' => $slug,
         'image_path' => $newRelativeImagePath,
-        'json_file_path' => $newRelativeJsonPath,
-        'inventory_stock_item' => $inventoryStockItem ?? null,
+        'json_file_path' => $newDataJsonRel,
+        'saved_json' => $savedJson,
+        'inventory_stock_item' => $inventoryStockItem,
         'stock_review' => [
-            'product_id' => $productId,
             'devices_count' => (int)($stockLinkResult['devices_count'] ?? $devicesCount),
             'linked' => $stockLinkResult['linked'] ?? [],
             'missing' => $stockLinkResult['missing'] ?? [],
             'linked_count' => $linkedCount,
             'missing_count' => $missingCount,
-        ],
+        ]
     ]);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
-    if ($newUploadedAbsoluteImage !== '' && is_file($newUploadedAbsoluteImage)) {
-        @unlink($newUploadedAbsoluteImage);
+    if ($newImageCreated && $newAbsoluteImagePath !== '' && $newAbsoluteImagePath !== $oldAbsoluteImagePath) {
+        product_storage_remove_file_if_exists($newAbsoluteImagePath);
     }
 
-    if ($copiedImageAbsolutePath !== '' && is_file($copiedImageAbsolutePath)) {
-        @unlink($copiedImageAbsolutePath);
-    }
-
-    if ($newAbsoluteJsonPath !== '' && is_file($newAbsoluteJsonPath)) {
-        @unlink($newAbsoluteJsonPath);
+    try {
+        if ($categoryId > 0) {
+            generate_products_json_for_category($categoryId);
+        }
+        if ($oldCategoryId > 0 && $oldCategoryId !== $categoryId) {
+            generate_products_json_for_category($oldCategoryId);
+        }
+    } catch (Throwable $restoreError) {
     }
 
     json_response(false, [
         'message' => 'فشل تحديث المنتج',
-        'error' => $e->getMessage(),
+        'error' => $e->getMessage()
     ], 500);
 }
