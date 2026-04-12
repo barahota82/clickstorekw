@@ -7,6 +7,7 @@ require_once dirname(__DIR__) . '/helpers/stock_helper.php';
 require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once dirname(__DIR__) . '/helpers/products_sync.php';
 require_once dirname(__DIR__) . '/helpers/product_storage_helper.php';
+require_once dirname(__DIR__) . '/helpers/github_sync_helper.php';
 require_once __DIR__ . '/link-product-stock.php';
 
 if (!function_exists('save_product_json_payload')) {
@@ -29,6 +30,7 @@ if (!function_exists('save_product_json_payload')) {
 }
 
 require_post();
+github_sync_reset_report();
 require_admin_auth_json();
 admin_require_permission_json('products_edit', 'ليس لديك صلاحية لحفظ المنتج');
 
@@ -255,9 +257,17 @@ try {
 
     $stockLinkResult = link_product_to_stock($pdo, $productId, $brandId, $categoryId, $originalImageName);
 
+    $pdo->commit();
+
     generate_products_json_for_category($categoryId);
 
-    $pdo->commit();
+    github_sync_upsert_local_file(
+        $relativeImagePath,
+        $absoluteImagePath,
+        'Sync product image: ' . $slug
+    );
+
+    $githubSyncReport = github_sync_get_report();
 
     if (function_exists('admin_activity_log')) {
         admin_activity_log(
@@ -296,6 +306,10 @@ try {
         $message = 'تم حفظ المنتج، لكن لم يتم ربطه بالمخزن بعد لأن الأجهزة غير مضافة';
     }
 
+    if (!empty($githubSyncReport['has_errors'])) {
+        $message .= '، لكن بعض ملفات GitHub لم تتم مزامنتها';
+    }
+
     json_response(true, [
         'message' => $message,
         'product_id' => $productId,
@@ -311,7 +325,8 @@ try {
             'missing' => $stockLinkResult['missing'] ?? [],
             'linked_count' => $linkedCount,
             'missing_count' => $missingCount,
-        ]
+        ],
+        'github_sync' => $githubSyncReport,
     ]);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
