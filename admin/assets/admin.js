@@ -704,16 +704,15 @@ function buildPreviewSlug() {
 function buildPreviewImagePath() {
   const categoryRow = resolveSelectedCategoryRow();
   const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
-  const ext = String(currentProductImageFile?.name || '').split('.').pop().toLowerCase();
   const slug = buildPreviewSlug();
 
-  if (!categoryRow || !brandName || !ext || !slug) return '';
+  if (!categoryRow || !brandName || !slug) return '';
 
   const brandSlug = toSlug(brandName);
 
   if (!brandSlug) return '';
 
-  return `/images/${String(categoryRow.slug || '').toLowerCase()}/${brandSlug}/${slug}.${ext}`;
+  return `/images/${String(categoryRow.slug || '').toLowerCase()}/${brandSlug}/${slug}.webp`;
 }
 
 function buildProductJsonPreviewObject() {
