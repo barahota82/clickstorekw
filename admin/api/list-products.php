@@ -6,7 +6,7 @@ require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 
 require_method('GET');
 require_admin_auth_json();
-admin_require_permission_json('products.edit', 'ليس لديك صلاحية لعرض المنتجات');
+admin_require_permission_json('products_edit', 'ليس لديك صلاحية لعرض المنتجات.');
 
 $categoryId = (int)($_GET['category_id'] ?? 0);
 $brandId = (int)($_GET['brand_id'] ?? 0);
@@ -37,10 +37,10 @@ $stmt = $pdo->prepare("
         p.created_at,
         p.updated_at,
         c.display_name AS category_name,
-        b.name AS brand_name
+        COALESCE(NULLIF(b.display_name, ''), b.name) AS brand_name
     FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
-    LEFT JOIN brands b ON b.id = p.brand_id
+    INNER JOIN categories c ON c.id = p.category_id
+    INNER JOIN brands b ON b.id = p.brand_id
     WHERE p.category_id = :category_id
       AND p.brand_id = :brand_id
       AND p.is_active = 1
@@ -48,12 +48,16 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([
     'category_id' => $categoryId,
-    'brand_id' => $brandId
+    'brand_id' => $brandId,
 ]);
 
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
 $products = array_map(static function (array $row): array {
+    $down = (float)($row['down_payment'] ?? 0);
+    $monthly = (float)($row['monthly_amount'] ?? 0);
+    $duration = (int)($row['duration_months'] ?? 0);
+
     return [
         'id' => (int)$row['id'],
         'category_id' => (int)$row['category_id'],
@@ -63,25 +67,19 @@ $products = array_map(static function (array $row): array {
         'sku' => (string)($row['sku'] ?? ''),
         'devices_count' => (int)($row['devices_count'] ?? 1),
         'image_path' => (string)($row['image_path'] ?? ''),
-        'down_payment' => (float)($row['down_payment'] ?? 0),
-        'monthly_amount' => (float)($row['monthly_amount'] ?? 0),
-        'duration_months' => (int)($row['duration_months'] ?? 0),
-        'is_available' => (int)($row['is_available'] ?? 0),
-        'is_hot_offer' => (int)($row['is_hot_offer'] ?? 0),
+        'down_payment' => $down,
+        'monthly_amount' => $monthly,
+        'duration_months' => $duration,
+        'is_available' => (bool)($row['is_available'] ?? false),
+        'is_hot_offer' => (bool)($row['is_hot_offer'] ?? false),
         'product_order' => (int)($row['product_order'] ?? 9999),
-        'is_active' => (int)($row['is_active'] ?? 0),
+        'is_active' => (bool)($row['is_active'] ?? false),
         'category_name' => (string)($row['category_name'] ?? ''),
         'brand_name' => (string)($row['brand_name'] ?? ''),
-        'price_logic' => trim(
-            ((float)($row['down_payment'] ?? 0)) . ' KD Down / ' .
-            ((float)($row['monthly_amount'] ?? 0)) . ' KD Monthly / ' .
-            ((int)($row['duration_months'] ?? 0)) . ' Months'
-        ),
+        'price_logic' => $down . ' KD Down / ' . $monthly . ' KD Monthly / ' . $duration . ' Months',
         'created_at' => (string)($row['created_at'] ?? ''),
-        'updated_at' => (string)($row['updated_at'] ?? '')
+        'updated_at' => (string)($row['updated_at'] ?? ''),
     ];
-}, $rows ?: []);
+}, $rows);
 
-json_response(true, [
-    'products' => $products,
-]);
+json_response(true, ['products' => $products]);
