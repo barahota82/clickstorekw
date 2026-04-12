@@ -7,7 +7,7 @@ require_once __DIR__ . '/../helpers/products_sync.php';
 
 require_post();
 require_admin_auth_json();
-admin_require_permission_json('products.delete', 'ليس لديك صلاحية لحذف المنتج');
+admin_require_permission_json('products_delete', 'ليس لديك صلاحية لحذف المنتج.');
 
 $data = get_request_json();
 $productId = (int)($data['id'] ?? 0);
@@ -73,7 +73,7 @@ try {
         WHERE product_id = :product_id
     ");
     $disableHotOffer->execute([
-        'product_id' => $productId
+        'product_id' => $productId,
     ]);
 
     $pdo->commit();
@@ -97,8 +97,8 @@ try {
             'title' => (string)$product['title'],
             'sku' => (string)$product['sku'],
             'is_active' => 0,
-            'is_available' => 0
-        ]
+            'is_available' => 0,
+        ],
     ]);
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
@@ -107,6 +107,6 @@ try {
 
     json_response(false, [
         'message' => 'فشل حذف المنتج',
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(),
     ], 500);
 }
