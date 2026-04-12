@@ -180,6 +180,11 @@ try {
         $extractedName
     );
 
+    $inventoryStockItem = null;
+    if ($productId > 0) {
+        $inventoryStockItem = ensure_stock_item_for_product($pdo, $productId, null, null);
+    }
+
     if ($linkedToProduct) {
         admin_activity_log(
             'link_product_stock_manual',
@@ -227,6 +232,7 @@ try {
     json_response(true, [
         'message' => $message,
         'stock_item' => $finalItem,
+        'inventory_stock_item' => $inventoryStockItem,
         'linked_to_product' => $linkedToProduct,
         'product_id' => $linkedToProduct ? $productId : null,
         'device_index' => $linkedToProduct ? $deviceIndex : null,
