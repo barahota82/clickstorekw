@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/product_storage_helper.php';
+require_once __DIR__ . '/github_sync_helper.php';
 
 if (!function_exists('products_sync_slugify')) {
     function products_sync_slugify(string $value): string
@@ -95,5 +96,11 @@ if (!function_exists('generate_products_json_for_category')) {
         }
 
         product_storage_write_json_file($categoryPaths['category_data_json_abs'], $items);
+
+        github_sync_upsert_local_file(
+            $categoryPaths['category_data_json_rel'],
+            $categoryPaths['category_data_json_abs'],
+            'Sync category data.json: ' . $categorySlug
+        );
     }
 }
