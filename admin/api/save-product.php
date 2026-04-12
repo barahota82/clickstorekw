@@ -302,6 +302,8 @@ try {
 
     $productId = (int)$pdo->lastInsertId();
 
+    $inventoryStockItem = ensure_stock_item_for_product($pdo, $productId, $sku, null);
+
     $insertMedia = $pdo->prepare("
         INSERT INTO product_media (
             product_id,
@@ -350,7 +352,53 @@ try {
 
     $pdo->commit();
 
-    generate_products_json_for_category($categoryId);
+    try {
+        generate_products_json_for_category($categoryId);
+    } catch (Throwable $syncError) {
+        try {
+            $cleanupPdo = db();
+            $cleanupPdo->beginTransaction();
+
+            $cleanupHot = $cleanupPdo->prepare("DELETE FROM hot_offers WHERE product_id = ?");
+            $cleanupHot->execute([$productId]);
+
+            $cleanupMedia = $cleanupPdo->prepare("DELETE FROM product_media WHERE product_id = ?");
+            $cleanupMedia->execute([$productId]);
+
+            $cleanupLinks = $cleanupPdo->prepare("DELETE FROM product_stock_links WHERE product_id = ?");
+            $cleanupLinks->execute([$productId]);
+
+            $cleanupStockItem = $cleanupPdo->prepare("DELETE FROM stock_items WHERE product_id = ?");
+            $cleanupStockItem->execute([$productId]);
+
+            $cleanupProduct = $cleanupPdo->prepare("DELETE FROM products WHERE id = ? LIMIT 1");
+            $cleanupProduct->execute([$productId]);
+
+            $cleanupPdo->commit();
+        } catch (Throwable $cleanupError) {
+            if (isset($cleanupPdo) && $cleanupPdo instanceof PDO && $cleanupPdo->inTransaction()) {
+                $cleanupPdo->rollBack();
+            }
+        }
+
+        if ($absoluteImagePath !== '' && file_exists($absoluteImagePath)) {
+            @unlink($absoluteImagePath);
+        }
+
+        if ($absoluteJsonPath !== '' && file_exists($absoluteJsonPath)) {
+            @unlink($absoluteJsonPath);
+        }
+
+        try {
+            generate_products_json_for_category($categoryId);
+        } catch (Throwable $restoreError) {
+        }
+
+        json_response(false, [
+            'message' => 'فشل تحديث ملف data.json، وتم التراجع عن حفظ المنتج لحماية الموقع',
+            'error' => $syncError->getMessage()
+        ], 500);
+    }
 
     if (function_exists('admin_activity_log')) {
         admin_activity_log(
@@ -383,6 +431,7 @@ try {
         'image_path' => $relativeImagePath,
         'json_file_path' => $relativeJsonPath,
         'saved_json' => $jsonPayload,
+        'inventory_stock_item' => $inventoryStockItem,
         'stock_review' => [
             'devices_count' => (int)($stockLinkResult['devices_count'] ?? $devicesCount),
             'linked' => $stockLinkResult['linked'] ?? [],
