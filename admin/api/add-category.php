@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/config.php';
 require_once dirname(__DIR__) . '/helpers/permissions_helper.php';
 require_once dirname(__DIR__) . '/helpers/categories_sync.php';
+require_once dirname(__DIR__) . '/helpers/products_sync.php';
 
 if (!function_exists('admin_category_slugify')) {
     function admin_category_slugify(string $value): string
@@ -50,103 +51,118 @@ $pdo = db();
 
 $checkStmt = $pdo->prepare("SELECT id FROM categories WHERE slug = ? LIMIT 1");
 $checkStmt->execute([$slug]);
+
 if ($checkStmt->fetch(PDO::FETCH_ASSOC)) {
     json_response(false, ['message' => 'Category already exists'], 409);
 }
 
-$insertStmt = $pdo->prepare("
-    INSERT INTO categories
-    (
-        name,
-        slug,
-        display_name,
-        name_en,
-        name_ph,
-        name_hi,
-        sort_order,
-        is_active,
-        visible,
-        nav_order,
-        created_at,
-        updated_at
-    )
-    VALUES
-    (
-        :name,
-        :slug,
-        :display_name,
-        :name_en,
-        :name_ph,
-        :name_hi,
-        :sort_order,
-        :is_active,
-        :visible,
-        :nav_order,
-        NOW(),
-        NOW()
-    )
-");
+$imageCategoryDir = dirname(__DIR__, 2) . '/images/' . $slug;
+$productCategoryDir = dirname(__DIR__, 2) . '/products/' . $slug;
+$productCategoryDataJson = $productCategoryDir . '/data.json';
 
-$insertStmt->execute([
-    'name' => $slug,
-    'slug' => $slug,
-    'display_name' => $nameEn,
-    'name_en' => $nameEn,
-    'name_ph' => $namePh,
-    'name_hi' => $nameHi,
-    'sort_order' => $sortOrder,
-    'is_active' => $isActive,
-    'visible' => $visible,
-    'nav_order' => $navOrder,
-]);
+try {
+    $pdo->beginTransaction();
 
-$categoryId = (int)$pdo->lastInsertId();
+    $insertStmt = $pdo->prepare("
+        INSERT INTO categories
+        (
+            name,
+            slug,
+            display_name,
+            name_en,
+            name_ph,
+            name_hi,
+            sort_order,
+            is_active,
+            visible,
+            nav_order,
+            created_at,
+            updated_at
+        )
+        VALUES
+        (
+            :name,
+            :slug,
+            :display_name,
+            :name_en,
+            :name_ph,
+            :name_hi,
+            :sort_order,
+            :is_active,
+            :visible,
+            :nav_order,
+            NOW(),
+            NOW()
+        )
+    ");
 
-generate_categories_json();
+    $insertStmt->execute([
+        'name' => $slug,
+        'slug' => $slug,
+        'display_name' => $nameEn,
+        'name_en' => $nameEn,
+        'name_ph' => $namePh,
+        'name_hi' => $nameHi,
+        'sort_order' => $sortOrder,
+        'is_active' => $isActive,
+        'visible' => $visible,
+        'nav_order' => $navOrder,
+    ]);
 
-admin_activity_log(
-    'add_category',
-    'categories',
-    'category',
-    $categoryId,
-    'Added category | slug: ' . $slug . ' | name_en: ' . $nameEn
-);
+    $categoryId = (int)$pdo->lastInsertId();
 
-$selectStmt = $pdo->prepare("
-    SELECT
-        id,
-        name,
-        slug,
-        display_name,
-        name_en,
-        name_ph,
-        name_hi,
-        sort_order,
-        is_active,
-        visible,
-        nav_order,
-        created_at,
-        updated_at
-    FROM categories
-    WHERE id = ?
-    LIMIT 1
-");
-$selectStmt->execute([$categoryId]);
-$row = $selectStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    generate_categories_json();
 
-json_response(true, [
-    'message' => 'تمت إضافة الفئة بنجاح',
-    'category' => [
-        'id' => (int)($row['id'] ?? $categoryId),
-        'name' => (string)($row['name'] ?? $slug),
-        'slug' => (string)($row['slug'] ?? $slug),
-        'display_name' => (string)($row['display_name'] ?? $nameEn),
-        'name_en' => (string)($row['name_en'] ?? $nameEn),
-        'name_ph' => (string)($row['name_ph'] ?? $namePh),
-        'name_hi' => (string)($row['name_hi'] ?? $nameHi),
-        'sort_order' => (int)($row['sort_order'] ?? $sortOrder),
-        'is_active' => (bool)($row['is_active'] ?? $isActive),
-        'visible' => (bool)($row['visible'] ?? $visible),
-        'nav_order' => (int)($row['nav_order'] ?? $navOrder),
-    ],
-]);
+    products_sync_ensure_dir($imageCategoryDir);
+    generate_products_json_for_category($categoryId);
+
+    if (!is_dir($productCategoryDir)) {
+        products_sync_ensure_dir($productCategoryDir);
+    }
+
+    if (!file_exists($productCategoryDataJson)) {
+        file_put_contents(
+            $productCategoryDataJson,
+            json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
+    }
+
+    $pdo->commit();
+
+    if (function_exists('admin_activity_log')) {
+        admin_activity_log(
+            'add_category',
+            'categories',
+            'category',
+            $categoryId,
+            'Added category | slug: ' . $slug . ' | name_en: ' . $nameEn
+        );
+    }
+
+    json_response(true, [
+        'message' => 'تمت إضافة الفئة بنجاح',
+        'category' => [
+            'id' => $categoryId,
+            'slug' => $slug,
+            'display_name' => $nameEn,
+            'name_en' => $nameEn,
+            'name_ph' => $namePh,
+            'name_hi' => $nameHi,
+            'sort_order' => $sortOrder,
+            'visible' => (bool)$visible,
+            'nav_order' => $navOrder,
+            'image_category_dir' => '/images/' . $slug . '/',
+            'products_category_dir' => '/products/' . $slug . '/',
+            'products_category_data_json' => '/products/' . $slug . '/data.json',
+        ],
+    ]);
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    json_response(false, [
+        'message' => 'Failed to add category',
+        'error' => $e->getMessage(),
+    ], 500);
+}
