@@ -1,28 +1,19 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/product_storage_helper.php';
+
 if (!function_exists('products_sync_slugify')) {
     function products_sync_slugify(string $value): string
     {
-        $value = strtolower(trim($value));
-        $value = preg_replace('/\.[^.]+$/', '', $value);
-        $value = str_replace(['_', '+'], ' ', $value);
-        $value = str_replace('.', ' ', $value);
-        $value = preg_replace('/[^a-z0-9\-\s]+/', ' ', (string)$value);
-        $value = preg_replace('/\s+/', '-', (string)$value);
-        $value = preg_replace('/-+/', '-', (string)$value);
-        $value = trim((string)$value, '-');
-
-        return $value;
+        return product_storage_slugify($value);
     }
 }
 
 if (!function_exists('products_sync_ensure_dir')) {
     function products_sync_ensure_dir(string $dir): void
     {
-        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
-            throw new RuntimeException('Failed to create directory: ' . $dir);
-        }
+        product_storage_ensure_dir($dir);
     }
 }
 
@@ -74,6 +65,8 @@ if (!function_exists('generate_products_json_for_category')) {
             return;
         }
 
+        $categoryPaths = product_storage_ensure_category_structure($categorySlug);
+
         $productsStmt = $pdo->prepare("
             SELECT
                 p.id,
@@ -101,20 +94,6 @@ if (!function_exists('generate_products_json_for_category')) {
             $items[] = products_sync_build_item($row, $categorySlug);
         }
 
-        $dir = dirname(__DIR__, 2) . '/products/' . $categorySlug;
-        $filePath = $dir . '/data.json';
-
-        products_sync_ensure_dir($dir);
-
-        $encoded = json_encode(
-            $items,
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
-        );
-
-        if ($encoded === false) {
-            throw new RuntimeException('Failed to encode category products JSON');
-        }
-
-        file_put_contents($filePath, $encoded);
+        product_storage_write_json_file($categoryPaths['category_data_json_abs'], $items);
     }
 }
