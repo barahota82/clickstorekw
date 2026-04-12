@@ -663,7 +663,7 @@ function buildPreviewImagePath() {
 
   if (!brandSlug) return '';
 
-  return `/images/products/${String(categoryRow.slug || '').toLowerCase()}/${brandSlug}/${slug}.${ext}`;
+  return `/images/${String(categoryRow.slug || '').toLowerCase()}/${brandSlug}/${slug}.${ext}`;
 }
 
 function buildProductJsonPreviewObject() {
@@ -952,12 +952,22 @@ async function refreshStockReviewFromFilename(filename) {
     return;
   }
 
+  const selectedCategoryId = String(getEl('ocrCategory')?.value || '').trim();
+  const devices = splitDevicesFromFilename(filename);
+  const firstDevice = devices[0] || filename;
+  const detectedBrandName = detectBrandFromFilename(firstDevice);
+  const preferredBrand = selectedCategoryId && detectedBrandName
+    ? findBootstrapBrandByNameAndCategory(detectedBrandName, selectedCategoryId)
+    : null;
+
   try {
     const { data } = await adminFetchJson('/admin/api/check-stock-from-filename.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        filename
+        filename,
+        preferred_category_id: selectedCategoryId ? Number(selectedCategoryId) : null,
+        preferred_brand_id: preferredBrand?.id ? Number(preferredBrand.id) : null
       })
     });
 
@@ -1206,9 +1216,15 @@ window.addMissingStockItem = async function (deviceIndex) {
 
   const categorySelect = getEl(`missingCategory_${deviceIndex}`);
   const selectedCategoryId = String(categorySelect?.value || '').trim();
+  const resolvedBrandId = Number(item.expected_brand_id || item.brand_id || 0);
 
   if (!selectedCategoryId) {
     adminSetStatus('dashboardStatus', 'error', 'اختر الفئة أولًا قبل الإضافة.');
+    return;
+  }
+
+  if (resolvedBrandId <= 0) {
+    adminSetStatus('dashboardStatus', 'error', 'هذا البراند غير مسجل داخل قاعدة البيانات. أضف البراند أولًا من تبويب Categories / Brands.');
     return;
   }
 
@@ -1222,10 +1238,13 @@ window.addMissingStockItem = async function (deviceIndex) {
         raw_title: item.raw_title || '',
         normalized_title: item.normalized_title || '',
         category_id: Number(selectedCategoryId),
-        brand_id: Number(item.expected_brand_id || item.brand_id || 0),
+        brand_id: resolvedBrandId,
         storage_value: item.storage_value || null,
         ram_value: item.ram_value || null,
-        network_value: item.network_value || null
+        network_value: item.network_value || null,
+        product_id: Number(CURRENT_STOCK_REVIEW.productId || 0),
+        device_index: Number(item.device_index || deviceIndex || 0),
+        extracted_name: item.raw_title || ''
       })
     });
 
@@ -1249,7 +1268,7 @@ window.addMissingStockItem = async function (deviceIndex) {
       stock_title: stockItem.title || item.raw_title || '',
       category_id: Number(stockItem.category_id || selectedCategoryId || 0),
       category_name: stockItem.category_name || selectedCategoryText || '',
-      brand_id: Number(stockItem.brand_id || item.expected_brand_id || 0),
+      brand_id: Number(stockItem.brand_id || resolvedBrandId || 0),
       brand_name: stockItem.brand_name || item.expected_brand_name || buildMissingCardBrandGuess(item) || '',
       expected_brand_name: item.expected_brand_name || buildMissingCardBrandGuess(item) || '',
       is_added: true
