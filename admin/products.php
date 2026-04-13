@@ -42,41 +42,59 @@ if (!admin_has_permission('products_edit')) {
 <style>
 html, body {
   height: 100%;
-  min-height: 100%;
 }
 body {
   font-family: Arial, sans-serif;
-  background: #0f172a;
+  background: #071224;
   color: #fff;
-  padding: 20px;
-  margin: 0;
+  padding: 18px;
   overflow: hidden;
-  box-sizing: border-box;
 }
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-.page-shell {
-  height: calc(100vh - 40px);
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 18px;
+.page-frame {
+  height: calc(100vh - 36px);
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(circle at top center, rgba(37,99,235,0.14), transparent 42%),
+    linear-gradient(180deg, rgba(15,28,57,0.98), rgba(10,19,40,0.98));
+  box-shadow: 0 22px 60px rgba(0,0,0,0.28);
+  padding: 18px;
   overflow: hidden;
 }
 .page-title {
-  font-size: 24px;
-  font-weight: 800;
+  font-size: 28px;
+  font-weight: 900;
   margin: 0;
-  flex: 0 0 auto;
+  text-align: right;
+  color: #ffffff;
+}
+.manager-topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-inline: 6px;
 }
 .panel {
-  background: rgba(255,255,255,0.04);
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025));
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 22px;
+  border-radius: 24px;
   padding: 18px;
-  margin: 0;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.22);
-  min-height: 0;
+  margin-bottom: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.18);
+}
+.manager-panel {
+  height: calc(100% - 62px);
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+.toolbar-wrap {
+  max-width: 100%;
+  border-radius: 22px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(8,20,46,0.82), rgba(13,27,58,0.9));
+  border: 1px solid rgba(255,255,255,0.06);
 }
 .toolbar {
   display: grid;
@@ -95,7 +113,7 @@ body {
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: #c8d4ea;
+  color: #d7e6ff;
   font-size: 14px;
   font-weight: 700;
 }
@@ -160,28 +178,23 @@ button {
   color: #dbeafe;
 }
 .status-box.success {
-  background: rgba(34,197,94,0.14);
-  border: 1px solid rgba(34,197,94,0.28);
-  color: #dcfce7;
+  background: rgba(24,101,73,0.42);
+  border: 1px solid rgba(47,158,111,0.34);
+  color: #d7fff0;
 }
 .status-box.error {
   background: rgba(239,68,68,0.14);
   border: 1px solid rgba(239,68,68,0.28);
   color: #fee2e2;
 }
-.workspace-panel {
-  min-height: 0;
-  display: flex;
-}
 .manager-shell {
   display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 0.98fr) 12px minmax(0, 1.08fr);
+  gap: 0;
   align-items: stretch;
   min-height: 0;
-  height: 100%;
-  width: 100%;
-  direction: ltr;
+  flex: 1;
+  padding-top: 6px;
 }
 .editor-pane,
 .list-pane {
@@ -191,14 +204,32 @@ button {
 .editor-pane {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  height: 100%;
+  gap: 14px;
+  padding-inline-end: 18px;
+}
+.vertical-divider {
+  width: 12px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(241,245,249,0.9));
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,0.18);
+  position: relative;
+}
+.vertical-divider::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 2px;
+  right: 2px;
+  height: 34%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(156,163,175,0.95), rgba(107,114,128,0.95));
 }
 .list-pane {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: 100%;
+  padding-inline-start: 18px;
 }
 .section-head {
   display:flex;
@@ -209,26 +240,26 @@ button {
 }
 .section-head h2 {
   margin:0;
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 20px;
+  font-weight: 900;
 }
 .editor-card,
 .list-card,
 .preview-card {
-  background: rgba(255,255,255,0.03);
+  background: rgba(12,25,53,0.82);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 16px;
-  min-width: 0;
 }
 .preview-card {
   padding: 14px;
-  flex: 1 1 auto;
-  min-height: 0;
+}
+.utility-fields {
+  display: none;
 }
 .image-box {
   width: 100%;
-  min-height: 240px;
+  min-height: 300px;
   border: 1px dashed rgba(255,255,255,0.14);
   border-radius: 18px;
   background: rgba(255,255,255,0.03);
@@ -240,7 +271,7 @@ button {
 }
 .image-box img {
   width: 100%;
-  max-height: 300px;
+  max-height: 360px;
   object-fit: contain;
   display: block;
 }
@@ -248,7 +279,7 @@ button {
   display:flex;
   gap:10px;
   flex-wrap:wrap;
-  margin-top:16px;
+  margin-top:18px;
 }
 .stock-links-grid {
   display:grid;
@@ -314,54 +345,47 @@ button {
   flex-direction:column;
   min-height:0;
   flex:1;
-  height: 100%;
 }
 .products-scroll {
   min-height:0;
-  flex: 1 1 auto;
-  height: 100%;
   overflow-y:auto;
   overflow-x:hidden;
   display:flex;
   flex-direction:column;
   gap:12px;
-  padding-inline: 4px 2px;
+  padding-inline: 2px 8px;
 }
 .products-scroll::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+}
+.products-scroll::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 999px;
 }
 .products-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.76);
   border-radius: 999px;
 }
 .product-row-card {
-  border:1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
-  border-radius:18px;
-  padding:14px;
-  display:grid;
-  grid-template-columns: 76px 1fr auto;
-  gap:14px;
-  align-items:start;
+  border-top: 1px solid rgba(255,255,255,0.09);
+  padding: 12px 0 14px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.product-row-card:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 .product-row-card.selected {
-  border-color: rgba(37,99,235,0.42);
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.18) inset;
-}
-.product-row-thumb {
-  width:76px;
-  height:76px;
-  border-radius:16px;
-  background: rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  padding:6px;
-  object-fit:contain;
+  background: rgba(255,255,255,0.02);
 }
 .product-row-main {
   min-width:0;
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:6px;
 }
 .product-row-top {
   display:flex;
@@ -370,35 +394,40 @@ button {
   gap:10px;
 }
 .product-row-index {
-  color:#c8d4ea;
-  font-size:12px;
-  font-weight:700;
+  color:#ffffff;
+  font-size:14px;
+  font-weight:800;
 }
 .product-row-title {
-  font-size:16px;
-  font-weight:800;
-  line-height:1.6;
-  margin:0;
-  color:#fff;
-  overflow-wrap:anywhere;
+  display:none;
 }
-.product-row-sku {
-  color:#dfe9ff;
-  line-height:1.65;
+.product-row-sku,
+.product-row-devices,
+.product-row-price {
+  color:#ffffff;
+  line-height:1.6;
   overflow-wrap:anywhere;
   word-break:break-word;
-  font-size: clamp(11px, 0.95vw, 15px);
+  font-size: 13px;
+}
+.product-row-label {
+  color:#dbe6ff;
+  font-weight:800;
+  display:inline-block;
+  min-width:48px;
 }
 .product-row-meta {
   display:flex;
   flex-wrap:wrap;
   gap:8px;
+  align-items:center;
+  margin-top: 4px;
 }
 .badge {
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  padding:6px 10px;
+  padding:6px 12px;
   border-radius:999px;
   font-size:12px;
   font-weight:700;
@@ -420,19 +449,15 @@ button {
   color:#fde68a;
 }
 .badge.stock-ok {
-  background:rgba(34,197,94,0.16);
-  border:1px solid rgba(34,197,94,0.28);
-  color:#dcfce7;
+  background:linear-gradient(135deg, #22c55e, #16a34a);
+  border: none;
+  color:#081120;
+  font-weight:800;
 }
 .badge.stock-missing {
-  background:rgba(239,68,68,0.16);
-  border:1px solid rgba(239,68,68,0.28);
-  color:#fee2e2;
-}
-.product-row-price {
+  background:linear-gradient(135deg, #ef4444, #dc2626);
+  border:none;
   color:#fff;
-  line-height:1.7;
-  overflow-wrap:anywhere;
 }
 .product-row-action {
   display:flex;
@@ -441,6 +466,23 @@ button {
 }
 .product-row-action .btn-primary {
   min-width:78px;
+}
+.products-hint-card {
+  border-top: 1px solid rgba(255,255,255,0.09);
+  padding-top: 14px;
+  text-align: center;
+}
+.products-hint-arrow {
+  color: #ffffff;
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.products-hint-card p {
+  margin: 12px auto 0;
+  max-width: 88%;
+  color: #ffffff;
+  line-height: 1.9;
 }
 .empty-box {
   padding:16px;
@@ -453,7 +495,6 @@ button {
 .hide-empty:empty {
   display:none;
 }
-/* remove number spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -464,25 +505,14 @@ input[type="number"] {
   appearance: textfield;
 }
 @media (max-width: 1200px) {
-  body { overflow: auto; }
-  .page-shell { height: auto; overflow: visible; }
-  .workspace-panel { display: block; }
-  .manager-shell {
-    grid-template-columns: 1fr;
-    height: auto;
-    direction: rtl;
-  }
-  .editor-pane,
-  .list-pane,
-  .preview-card,
-  .list-pane .list-card {
-    height: auto;
-  }
-  .products-scroll {
-    height: auto;
-    max-height: none;
-    overflow: visible;
-  }
+  body { overflow:auto; }
+  .page-frame { height: auto; overflow: visible; }
+  .manager-panel { height: auto; }
+  .manager-shell { grid-template-columns: 1fr; gap: 18px; }
+  .vertical-divider { display: none; }
+  .editor-pane { padding-inline-end: 0; }
+  .list-pane { padding-inline-start: 0; min-height: auto; }
+  .products-scroll { max-height: none; overflow: visible; }
 }
 @media (max-width: 760px) {
   .toolbar, .form-grid, .stock-chip-meta { grid-template-columns: 1fr; }
@@ -492,130 +522,136 @@ input[type="number"] {
 </style>
 </head>
 <body>
-
-<div class="page-shell">
-<h1 class="page-title">Products Manager</h1>
-
-<div class="panel">
-  <div class="toolbar">
-    <div class="form-group">
-      <label for="productsCategory">Category</label>
-      <select id="productsCategory"></select>
-    </div>
-
-    <div class="form-group">
-      <label for="productsBrand">Brand</label>
-      <select id="productsBrand"></select>
-    </div>
-
-    <button type="button" class="btn-primary" id="loadProductsBtn">Load Products</button>
+<div class="page-frame">
+  <div class="manager-topbar">
+    <h1 class="page-title">Products Manager</h1>
   </div>
-  <div id="productsStatus" class="status-box"></div>
-</div>
 
-<div class="panel workspace-panel">
-  <div class="manager-shell">
-    <div class="editor-pane">
-      <div class="editor-card">
-        <div class="section-head">
-          <h2>Edit Product</h2>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="editProductId">Product ID</label>
-            <input id="editProductId" type="text" readonly>
-          </div>
-
-          <div class="form-group">
-            <label for="editProductSlug">Slug</label>
-            <input id="editProductSlug" type="text" readonly>
-          </div>
-
-          <div class="form-group" style="grid-column:1 / -1;">
-            <label for="editProductTitle">Title</label>
-            <input id="editProductTitle" type="text">
-          </div>
-
-          <div class="form-group">
-            <label for="editProductCategory">Category</label>
-            <select id="editProductCategory"></select>
-          </div>
-
-          <div class="form-group">
-            <label for="editProductBrand">Brand</label>
-            <select id="editProductBrand"></select>
-          </div>
-
-          <div class="form-group">
-            <label for="editProductDevicesCount">Devices Count</label>
-            <input id="editProductDevicesCount" type="number" min="1" max="4">
-          </div>
-
-          <div class="form-group">
-            <label for="editProductDuration">Duration Months</label>
-            <input id="editProductDuration" type="number" min="1">
-          </div>
-
-          <div class="form-group">
-            <label for="editProductDownPayment">Down Payment</label>
-            <input id="editProductDownPayment" type="number" min="0" step="0.001">
-          </div>
-
-          <div class="form-group">
-            <label for="editProductMonthly">Monthly Amount</label>
-            <input id="editProductMonthly" type="number" min="0" step="0.001">
-          </div>
-
-          <div class="form-group">
-            <label for="editProductAvailable">Available</label>
-            <select id="editProductAvailable">
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="editProductHotOffer">Hot Offer</label>
-            <select id="editProductHotOffer">
-              <option value="0">No</option>
-              <option value="1">Yes</option>
-            </select>
-          </div>
-        </div>
+  <div class="panel manager-panel">
+    <div class="toolbar-wrap">
+      <div class="section-head">
+        <h2>Products Manager</h2>
       </div>
-
-      <div class="preview-card">
-        <div class="image-box">
-          <img id="editProductPreviewImage" src="" alt="">
+      <div class="toolbar">
+        <div class="form-group">
+          <label for="productsCategory">Category</label>
+          <select id="productsCategory"></select>
         </div>
 
-        <div class="form-group" style="margin-top:14px;">
-          <label for="editProductImageInput">Replace Image</label>
-          <input id="editProductImageInput" type="file" accept=".jpg,.jpeg,.png,.webp">
+        <div class="form-group">
+          <label for="productsBrand">Brand</label>
+          <select id="productsBrand"></select>
         </div>
 
-        <div id="productStockLinksWrap" class="stock-links-grid hide-empty" style="margin-top:14px;"></div>
-
-        <div class="editor-actions">
-          <button type="button" class="btn-danger" id="deleteProductBtn">Delete Product</button>
-          <button type="button" class="btn-success" id="saveProductChangesBtn">Save Changes</button>
-        </div>
+        <button type="button" class="btn-primary" id="loadProductsBtn">Load Products</button>
       </div>
+      <div id="productsStatus" class="status-box"></div>
     </div>
 
-    <div class="list-pane">
-      <div class="list-card">
-        <div class="section-head">
-          <h2>Products List</h2>
+    <div class="manager-shell">
+      <div class="editor-pane">
+        <div class="editor-card">
+          <div class="section-head">
+            <h2>Edit Product</h2>
+          </div>
+
+          <div class="form-grid">
+            <div class="utility-fields form-group">
+              <label for="editProductId">Product ID</label>
+              <input id="editProductId" type="text" readonly>
+            </div>
+
+            <div class="utility-fields form-group">
+              <label for="editProductSlug">Slug</label>
+              <input id="editProductSlug" type="text" readonly>
+            </div>
+
+            <div class="form-group" style="grid-column:1 / -1;">
+              <label for="editProductTitle">Title</label>
+              <input id="editProductTitle" type="text">
+            </div>
+
+            <div class="form-group">
+              <label for="editProductCategory">Category</label>
+              <select id="editProductCategory"></select>
+            </div>
+
+            <div class="form-group">
+              <label for="editProductBrand">Brand</label>
+              <select id="editProductBrand"></select>
+            </div>
+
+            <div class="form-group">
+              <label for="editProductDevicesCount">Devices Count</label>
+              <input id="editProductDevicesCount" type="number" min="1" max="4">
+            </div>
+
+            <div class="form-group">
+              <label for="editProductDownPayment">Down Payment</label>
+              <input id="editProductDownPayment" type="number" min="0" step="0.001">
+            </div>
+
+            <div class="form-group">
+              <label for="editProductMonthly">Monthly Amount</label>
+              <input id="editProductMonthly" type="number" min="0" step="0.001">
+            </div>
+
+            <div class="form-group">
+              <label for="editProductDuration">Duration Months</label>
+              <input id="editProductDuration" type="number" min="1">
+            </div>
+
+            <div class="form-group">
+              <label for="editProductAvailable">Available</label>
+              <select id="editProductAvailable">
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="editProductHotOffer">Hot Offer</label>
+              <select id="editProductHotOffer">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div id="productsTableBody" class="products-scroll">
-          <div class="empty-box">&nbsp;</div>
+
+        <div class="preview-card">
+          <div class="image-box">
+            <img id="editProductPreviewImage" src="" alt="">
+          </div>
+
+          <div class="form-group" style="margin-top:14px;">
+            <label for="editProductImageInput">Replace Image</label>
+            <input id="editProductImageInput" type="file" accept=".jpg,.jpeg,.png,.webp">
+          </div>
+
+          <div id="productStockLinksWrap" class="stock-links-grid hide-empty" style="margin-top:14px;"></div>
+
+          <div class="editor-actions">
+            <button type="button" class="btn-danger" id="deleteProductBtn">Delete Product</button>
+            <button type="button" class="btn-success" id="saveProductChangesBtn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="vertical-divider" aria-hidden="true"></div>
+
+      <div class="list-pane">
+        <div class="list-card">
+          <div class="section-head">
+            <h2>Products List</h2>
+          </div>
+          <div id="productsTableBody" class="products-scroll">
+            <div class="empty-box">لا توجد منتجات مطابقة.</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 </div>
 
 <script src="products-manager.js?v=20260413-2"></script>
