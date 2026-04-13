@@ -200,7 +200,7 @@ function renderProductsTable() {
   if (!wrap) return;
 
   if (!Array.isArray(PRODUCTS_ROWS) || PRODUCTS_ROWS.length === 0) {
-    wrap.innerHTML = `<div class="empty-box">لا توجد منتجات مطابقة.</div>`;
+    wrap.innerHTML = `<div class="empty-box">No matching products found.</div>`;
     return;
   }
 
@@ -219,23 +219,20 @@ function renderProductsTable() {
     if (isSelected && CURRENT_EDIT_STOCK_REVIEW.productId) {
       const fullyLinked = CURRENT_EDIT_STOCK_REVIEW.missing.length === 0 && CURRENT_EDIT_STOCK_REVIEW.linked.length > 0;
       stockBadge = fullyLinked
-        ? '<span class="badge stock-ok">الأصناف مضافة إلى المخزن</span>'
-        : '<span class="badge stock-missing">الأصناف غير مضافة بالكامل</span>';
+        ? '<span class="badge stock-ok">Added To Stock</span>'
+        : '<span class="badge stock-missing">Not Added Completely</span>';
     }
 
     return `
       <div class="product-row-card ${isSelected ? 'selected' : ''}">
         <img class="product-row-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
-
         <div class="product-row-main">
           <div class="product-row-top">
             <span class="product-row-index">No.${index + 1}</span>
           </div>
-
           <h3 class="product-row-title">${escapeHtml(product.title || '')}</h3>
-          <div class="product-row-sku">SKU&nbsp;&nbsp; ${escapeHtml(product.sku || '')}</div>
-          <div class="product-row-price">Price&nbsp;&nbsp; ${escapeHtml(product.price_logic || '-')}</div>
-
+          <div class="product-row-sku"><strong>SKU</strong> ${escapeHtml(product.sku || '')}</div>
+          <div class="product-row-price"><strong>Price</strong> ${escapeHtml(product.price_logic || '-')}</div>
           <div class="product-row-meta">
             <span class="badge">Devices ${Number(product.devices_count || 1)}</span>
             ${availabilityBadge}
@@ -243,7 +240,6 @@ function renderProductsTable() {
             ${stockBadge}
           </div>
         </div>
-
         <div class="product-row-action">
           <button type="button" class="btn-primary" onclick="loadProductForEdit(${product.id})">Edit</button>
         </div>
@@ -313,13 +309,12 @@ function renderStockReview(review) {
   }
 
   const rows = [];
-
   linked.forEach(item => {
     rows.push(`
       <div class="stock-chip-card linked">
         <div class="stock-chip-head">
           <strong>${escapeHtml(item.raw_title || item.stock_title || 'Linked Device')}</strong>
-          <span class="badge stock-ok">مضاف إلى المخزن</span>
+          <span class="badge stock-ok">Added To Stock</span>
         </div>
         <div class="stock-chip-meta">
           <div class="meta-box"><small>Category</small><span>${escapeHtml(item.category_name || '-')}</span></div>
@@ -330,16 +325,14 @@ function renderStockReview(review) {
       </div>
     `);
   });
-
   missing.forEach(item => {
     const selectId = `editMissingCategory_${Number(item.device_index || 0)}`;
     const expectedCategoryId = String(item.expected_category_id || '').trim();
-
     rows.push(`
       <div class="stock-chip-card missing">
         <div class="stock-chip-head">
           <strong>${escapeHtml(item.raw_title || 'Missing Device')}</strong>
-          <span class="badge stock-missing">غير مضاف بالكامل</span>
+          <span class="badge stock-missing">Missing From Stock</span>
         </div>
         <div class="stock-chip-meta">
           <div class="meta-box"><small>Brand</small><span>${escapeHtml(item.expected_brand_name || item.brand_guess || '-')}</span></div>
@@ -349,17 +342,14 @@ function renderStockReview(review) {
         </div>
         <div class="link-actions">
           <div class="form-group" style="min-width:220px; margin:0;">
-            <label for="${selectId}">Choose Category</label>
-            <select id="${selectId}">
-              ${buildMissingCategoryOptions(expectedCategoryId)}
-            </select>
+            <label for="${selectId}">Category</label>
+            <select id="${selectId}">${buildMissingCategoryOptions(expectedCategoryId)}</select>
           </div>
           <button type="button" class="btn-success" onclick="addMissingStockItemFromEdit(${Number(item.device_index || 0)})">Add To Stock</button>
         </div>
       </div>
     `);
   });
-
   wrap.innerHTML = rows.join('');
   renderProductsTable();
 }
