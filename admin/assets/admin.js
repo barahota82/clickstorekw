@@ -1400,7 +1400,7 @@ function bindTabSwitching() {
         loadOrdersManagement();
       }
 
-      if (tabId === 'tab-add-product' || tabId === 'tab-edit-delete') {
+      if (tabId === 'tab-add-product') {
         refreshBootstrapCatalogData().then(() => {
           updateProductJsonPreview();
 
