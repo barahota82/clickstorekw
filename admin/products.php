@@ -47,13 +47,13 @@ body {
   font-family: Arial, sans-serif;
   background: #0f172a;
   color: #fff;
-  padding: 20px;
+  padding: 16px 18px;
   overflow: hidden;
 }
 .page-title {
   font-size: 24px;
   font-weight: 800;
-  margin: 0 0 18px;
+  margin: 0 0 16px;
 }
 .panel {
   background: rgba(255,255,255,0.04);
@@ -68,6 +68,11 @@ body {
   grid-template-columns: 1fr 1fr auto;
   gap: 14px;
   align-items: end;
+}
+.toolbar .btn-primary {
+  height: 50px;
+  min-width: 140px;
+  align-self: end;
 }
 .form-grid {
   display: grid;
@@ -156,10 +161,11 @@ button {
 }
 .manager-shell {
   display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
-  align-items: start;
-  min-height: 760px;
+  align-items: stretch;
+  min-height: calc(100vh - 170px);
+  max-height: calc(100vh - 170px);
 }
 .editor-pane,
 .list-pane {
@@ -169,12 +175,13 @@ button {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 0;
 }
 .list-pane {
   display: flex;
   flex-direction: column;
-  min-height: 760px;
-  max-height: 760px;
+  min-height: 0;
+  max-height: 100%;
 }
 .section-head {
   display:flex;
@@ -201,7 +208,7 @@ button {
 }
 .image-box {
   width: 100%;
-  min-height: 240px;
+  min-height: 190px;
   border: 1px dashed rgba(255,255,255,0.14);
   border-radius: 18px;
   background: rgba(255,255,255,0.03);
@@ -213,7 +220,7 @@ button {
 }
 .image-box img {
   width: 100%;
-  max-height: 300px;
+  max-height: 220px;
   object-fit: contain;
   display: block;
 }
@@ -419,6 +426,45 @@ button {
   border:1px solid rgba(255,255,255,0.08);
   color:#c8d4ea;
   line-height:1.8;
+}
+.stock-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.stock-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.stock-summary-pill.ok {
+  background: rgba(34,197,94,0.16);
+  border: 1px solid rgba(34,197,94,0.28);
+  color: #dcfce7;
+}
+.stock-summary-pill.missing {
+  background: rgba(239,68,68,0.16);
+  border: 1px solid rgba(239,68,68,0.28);
+  color: #fee2e2;
+}
+.stock-links-grid {
+  margin-top: 12px;
+}
+.stock-chip-card {
+  padding: 12px;
+}
+.stock-chip-meta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.link-actions .form-group label {
+  margin-bottom: 6px;
+  font-size: 12px;
 }
 .hide-empty:empty {
   display:none;
