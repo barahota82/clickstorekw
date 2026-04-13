@@ -60,405 +60,677 @@ if (!admin_has_permission('products_edit')) {
 <title>Products Manager</title>
 <link rel="stylesheet" href="assets/admin.css">
 <style>
-body{
-  font-family:Arial,sans-serif;
-  background:#0f172a;
-  color:#fff;
-  padding:20px;
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #fff;
 }
-.page-title{
-  font-size:24px;
-  font-weight:800;
-  margin-bottom:10px;
+
+.pm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
-.page-desc{
-  color:#c8d4ea;
-  line-height:1.8;
-  margin-bottom:22px;
+
+.pm-shell {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 20px 44px rgba(0,0,0,0.20);
 }
-.panel{
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:18px;
-  padding:18px;
-  margin-bottom:18px;
+
+.pm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
 }
-.toolbar{
-  display:grid;
-  grid-template-columns:1fr 1fr auto;
-  gap:12px;
-  align-items:end;
+
+.pm-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  color: #fff;
 }
-.form-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
+
+.pm-desc {
+  margin: 10px 0 0;
+  color: #c8d4ea;
+  line-height: 1.9;
+  font-size: 14px;
 }
-.form-group label{
-  display:block;
-  margin-bottom:8px;
-  color:#c8d4ea;
-  font-size:14px;
+
+.pm-filter-card,
+.pm-column-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 18px;
 }
-.form-group input,
-.form-group select,
-.form-group textarea{
-  width:100%;
-  padding:12px 14px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,0.10);
-  background:rgba(255,255,255,0.04);
-  color:#fff;
+
+.pm-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
 }
-.form-group textarea{
-  min-height:100px;
-  resize:vertical;
+
+.pm-manager-grid {
+  display: grid;
+  grid-template-columns: 1.03fr 0.97fr;
+  gap: 18px;
+  align-items: start;
 }
-button{
-  padding:12px 16px;
-  border:none;
-  border-radius:14px;
-  cursor:pointer;
-  font-weight:700;
+
+.pm-column-title {
+  margin: 0 0 12px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #fff;
 }
-.btn-primary{
-  background:linear-gradient(135deg,#2563eb,#1d4ed8);
-  color:#fff;
+
+.pm-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
-.btn-success{
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  color:#fff;
+
+.pm-field-grid .full {
+  grid-column: 1 / -1;
 }
-.btn-danger{
-  background:linear-gradient(135deg,#ef4444,#dc2626);
-  color:#fff;
+
+.pm-field-grid .span-half {
+  grid-column: span 1;
 }
-.table-wrap{
-  overflow-x:auto;
+
+.pm-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:1100px;
+
+.pm-form-group label {
+  color: #c8d4ea;
+  font-size: 13px;
+  font-weight: 700;
 }
-th,td{
-  padding:12px 14px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
-  text-align:right;
-  vertical-align:top;
+
+.pm-form-group input,
+.pm-form-group select,
+.pm-form-group textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  outline: none;
+  transition: 0.2s ease;
 }
-th{
-  color:#c8d4ea;
-  font-size:13px;
+
+.pm-form-group textarea {
+  min-height: 110px;
+  resize: vertical;
 }
-.thumb{
-  width:60px;
-  height:60px;
-  object-fit:contain;
-  border-radius:12px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  padding:5px;
+
+.pm-form-group input:focus,
+.pm-form-group select:focus,
+.pm-form-group textarea:focus {
+  border-color: rgba(37,99,235,0.55);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
 }
-.badge{
-  display:inline-flex;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:700;
+
+.pm-form-group input[readonly] {
+  background: #0a1120;
+  opacity: 0.95;
 }
-.badge.active{
-  background:rgba(34,197,94,0.16);
-  border:1px solid rgba(34,197,94,0.28);
-  color:#dcfce7;
+
+.pm-form-group input[type="number"]::-webkit-outer-spin-button,
+.pm-form-group input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
-.badge.inactive{
-  background:rgba(239,68,68,0.16);
-  border:1px solid rgba(239,68,68,0.28);
-  color:#fee2e2;
+
+.pm-form-group input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
-.badge.hot{
-  background:rgba(245,158,11,0.16);
-  border:1px solid rgba(245,158,11,0.28);
-  color:#fde68a;
+
+.pm-form-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 14px center;
+  padding-left: 40px;
+  color-scheme: dark;
 }
-.status-box{
-  margin-top:14px;
-  padding:14px 16px;
-  border-radius:14px;
-  display:none;
+
+.pm-form-group select option {
+  background: #0f172a;
+  color: #ffffff;
 }
-.status-box.show{display:block;}
-.status-box.info{
-  background:rgba(59,130,246,0.14);
-  border:1px solid rgba(59,130,246,0.28);
-  color:#dbeafe;
+
+.pm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
 }
-.status-box.success{
-  background:rgba(34,197,94,0.14);
-  border:1px solid rgba(34,197,94,0.28);
-  color:#dcfce7;
+
+.pm-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #fff;
 }
-.status-box.error{
-  background:rgba(239,68,68,0.14);
-  border:1px solid rgba(239,68,68,0.28);
-  color:#fee2e2;
+
+.pm-btn-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
 }
-.empty-box{
-  padding:16px;
-  border-radius:14px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  color:#c8d4ea;
-  line-height:1.8;
+
+.pm-btn-success {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
 }
-.edit-grid{
-  display:grid;
-  grid-template-columns:1.05fr 0.95fr;
-  gap:18px;
+
+.pm-btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
 }
-.image-box{
-  width:100%;
-  min-height:340px;
-  border:1px dashed rgba(255,255,255,0.14);
-  border-radius:18px;
-  background:rgba(255,255,255,0.03);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  padding:16px;
+
+.pm-image-box {
+  width: 100%;
+  min-height: 340px;
+  border: 1px dashed rgba(255,255,255,0.14);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 14px;
+  margin-bottom: 14px;
 }
-.image-box img{
-  width:100%;
-  max-height:420px;
-  object-fit:contain;
+
+.pm-image-box img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  display: block;
 }
-.links-wrap{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
+
+.pm-status-box {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  display: none;
 }
-.link-card{
-  padding:14px;
-  border-radius:16px;
-  border:1px solid rgba(255,255,255,0.08);
-  background:rgba(255,255,255,0.04);
+
+.pm-status-box.show {
+  display: block;
 }
-.link-card.missing{
-  border-color:rgba(239,68,68,0.30);
-  background:rgba(239,68,68,0.08);
+
+.pm-status-box.info {
+  background: rgba(59,130,246,0.14);
+  border: 1px solid rgba(59,130,246,0.28);
+  color: #dbeafe;
 }
-.link-card.linked{
-  border-color:rgba(34,197,94,0.30);
-  background:rgba(34,197,94,0.08);
+
+.pm-status-box.success {
+  background: rgba(34,197,94,0.14);
+  border: 1px solid rgba(34,197,94,0.28);
+  color: #dcfce7;
 }
-.link-title{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-bottom:10px;
+
+.pm-status-box.error {
+  background: rgba(239,68,68,0.14);
+  border: 1px solid rgba(239,68,68,0.28);
+  color: #fee2e2;
 }
-.link-title strong{
-  font-size:15px;
-  line-height:1.7;
+
+.pm-helper-note,
+.pm-empty-box {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #c8d4ea;
+  line-height: 1.9;
+  font-size: 13px;
 }
-.link-meta{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
+
+.pm-products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 980px;
+  overflow-y: auto;
+  padding-left: 6px;
 }
-.meta-box{
-  padding:10px 12px;
-  border-radius:14px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.08);
+
+.pm-products-list::-webkit-scrollbar {
+  width: 8px;
 }
-.meta-box small{
-  display:block;
-  color:#c8d4ea;
-  margin-bottom:4px;
-  font-size:12px;
+.pm-products-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 999px;
 }
-.meta-box span{
-  color:#fff;
-  font-size:13px;
-  line-height:1.7;
+.pm-products-list::-webkit-scrollbar-track {
+  background: transparent;
 }
-.link-actions{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  align-items:end;
-  margin-top:12px;
+
+.pm-product-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.helper-note{
-  margin-top:12px;
-  padding:12px 14px;
-  border-radius:14px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  color:#c8d4ea;
-  line-height:1.8;
-  font-size:13px;
+
+.pm-product-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
 }
-.note-inline{
-  margin:0 0 14px;
-  color:#c8d4ea;
-  font-size:13px;
-  line-height:1.8;
+
+.pm-product-head-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
-@media (max-width: 1100px){
-  .toolbar,.form-grid,.edit-grid,.link-meta{grid-template-columns:1fr;}
+
+.pm-product-index {
+  color: #c8d4ea;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pm-product-title {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.pm-product-sku {
+  color: #e4ecff;
+  font-weight: 800;
+  line-height: 1.6;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+.pm-product-sku.is-long {
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.pm-product-sku.is-very-long {
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.pm-product-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pm-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pm-badge.active {
+  background: rgba(34,197,94,0.16);
+  border: 1px solid rgba(34,197,94,0.30);
+  color: #dcfce7;
+}
+
+.pm-badge.inactive {
+  background: rgba(239,68,68,0.16);
+  border: 1px solid rgba(239,68,68,0.30);
+  color: #fee2e2;
+}
+
+.pm-badge.hot {
+  background: rgba(245,158,11,0.16);
+  border: 1px solid rgba(245,158,11,0.30);
+  color: #fde68a;
+}
+
+.pm-badge.stock-ok {
+  background: rgba(34,197,94,0.18);
+  border: 1px solid rgba(34,197,94,0.34);
+  color: #dcfce7;
+}
+
+.pm-badge.stock-missing {
+  background: rgba(239,68,68,0.16);
+  border: 1px solid rgba(239,68,68,0.30);
+  color: #fee2e2;
+}
+
+.pm-product-price {
+  color: #fff;
+  line-height: 1.8;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.pm-product-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pm-list-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 5px;
+  flex: 0 0 auto;
+}
+
+.pm-stock-summary {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pm-stock-summary-box {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+
+.pm-stock-summary-box.good {
+  border-color: rgba(34,197,94,0.28);
+  background: rgba(34,197,94,0.10);
+}
+
+.pm-stock-summary-box.bad {
+  border-color: rgba(239,68,68,0.28);
+  background: rgba(239,68,68,0.10);
+}
+
+.pm-stock-summary-box strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: #fff;
+}
+
+.pm-stock-summary-box span {
+  display: block;
+  line-height: 1.85;
+  color: #dbe7fb;
+  font-size: 13px;
+}
+
+.pm-links-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pm-link-card {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+
+.pm-link-card.missing {
+  border-color: rgba(239,68,68,0.28);
+  background: rgba(239,68,68,0.08);
+}
+
+.pm-link-card.linked {
+  border-color: rgba(34,197,94,0.28);
+  background: rgba(34,197,94,0.08);
+}
+
+.pm-link-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pm-link-title strong {
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.pm-link-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pm-meta-box {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.pm-meta-box small {
+  display: block;
+  color: #c8d4ea;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.pm-meta-box span {
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.pm-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+.pm-link-actions .pm-form-group {
+  min-width: 220px;
+  margin: 0;
+}
+
+.pm-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pm-legend .pm-badge {
+  min-height: 34px;
+}
+
+@media (max-width: 1180px) {
+  .pm-filter-grid,
+  .pm-manager-grid,
+  .pm-field-grid,
+  .pm-link-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-products-list {
+    max-height: none;
+  }
 }
 </style>
 </head>
 <body>
 
-<h1 class="page-title">Products Manager</h1>
-<p class="page-desc">تحميل المنتجات حسب الفئة والبراند، تعديل بياناتها، استبدال الصورة، ومراجعة الأجهزة المرتبطة بالمخزن أو غير المضافة من نفس الشاشة.</p>
-
-<div class="panel">
-  <div class="toolbar">
-    <div class="form-group">
-      <label for="productsCategory">Category</label>
-      <select id="productsCategory"></select>
+<div class="pm-page">
+  <div class="pm-shell">
+    <div class="pm-header">
+      <div>
+        <h1 class="pm-title">Products Manager</h1>
+        <p class="pm-desc">تحميل المنتجات حسب الفئة والبراند، تعديل بياناتها، استبدال الصورة، ومراجعة حالة الأصناف المضافة إلى المخزن من نفس الشاشة.</p>
+      </div>
     </div>
 
-    <div class="form-group">
-      <label for="productsBrand">Brand</label>
-      <select id="productsBrand"></select>
+    <div class="pm-filter-card">
+      <div class="pm-filter-grid">
+        <div class="pm-form-group">
+          <label for="productsCategory">Category</label>
+          <select id="productsCategory"></select>
+        </div>
+
+        <div class="pm-form-group">
+          <label for="productsBrand">Brand</label>
+          <select id="productsBrand"></select>
+        </div>
+
+        <button type="button" class="pm-btn pm-btn-primary" id="loadProductsBtn">Load Products</button>
+      </div>
+
+      <div class="pm-helper-note" style="margin-top:12px;">اختر الفئة ثم البراند وبعدها حمّل المنتجات. الحالة الخضراء تعني أن جميع أجهزة العرض مرتبطة بالمخزن، والحالة الحمراء تعني أن بعض الأجهزة غير مضافة بالكامل.</div>
+      <div id="productsStatus" class="pm-status-box"></div>
     </div>
 
-    <button type="button" class="btn-primary" id="loadProductsBtn">Load Products</button>
-  </div>
+    <div class="pm-manager-grid" style="margin-top:18px;">
+      <section class="pm-column-card">
+        <h2 class="pm-column-title">Edit Product</h2>
 
-  <div class="helper-note">اختر الفئة ثم البراند، وبعدها حمّل القائمة. عند فتح منتج للتعديل ستظهر لك حالة الأجهزة: أخضر = موجودة بالمخزن، أحمر = غير مضافة بالمخزن.</div>
-  <div id="productsStatus" class="status-box"></div>
-</div>
+        <div class="pm-field-grid">
+          <div class="pm-form-group full">
+            <label for="editProductTitle">Title</label>
+            <input id="editProductTitle" type="text">
+          </div>
 
-<div class="panel">
-  <h2 style="margin:0 0 14px;">Products List</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Image</th>
-          <th>Title</th>
-          <th>SKU</th>
-          <th>Devices</th>
-          <th>Price Logic</th>
-          <th>Availability</th>
-          <th>Hot</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="productsTableBody">
-        <tr>
-          <td colspan="9"><div class="empty-box">اختر Category و Brand ثم اضغط Load Products.</div></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+          <div class="pm-form-group">
+            <label for="editProductCategory">Category</label>
+            <select id="editProductCategory"></select>
+          </div>
 
-<div class="panel">
-  <h2 style="margin:0 0 14px;">Edit Product</h2>
-  <p class="note-inline">حفظ التعديلات سيحدّث قاعدة البيانات وملفات JSON، وسيعيد فحص الربط مع المخزن بناءً على الصورة الجديدة إن وُجدت، أو على العرض الحالي إن لم تغيّر الصورة.</p>
+          <div class="pm-form-group">
+            <label for="editProductBrand">Brand</label>
+            <select id="editProductBrand"></select>
+          </div>
 
-  <div class="edit-grid">
-    <div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="editProductId">Product ID</label>
-          <input id="editProductId" type="text" readonly>
+          <div class="pm-form-group">
+            <label for="editProductDevicesCount">Devices Count</label>
+            <input id="editProductDevicesCount" type="number" min="1" max="4">
+          </div>
+
+          <div class="pm-form-group">
+            <label for="editProductDownPayment">Down Payment</label>
+            <input id="editProductDownPayment" type="number" min="0" step="0.001">
+          </div>
+
+          <div class="pm-form-group">
+            <label for="editProductMonthly">Monthly Amount</label>
+            <input id="editProductMonthly" type="number" min="0" step="0.001">
+          </div>
+
+          <div class="pm-form-group">
+            <label for="editProductDuration">Duration Months</label>
+            <input id="editProductDuration" type="number" min="1">
+          </div>
+
+          <div class="pm-form-group">
+            <label for="editProductAvailable">Available</label>
+            <select id="editProductAvailable">
+              <option value="1">Yes</option>
+              <option value="0">No</option>
+            </select>
+          </div>
+
+          <div class="pm-form-group">
+            <label for="editProductHotOffer">Hot Offer</label>
+            <select id="editProductHotOffer">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="editProductSlug">Slug</label>
-          <input id="editProductSlug" type="text" readonly>
+        <div class="pm-image-box" style="margin-top:16px;">
+          <img id="editProductPreviewImage" src="" alt="">
         </div>
 
-        <div class="form-group" style="grid-column:1 / -1;">
-          <label for="editProductTitle">Title</label>
-          <input id="editProductTitle" type="text">
-        </div>
-
-        <div class="form-group">
-          <label for="editProductCategory">Category</label>
-          <select id="editProductCategory"></select>
-        </div>
-
-        <div class="form-group">
-          <label for="editProductBrand">Brand</label>
-          <select id="editProductBrand"></select>
-        </div>
-
-        <div class="form-group">
-          <label for="editProductDevicesCount">Devices Count</label>
-          <input id="editProductDevicesCount" type="number" min="1" max="4">
-        </div>
-
-        <div class="form-group">
-          <label for="editProductDuration">Duration Months</label>
-          <input id="editProductDuration" type="number" min="1">
-        </div>
-
-        <div class="form-group">
-          <label for="editProductDownPayment">Down Payment</label>
-          <input id="editProductDownPayment" type="number" min="0" step="0.001">
-        </div>
-
-        <div class="form-group">
-          <label for="editProductMonthly">Monthly Amount</label>
-          <input id="editProductMonthly" type="number" min="0" step="0.001">
-        </div>
-
-        <div class="form-group">
-          <label for="editProductAvailable">Available</label>
-          <select id="editProductAvailable">
-            <option value="1">Yes</option>
-            <option value="0">No</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="editProductHotOffer">Hot Offer</label>
-          <select id="editProductHotOffer">
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-          </select>
-        </div>
-
-        <div class="form-group" style="grid-column:1 / -1;">
+        <div class="pm-form-group">
           <label for="editProductImageInput">Replace Image</label>
           <input id="editProductImageInput" type="file" accept=".jpg,.jpeg,.png,.webp">
         </div>
-      </div>
 
-      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
-        <button type="button" class="btn-success" id="saveProductChangesBtn">Save Changes</button>
-        <button type="button" class="btn-danger" id="deleteProductBtn">Delete Product</button>
-      </div>
-    </div>
-
-    <div>
-      <div class="image-box">
-        <img id="editProductPreviewImage" src="" alt="">
-      </div>
-
-      <div style="margin-top:16px;">
-        <h3 style="margin:0 0 12px; font-size:16px;">Stock Review / Product Links</h3>
-        <div id="productStockLinksWrap" class="links-wrap">
-          <div class="empty-box">اختر منتجًا أولًا لتحميل مراجعة الأجهزة والربط مع المخزن.</div>
+        <div class="pm-actions">
+          <button type="button" class="pm-btn pm-btn-danger" id="deleteProductBtn">Delete Product</button>
+          <button type="button" class="pm-btn pm-btn-success" id="saveProductChangesBtn">Save Changes</button>
         </div>
-      </div>
+
+        <input id="editProductId" type="hidden">
+        <input id="editProductSlug" type="hidden">
+      </section>
+
+      <section class="pm-column-card">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;">
+          <h2 class="pm-column-title" style="margin:0;">Products List</h2>
+          <div class="pm-legend">
+            <span class="pm-badge stock-ok">الأصناف مضافة إلى المخزن</span>
+            <span class="pm-badge stock-missing">الأصناف غير مضافة بالكامل</span>
+          </div>
+        </div>
+
+        <div id="productsTableBody" class="pm-products-list">
+          <div class="pm-empty-box">اختر Category و Brand ثم اضغط Load Products.</div>
+        </div>
+
+        <div class="pm-stock-summary">
+          <div id="editProductStockSummary" class="pm-stock-summary-box">
+            <strong>حالة المخزن</strong>
+            <span>اختر منتجًا من القائمة لمعرفة هل جميع أجهزة العرض مضافة إلى المخزن أم لا.</span>
+          </div>
+
+          <div id="productStockLinksWrap" class="pm-links-wrap">
+            <div class="pm-empty-box">اختر منتجًا أولًا لتحميل مراجعة الأجهزة والربط مع المخزن.</div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </div>
 
-<script src="products-manager.js?v=20260412-1"></script>
+<script src="products-manager.js?v=20260413-2"></script>
 </body>
 </html>
