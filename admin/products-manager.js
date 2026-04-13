@@ -204,7 +204,7 @@ function renderProductsTable() {
     return;
   }
 
-  wrap.innerHTML = PRODUCTS_ROWS.map((product, index) => {
+  const rows = PRODUCTS_ROWS.map((product, index) => {
     const availabilityBadge = product.is_available
       ? '<span class="badge active">Available</span>'
       : '<span class="badge inactive">Out of Stock</span>';
@@ -225,19 +225,16 @@ function renderProductsTable() {
 
     return `
       <div class="product-row-card ${isSelected ? 'selected' : ''}">
-        <img class="product-row-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
-
         <div class="product-row-main">
           <div class="product-row-top">
             <span class="product-row-index">No.${index + 1}</span>
           </div>
 
-          <h3 class="product-row-title">${escapeHtml(product.title || '')}</h3>
-          <div class="product-row-sku">SKU&nbsp;&nbsp; ${escapeHtml(product.sku || '')}</div>
-          <div class="product-row-price">Price&nbsp;&nbsp; ${escapeHtml(product.price_logic || '-')}</div>
+          <div class="product-row-sku"><span class="product-row-label">SKU</span> ${escapeHtml(product.sku || '')}</div>
+          <div class="product-row-devices"><span class="product-row-label">Devices</span> ${Number(product.devices_count || 1)}</div>
+          <div class="product-row-price"><span class="product-row-label">Price</span> ${escapeHtml(product.price_logic || '-')}</div>
 
           <div class="product-row-meta">
-            <span class="badge">Devices ${Number(product.devices_count || 1)}</span>
             ${availabilityBadge}
             ${hotBadge}
             ${stockBadge}
@@ -249,7 +246,19 @@ function renderProductsTable() {
         </div>
       </div>
     `;
-  }).join('');
+  });
+
+  if (CURRENT_EDIT_STOCK_REVIEW.productId && CURRENT_EDIT_STOCK_REVIEW.missing.length > 0) {
+    rows.push(`
+      <div class="products-hint-card">
+        <div class="products-hint-arrow">→</div>
+        <span class="badge stock-missing">الأصناف غير مضافة بالكامل إلى المخزن</span>
+        <p>عند الضغط عليها تظهر شاشة لإضافة الصنف الناقص غير مضاف إلى المخزن ليتم إضافته وهذه الشاشة تظهر فوق الشاشة دي بحيث أضف وأغلقها</p>
+      </div>
+    `);
+  }
+
+  wrap.innerHTML = rows.join('');
 }
 
 async function loadProductsList() {
