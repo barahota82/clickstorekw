@@ -225,7 +225,9 @@ function renderProductsTable() {
 
     return `
       <div class="product-row-card ${isSelected ? 'selected' : ''}">
-        <img class="product-row-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
+        <div class="product-row-action">
+          <button type="button" class="btn-primary" onclick="loadProductForEdit(${product.id})">Edit</button>
+        </div>
 
         <div class="product-row-main">
           <div class="product-row-top">
@@ -237,16 +239,14 @@ function renderProductsTable() {
           <div class="product-row-price">Price&nbsp;&nbsp; ${escapeHtml(product.price_logic || '-')}</div>
 
           <div class="product-row-meta">
-            <span class="badge">Devices ${Number(product.devices_count || 1)}</span>
             ${availabilityBadge}
             ${hotBadge}
+            <span class="badge">Devices ${Number(product.devices_count || 1)}</span>
             ${stockBadge}
           </div>
         </div>
 
-        <div class="product-row-action">
-          <button type="button" class="btn-primary" onclick="loadProductForEdit(${product.id})">Edit</button>
-        </div>
+        <img class="product-row-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
       </div>
     `;
   }).join('');
@@ -312,24 +312,15 @@ function renderStockReview(review) {
     return;
   }
 
-  const rows = [];
+  const summary = [];
+  if (linked.length) {
+    summary.push(`<span class="stock-summary-pill ok">مضاف للمخزن: ${linked.length}</span>`);
+  }
+  if (missing.length) {
+    summary.push(`<span class="stock-summary-pill missing">ناقص بالمخزن: ${missing.length}</span>`);
+  }
 
-  linked.forEach(item => {
-    rows.push(`
-      <div class="stock-chip-card linked">
-        <div class="stock-chip-head">
-          <strong>${escapeHtml(item.raw_title || item.stock_title || 'Linked Device')}</strong>
-          <span class="badge stock-ok">مضاف إلى المخزن</span>
-        </div>
-        <div class="stock-chip-meta">
-          <div class="meta-box"><small>Category</small><span>${escapeHtml(item.category_name || '-')}</span></div>
-          <div class="meta-box"><small>Brand</small><span>${escapeHtml(item.brand_name || item.expected_brand_name || '-')}</span></div>
-          <div class="meta-box"><small>Storage</small><span>${escapeHtml(item.storage_value || '-')}</span></div>
-          <div class="meta-box"><small>RAM / Network</small><span>${escapeHtml(item.ram_value || '-')} / ${escapeHtml(item.network_value || '-')}</span></div>
-        </div>
-      </div>
-    `);
-  });
+  const rows = [];
 
   missing.forEach(item => {
     const selectId = `editMissingCategory_${Number(item.device_index || 0)}`;
@@ -348,8 +339,8 @@ function renderStockReview(review) {
           <div class="meta-box"><small>Network</small><span>${escapeHtml(item.network_value || '-')}</span></div>
         </div>
         <div class="link-actions">
-          <div class="form-group" style="min-width:220px; margin:0;">
-            <label for="${selectId}">Choose Category</label>
+          <div class="form-group" style="min-width:180px; margin:0;">
+            <label for="${selectId}">Category</label>
             <select id="${selectId}">
               ${buildMissingCategoryOptions(expectedCategoryId)}
             </select>
@@ -360,7 +351,11 @@ function renderStockReview(review) {
     `);
   });
 
-  wrap.innerHTML = rows.join('');
+  wrap.innerHTML = `
+    <div class="stock-summary-bar">${summary.join('')}</div>
+    ${rows.join('')}
+  `;
+
   renderProductsTable();
 }
 
