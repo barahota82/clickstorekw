@@ -310,165 +310,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       margin-bottom: 18px;
     }
 
-    #tab-products-manager .panel-desc {
-      display: none;
-    }
-
-    .embedded-admin-wrap-products {
-      min-height: 900px;
-    }
-
-    .embedded-admin-wrap-products .embedded-admin-frame {
-      min-height: 860px;
-    }
-
-    .orders-list-wrap {
-      margin-top: 12px;
-      overflow: hidden;
-    }
-
-    .orders-list-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .order-card {
-      display: grid;
-      grid-template-columns: 150px 150px 70px 120px minmax(260px, 1.2fr) minmax(230px, 1fr) 160px 160px;
-      gap: 14px;
-      align-items: stretch;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 16px 18px;
-    }
-
-    .order-card-cell {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-width: 0;
-    }
-
-    .order-card-label {
-      color: #c8d4ea;
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .order-card-value {
-      color: #fff;
-      font-size: 15px;
-      line-height: 1.8;
-      overflow-wrap: anywhere;
-    }
-
-    .order-card-order-no {
-      font-size: 28px;
-      font-weight: 800;
-      line-height: 1.15;
-      text-align: center;
-      color: #fff;
-      overflow-wrap: anywhere;
-    }
-
-    .order-card-order-no small {
-      display: block;
-      margin-top: 8px;
-      font-size: 13px;
-      color: #c8d4ea;
-      font-weight: 700;
-    }
-
-    .order-card-total {
-      font-size: 30px;
-      font-weight: 800;
-      line-height: 1.2;
-      color: #fff;
-    }
-
-    .order-card-total small {
-      display: block;
-      margin-top: 6px;
-      font-size: 13px;
-      color: #c8d4ea;
-      font-weight: 700;
-    }
-
-    .order-card-qty {
-      font-size: 32px;
-      font-weight: 800;
-      text-align: center;
-      color: #fff;
-      line-height: 1.2;
-    }
-
-    .order-card-products,
-    .order-card-customer {
-      gap: 6px;
-    }
-
-    .order-card-products .item-title {
-      color: #fff;
-      font-size: 15px;
-      line-height: 1.7;
-      overflow-wrap: anywhere;
-    }
-
-    .order-card-products .item-meta,
-    .order-card-customer .sub-line {
-      color: #c8d4ea;
-      font-size: 13px;
-      line-height: 1.75;
-      overflow-wrap: anywhere;
-    }
-
-    .order-card-customer .customer-name {
-      color: #fff;
-      font-size: 15px;
-      font-weight: 800;
-      line-height: 1.7;
-      overflow-wrap: anywhere;
-    }
-
-    .order-actions-panel {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .order-actions-panel .order-actions-cell {
-      justify-content: flex-start;
-    }
-
-    .order-actions-panel .order-actions-cell button {
-      min-width: 112px;
-    }
-
-    .order-status-cell {
-      align-items: flex-start;
-      justify-content: center;
-    }
-
-    .order-date-cell {
-      justify-content: center;
-    }
-
-    @media (max-width: 1450px) {
-      .order-card {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .order-actions-panel {
-        grid-column: 1 / -1;
-      }
-    }
-
-
     .status-chip {
       display: inline-flex;
       align-items: center;
@@ -805,6 +646,156 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 18px;
       background: #0a1120;
+    }
+
+    .products-manager-frame {
+      min-height: 980px;
+      height: 980px;
+      overflow: hidden;
+    }
+
+    .orders-board-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .orders-head-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 2fr 0.55fr 0.9fr 1fr 0.95fr 1.1fr;
+      gap: 14px;
+      align-items: center;
+      color: #c8d4ea;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .orders-cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .order-line-card {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr 2fr 0.55fr 0.9fr 1fr 0.95fr 1.1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .order-line-card > div {
+      min-width: 0;
+    }
+
+    .order-line-order-number {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .order-line-customer {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .order-line-customer .customer-link-btn {
+      text-align: right;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .order-line-customer .customer-meta {
+      color: #8fa6c9;
+      font-size: 12px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .order-line-products {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .order-line-products-title {
+      color: #ffffff;
+      font-size: 17px;
+      line-height: 1.7;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .order-line-products-plan {
+      color: #d7e4fb;
+      font-size: 14px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .order-line-qty,
+    .order-line-total,
+    .order-line-date {
+      color: #ffffff;
+      font-size: 16px;
+      line-height: 1.8;
+      font-weight: 700;
+      white-space: normal;
+    }
+
+    .order-line-date {
+      color: #d7e4fb;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .order-line-status {
+      display: flex;
+      justify-content: flex-start;
+      padding-top: 8px;
+    }
+
+    .order-line-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+
+    .order-line-actions .btn {
+      min-height: 38px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1320px) {
+      .orders-head-grid {
+        display: none;
+      }
+
+      .order-line-card {
+        grid-template-columns: 1fr;
+      }
+
+      .order-line-actions,
+      .order-line-status {
+        justify-content: flex-start;
+      }
     }
 
     .hidden {
@@ -1159,10 +1150,11 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-products-manager" class="admin-panel" data-panel-permission="products_edit">
           <h3 class="panel-title">Products Manager</h3>
+          <p class="panel-desc products-manager-panel-desc" style="display:none;"></p>
 
-          <div class="embedded-admin-wrap embedded-admin-wrap-products">
+          <div class="embedded-admin-wrap products-manager-wrap">
             <iframe
-              class="embedded-admin-frame"
+              class="embedded-admin-frame products-manager-frame"
               src="/admin/products.php"
               title="Products Manager"
               loading="lazy">
@@ -1330,8 +1322,19 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
               </div>
             </div>
 
-            <div class="orders-list-wrap">
-              <div id="adminOrdersList" class="orders-list-grid">
+            <div class="orders-board-wrap">
+              <div class="orders-head-grid">
+                <div>Order No.</div>
+                <div>Customer</div>
+                <div>Products</div>
+                <div>Qty</div>
+                <div>Total</div>
+                <div>Date</div>
+                <div>Status</div>
+                <div>Actions</div>
+              </div>
+
+              <div id="adminOrdersCards" class="orders-cards-list">
                 <div class="empty-box">لم يتم تحميل الطلبات بعد.</div>
               </div>
             </div>
