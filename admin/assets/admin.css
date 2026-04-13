@@ -385,3 +385,34 @@ button:disabled {
     min-height: auto;
   }
 }
+
+
+/* ===== ADMIN NUMERIC INPUTS WITHOUT SPINNERS ===== */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ===== SMALL VISUAL TWEAKS FOR DASHBOARD FORMS ===== */
+.dashboard-shell .info-grid {
+  gap: 14px;
+}
+
+.dashboard-shell .info-card {
+  min-height: 88px;
+}
+
+.dashboard-shell .sub-card {
+  border-radius: 22px;
+}
+
+.dashboard-shell .btn,
+.dashboard-shell button {
+  white-space: nowrap;
+}
