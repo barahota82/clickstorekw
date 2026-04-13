@@ -4,7 +4,6 @@ let EDIT_BRANDS = [];
 let CATEGORY_BRANDS_CACHE = {};
 let PRODUCTS_ROWS = [];
 let CURRENT_PRODUCT = null;
-let PRODUCT_STOCK_STATUS_CACHE = {};
 let CURRENT_EDIT_STOCK_REVIEW = {
   productId: null,
   devicesCount: 0,
@@ -171,19 +170,6 @@ async function loadBootstrapLists() {
   });
 }
 
-function setProductsCount() {
-  const el = document.getElementById('productsListCount');
-  if (!el) return;
-  el.textContent = String(Array.isArray(PRODUCTS_ROWS) ? PRODUCTS_ROWS.length : 0);
-}
-
-function setEditStockStateBadge(state = 'neutral', text = '—') {
-  const badge = document.getElementById('editStockStateBadge');
-  if (!badge) return;
-  badge.className = `stock-state-chip ${state}`;
-  badge.textContent = text;
-}
-
 function clearEditForm() {
   CURRENT_PRODUCT = null;
   CURRENT_EDIT_STOCK_REVIEW = {
@@ -206,34 +192,12 @@ function clearEditForm() {
   document.getElementById('editProductHotOffer').value = '0';
   document.getElementById('editProductPreviewImage').src = '';
   document.getElementById('editProductImageInput').value = '';
-  document.getElementById('productStockLinksWrap').innerHTML = `<div class="stock-placeholder"></div>`;
-  setEditStockStateBadge('neutral', '—');
+  document.getElementById('productStockLinksWrap').innerHTML = '';
 }
 
-function getSkuSizeClass(sku) {
-  const len = String(sku || '').length;
-  if (len > 90) return 'sku-xs';
-  if (len > 60) return 'sku-sm';
-  return '';
-}
-
-function getProductStockBadgeHtml(product) {
-  const state = product.stock_state || 'unknown';
-  const text = product.stock_label || 'جاري فحص المخزن';
-  const css = state === 'complete'
-    ? 'stock-complete'
-    : state === 'incomplete'
-      ? 'stock-incomplete'
-      : 'stock-unknown';
-
-  return `<span class="badge ${css}">${escapeHtml(text)}</span>`;
-}
-
-function renderProductsCards() {
-  const wrap = document.getElementById('productsCardsWrap');
+function renderProductsTable() {
+  const wrap = document.getElementById('productsTableBody');
   if (!wrap) return;
-
-  setProductsCount();
 
   if (!Array.isArray(PRODUCTS_ROWS) || PRODUCTS_ROWS.length === 0) {
     wrap.innerHTML = `<div class="empty-box">لا توجد منتجات مطابقة.</div>`;
@@ -249,77 +213,43 @@ function renderProductsCards() {
       ? '<span class="badge hot">Hot Offer</span>'
       : '';
 
-    const skuClass = getSkuSizeClass(product.sku || '');
+    const isSelected = Number(CURRENT_PRODUCT?.id || 0) === Number(product.id || 0);
+    let stockBadge = '';
+
+    if (isSelected && CURRENT_EDIT_STOCK_REVIEW.productId) {
+      const fullyLinked = CURRENT_EDIT_STOCK_REVIEW.missing.length === 0 && CURRENT_EDIT_STOCK_REVIEW.linked.length > 0;
+      stockBadge = fullyLinked
+        ? '<span class="badge stock-ok">الأصناف مضافة إلى المخزن</span>'
+        : '<span class="badge stock-missing">الأصناف غير مضافة بالكامل</span>';
+    }
 
     return `
-      <div class="product-card-item" id="productCard_${product.id}">
-        <img class="product-card-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
+      <div class="product-row-card ${isSelected ? 'selected' : ''}">
+        <img class="product-row-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
 
-        <div class="product-card-body">
-          <div class="product-card-top">
-            <h3 class="product-card-title">${index + 1}. ${escapeHtml(product.title || '')}</h3>
+        <div class="product-row-main">
+          <div class="product-row-top">
+            <span class="product-row-index">No.${index + 1}</span>
           </div>
 
-          <div class="sku-line ${skuClass}">${escapeHtml(product.sku || '-')}</div>
+          <h3 class="product-row-title">${escapeHtml(product.title || '')}</h3>
+          <div class="product-row-sku">SKU&nbsp;&nbsp; ${escapeHtml(product.sku || '')}</div>
+          <div class="product-row-price">Price&nbsp;&nbsp; ${escapeHtml(product.price_logic || '-')}</div>
 
-          <div class="product-meta-line">
-            ${Number(product.devices_count || 1)} Devices &nbsp;/&nbsp; ${escapeHtml(product.price_logic || '-')}
-          </div>
-
-          <div class="product-badges">
+          <div class="product-row-meta">
+            <span class="badge">Devices ${Number(product.devices_count || 1)}</span>
             ${availabilityBadge}
             ${hotBadge}
-            ${getProductStockBadgeHtml(product)}
+            ${stockBadge}
           </div>
         </div>
 
-        <div class="product-card-actions">
+        <div class="product-row-action">
           <button type="button" class="btn-primary" onclick="loadProductForEdit(${product.id})">Edit</button>
         </div>
       </div>
     `;
   }).join('');
-}
-
-function computeStockStateFromResponse(response, fallbackProduct) {
-  const devicesCount = Number(response?.stock_review?.devices_count || fallbackProduct?.devices_count || 0);
-  const linkedCount = Array.isArray(response?.stock_review?.linked)
-    ? response.stock_review.linked.length
-    : Array.isArray(response?.stock_links)
-      ? response.stock_links.length
-      : 0;
-
-  const missingCount = Array.isArray(response?.stock_review?.missing)
-    ? response.stock_review.missing.length
-    : Math.max(devicesCount - linkedCount, 0);
-
-  const complete = devicesCount > 0 && linkedCount >= devicesCount && missingCount === 0;
-
-  return {
-    state: complete ? 'complete' : 'incomplete',
-    label: complete ? 'الأصناف مضافة إلى المخزن' : 'الأصناف غير مضافة بالكامل',
-    linkedCount,
-    missingCount,
-    devicesCount
-  };
-}
-
-async function hydrateProductsStockStates() {
-  if (!Array.isArray(PRODUCTS_ROWS) || PRODUCTS_ROWS.length === 0) return;
-
-  await Promise.allSettled(PRODUCTS_ROWS.map(async (product) => {
-    try {
-      const { data } = await fetchJson(`api/load-product.php?id=${encodeURIComponent(product.id)}`);
-      if (!data?.ok) return;
-
-      const summary = computeStockStateFromResponse(data, product);
-      PRODUCT_STOCK_STATUS_CACHE[String(product.id)] = summary;
-      product.stock_state = summary.state;
-      product.stock_label = summary.label;
-    } catch (e) {}
-  }));
-
-  renderProductsCards();
 }
 
 async function loadProductsList() {
@@ -341,15 +271,9 @@ async function loadProductsList() {
       return;
     }
 
-    PRODUCTS_ROWS = Array.isArray(data.products) ? data.products.map(product => ({
-      ...product,
-      stock_state: PRODUCT_STOCK_STATUS_CACHE[String(product.id)]?.state || 'unknown',
-      stock_label: PRODUCT_STOCK_STATUS_CACHE[String(product.id)]?.label || 'جاري فحص المخزن'
-    })) : [];
-
-    renderProductsCards();
+    PRODUCTS_ROWS = Array.isArray(data.products) ? data.products : [];
+    renderProductsTable();
     productsSetStatus('success', 'تم تحميل المنتجات بنجاح.');
-    await hydrateProductsStockStates();
   } catch (e) {
     productsSetStatus('error', e.message || 'حدث خطأ أثناء تحميل المنتجات.');
   }
@@ -365,30 +289,6 @@ function buildMissingCategoryOptions(selectedValue = '') {
   ].join('');
 }
 
-function updateEditStockStateFromReview(review, fallbackProduct = null) {
-  const summary = computeStockStateFromResponse({ stock_review: review }, fallbackProduct || CURRENT_PRODUCT || {});
-  setEditStockStateBadge(summary.state, summary.label);
-
-  if (fallbackProduct?.id) {
-    PRODUCT_STOCK_STATUS_CACHE[String(fallbackProduct.id)] = summary;
-  }
-
-  if (CURRENT_PRODUCT?.id) {
-    PRODUCT_STOCK_STATUS_CACHE[String(CURRENT_PRODUCT.id)] = summary;
-  }
-
-  PRODUCTS_ROWS = PRODUCTS_ROWS.map(row => {
-    if (Number(row.id) !== Number(fallbackProduct?.id || CURRENT_PRODUCT?.id || 0)) return row;
-    return {
-      ...row,
-      stock_state: summary.state,
-      stock_label: summary.label
-    };
-  });
-
-  renderProductsCards();
-}
-
 function renderStockReview(review) {
   const wrap = document.getElementById('productStockLinksWrap');
   if (!wrap) return;
@@ -401,15 +301,14 @@ function renderStockReview(review) {
 
   CURRENT_EDIT_STOCK_REVIEW = {
     productId: Number(review?.product_id || CURRENT_PRODUCT?.id || 0),
-    devicesCount: Number(review?.devices_count || (linked.length + missing.length) || CURRENT_PRODUCT?.devices_count || 0),
+    devicesCount: Number(review?.devices_count || (linked.length + missing.length) || 0),
     linked,
     missing
   };
 
-  updateEditStockStateFromReview(CURRENT_EDIT_STOCK_REVIEW, CURRENT_PRODUCT || null);
-
   if (!linked.length && !missing.length) {
-    wrap.innerHTML = `<div class="stock-placeholder"></div>`;
+    wrap.innerHTML = '';
+    renderProductsTable();
     return;
   }
 
@@ -417,29 +316,16 @@ function renderStockReview(review) {
 
   linked.forEach(item => {
     rows.push(`
-      <div class="link-card linked">
-        <div class="link-title">
+      <div class="stock-chip-card linked">
+        <div class="stock-chip-head">
           <strong>${escapeHtml(item.raw_title || item.stock_title || 'Linked Device')}</strong>
-          <span class="badge active">Added</span>
+          <span class="badge stock-ok">مضاف إلى المخزن</span>
         </div>
-
-        <div class="link-meta">
-          <div class="meta-box">
-            <small>Category</small>
-            <span>${escapeHtml(item.category_name || '-')}</span>
-          </div>
-          <div class="meta-box">
-            <small>Brand</small>
-            <span>${escapeHtml(item.brand_name || item.expected_brand_name || '-')}</span>
-          </div>
-          <div class="meta-box">
-            <small>Storage</small>
-            <span>${escapeHtml(item.storage_value || '-')}</span>
-          </div>
-          <div class="meta-box">
-            <small>RAM / Network</small>
-            <span>${escapeHtml(item.ram_value || '-')} / ${escapeHtml(item.network_value || '-')}</span>
-          </div>
+        <div class="stock-chip-meta">
+          <div class="meta-box"><small>Category</small><span>${escapeHtml(item.category_name || '-')}</span></div>
+          <div class="meta-box"><small>Brand</small><span>${escapeHtml(item.brand_name || item.expected_brand_name || '-')}</span></div>
+          <div class="meta-box"><small>Storage</small><span>${escapeHtml(item.storage_value || '-')}</span></div>
+          <div class="meta-box"><small>RAM / Network</small><span>${escapeHtml(item.ram_value || '-')} / ${escapeHtml(item.network_value || '-')}</span></div>
         </div>
       </div>
     `);
@@ -450,31 +336,17 @@ function renderStockReview(review) {
     const expectedCategoryId = String(item.expected_category_id || '').trim();
 
     rows.push(`
-      <div class="link-card missing">
-        <div class="link-title">
+      <div class="stock-chip-card missing">
+        <div class="stock-chip-head">
           <strong>${escapeHtml(item.raw_title || 'Missing Device')}</strong>
-          <span class="badge inactive">Not Added</span>
+          <span class="badge stock-missing">غير مضاف بالكامل</span>
         </div>
-
-        <div class="link-meta">
-          <div class="meta-box">
-            <small>Brand</small>
-            <span>${escapeHtml(item.expected_brand_name || item.brand_guess || '-')}</span>
-          </div>
-          <div class="meta-box">
-            <small>Storage</small>
-            <span>${escapeHtml(item.storage_value || '-')}</span>
-          </div>
-          <div class="meta-box">
-            <small>RAM</small>
-            <span>${escapeHtml(item.ram_value || '-')}</span>
-          </div>
-          <div class="meta-box">
-            <small>Network</small>
-            <span>${escapeHtml(item.network_value || '-')}</span>
-          </div>
+        <div class="stock-chip-meta">
+          <div class="meta-box"><small>Brand</small><span>${escapeHtml(item.expected_brand_name || item.brand_guess || '-')}</span></div>
+          <div class="meta-box"><small>Storage</small><span>${escapeHtml(item.storage_value || '-')}</span></div>
+          <div class="meta-box"><small>RAM</small><span>${escapeHtml(item.ram_value || '-')}</span></div>
+          <div class="meta-box"><small>Network</small><span>${escapeHtml(item.network_value || '-')}</span></div>
         </div>
-
         <div class="link-actions">
           <div class="form-group" style="min-width:220px; margin:0;">
             <label for="${selectId}">Choose Category</label>
@@ -482,7 +354,6 @@ function renderStockReview(review) {
               ${buildMissingCategoryOptions(expectedCategoryId)}
             </select>
           </div>
-
           <button type="button" class="btn-success" onclick="addMissingStockItemFromEdit(${Number(item.device_index || 0)})">Add To Stock</button>
         </div>
       </div>
@@ -490,6 +361,7 @@ function renderStockReview(review) {
   });
 
   wrap.innerHTML = rows.join('');
+  renderProductsTable();
 }
 
 async function loadProductForEdit(productId) {
@@ -504,6 +376,7 @@ async function loadProductForEdit(productId) {
     }
 
     CURRENT_PRODUCT = data.product || null;
+    renderProductsTable();
     const product = data.product || {};
 
     document.getElementById('editProductId').value = product.id || '';
@@ -521,14 +394,13 @@ async function loadProductForEdit(productId) {
     document.getElementById('editProductCategory').innerHTML = buildCategoryOptions(product.category_id || '', true);
     await populateEditBrands(product.category_id || '', product.brand_id || '');
 
-    const fallbackReview = {
+    renderStockReview(data.stock_review || {
       product_id: product.id || 0,
       devices_count: product.devices_count || 0,
       linked: data.stock_links || [],
       missing: []
-    };
+    });
 
-    renderStockReview(data.stock_review || fallbackReview);
     productsSetStatus('success', 'تم تحميل بيانات المنتج بنجاح.');
   } catch (e) {
     productsSetStatus('error', e.message || 'حدث خطأ أثناء تحميل بيانات المنتج.');
@@ -677,7 +549,6 @@ async function deleteCurrentProduct() {
       return;
     }
 
-    delete PRODUCT_STOCK_STATUS_CACHE[String(productId)];
     clearEditForm();
     productsSetStatus('success', data.message || 'تم حذف المنتج بنجاح.');
     await loadProductsList();
