@@ -1,3 +1,4 @@
+
 let PRODUCTS_CATEGORIES = [];
 let FILTER_BRANDS = [];
 let EDIT_BRANDS = [];
@@ -14,14 +15,14 @@ let CURRENT_EDIT_STOCK_REVIEW = {
 function productsSetStatus(type, message) {
   const box = document.getElementById('productsStatus');
   if (!box) return;
-  box.className = `status-box show ${type}`;
+  box.className = `pm-status-box show ${type}`;
   box.textContent = message;
 }
 
 function productsClearStatus() {
   const box = document.getElementById('productsStatus');
   if (!box) return;
-  box.className = 'status-box';
+  box.className = 'pm-status-box';
   box.textContent = '';
 }
 
@@ -192,45 +193,98 @@ function clearEditForm() {
   document.getElementById('editProductHotOffer').value = '0';
   document.getElementById('editProductPreviewImage').src = '';
   document.getElementById('editProductImageInput').value = '';
-  document.getElementById('productStockLinksWrap').innerHTML = `<div class="empty-box">اختر منتجًا أولًا لتحميل مراجعة الأجهزة والربط مع المخزن.</div>`;
+  renderStockSummaryBox();
+  document.getElementById('productStockLinksWrap').innerHTML = `<div class="pm-empty-box">اختر منتجًا أولًا لتحميل مراجعة الأجهزة والربط مع المخزن.</div>`;
 }
 
-function renderProductsTable() {
-  const tbody = document.getElementById('productsTableBody');
-  if (!tbody) return;
+function getSkuClass(sku) {
+  const len = String(sku || '').length;
+  if (len > 85) return 'pm-product-sku is-very-long';
+  if (len > 55) return 'pm-product-sku is-long';
+  return 'pm-product-sku';
+}
+
+function buildStockBadgeHtml(product) {
+  const devicesCount = Number(product.devices_count || 0);
+  const linkedCount = Number(product.stock_linked_count || 0);
+  const complete = devicesCount > 0 ? linkedCount >= devicesCount : false;
+
+  if (complete) {
+    return `<span class="pm-badge stock-ok">الأصناف مضافة إلى المخزن</span>`;
+  }
+
+  return `<span class="pm-badge stock-missing">الأصناف غير مضافة بالكامل</span>`;
+}
+
+function renderProductsCards() {
+  const container = document.getElementById('productsTableBody');
+  if (!container) return;
 
   if (!Array.isArray(PRODUCTS_ROWS) || PRODUCTS_ROWS.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="9"><div class="empty-box">لا توجد منتجات مطابقة.</div></td>
-      </tr>
-    `;
+    container.innerHTML = `<div class="pm-empty-box">لا توجد منتجات مطابقة.</div>`;
     return;
   }
 
-  tbody.innerHTML = PRODUCTS_ROWS.map((product, index) => {
+  container.innerHTML = PRODUCTS_ROWS.map((product, index) => {
     const availabilityBadge = product.is_available
-      ? '<span class="badge active">Available</span>'
-      : '<span class="badge inactive">Out of Stock</span>';
+      ? '<span class="pm-badge active">Available</span>'
+      : '<span class="pm-badge inactive">Out of Stock</span>';
 
     const hotBadge = product.is_hot_offer
-      ? '<span class="badge hot">Hot Offer</span>'
-      : '-';
+      ? '<span class="pm-badge hot">Hot Offer</span>'
+      : '';
+
+    const devicesCount = Number(product.devices_count || 0);
+    const linkedCount = Number(product.stock_linked_count || 0);
+    const priceLogic = escapeHtml(product.price_logic || '-');
 
     return `
-      <tr>
-        <td>${index + 1}</td>
-        <td><img class="thumb" src="${escapeHtml(product.image_path || '')}" alt=""></td>
-        <td>${escapeHtml(product.title)}</td>
-        <td>${escapeHtml(product.sku)}</td>
-        <td>${Number(product.devices_count || 1)}</td>
-        <td>${escapeHtml(product.price_logic || '-')}</td>
-        <td>${availabilityBadge}</td>
-        <td>${hotBadge}</td>
-        <td><button type="button" class="btn-primary" onclick="loadProductForEdit(${product.id})">Edit</button></td>
-      </tr>
+      <article class="pm-product-card">
+        <div class="pm-product-head">
+          <div class="pm-product-head-right">
+            <div class="pm-product-index">No.${index + 1}</div>
+            <div class="${getSkuClass(product.sku)}">SKU&nbsp;&nbsp;${escapeHtml(product.sku || '-')}</div>
+            <div class="pm-product-title">${escapeHtml(product.title || '-')}</div>
+            <div class="pm-product-price">
+              Devices&nbsp;&nbsp;${devicesCount}<br>
+              Price&nbsp;&nbsp;${priceLogic}
+            </div>
+          </div>
+
+          <img class="pm-list-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
+        </div>
+
+        <div class="pm-product-meta">
+          ${availabilityBadge}
+          ${hotBadge}
+          ${buildStockBadgeHtml(product)}
+          <span class="pm-badge">${linkedCount} / ${devicesCount} Linked</span>
+        </div>
+
+        <div class="pm-product-actions">
+          <button type="button" class="pm-btn pm-btn-primary" onclick="loadProductForEdit(${product.id})">Edit</button>
+        </div>
+      </article>
     `;
   }).join('');
+}
+
+async function hydrateProductsStockState() {
+  const tasks = PRODUCTS_ROWS.map(async product => {
+    try {
+      const { data } = await fetchJson(`api/load-product.php?id=${encodeURIComponent(product.id)}`);
+      const stockLinks = Array.isArray(data?.stock_links) ? data.stock_links : [];
+      product.stock_linked_count = stockLinks.length;
+      product.stock_complete = Number(product.devices_count || 0) > 0
+        ? stockLinks.length >= Number(product.devices_count || 0)
+        : false;
+    } catch (e) {
+      product.stock_linked_count = 0;
+      product.stock_complete = false;
+    }
+  });
+
+  await Promise.all(tasks);
 }
 
 async function loadProductsList() {
@@ -253,7 +307,9 @@ async function loadProductsList() {
     }
 
     PRODUCTS_ROWS = Array.isArray(data.products) ? data.products : [];
-    renderProductsTable();
+    renderProductsCards();
+    await hydrateProductsStockState();
+    renderProductsCards();
     productsSetStatus('success', 'تم تحميل المنتجات بنجاح.');
   } catch (e) {
     productsSetStatus('error', e.message || 'حدث خطأ أثناء تحميل المنتجات.');
@@ -270,7 +326,40 @@ function buildMissingCategoryOptions(selectedValue = '') {
   ].join('');
 }
 
-function renderStockReview(review) {
+function renderStockSummaryBox(review = null, product = null) {
+  const box = document.getElementById('editProductStockSummary');
+  if (!box) return;
+
+  if (!review || !product) {
+    box.className = 'pm-stock-summary-box';
+    box.innerHTML = `
+      <strong>حالة المخزن</strong>
+      <span>اختر منتجًا من القائمة لمعرفة هل جميع أجهزة العرض مضافة إلى المخزن أم لا.</span>
+    `;
+    return;
+  }
+
+  const devicesCount = Number(review.devices_count || product.devices_count || 0);
+  const linkedCount = Array.isArray(review.linked) ? review.linked.length : 0;
+  const missingCount = Array.isArray(review.missing) && review.missing.length
+    ? review.missing.length
+    : Math.max(devicesCount - linkedCount, 0);
+
+  const complete = devicesCount > 0 && missingCount === 0;
+
+  box.className = `pm-stock-summary-box ${complete ? 'good' : 'bad'}`;
+  box.innerHTML = complete
+    ? `
+      <strong>الأصناف مضافة إلى المخزن</strong>
+      <span>تم ربط ${linkedCount} من أصل ${devicesCount} جهازًا داخل هذا العرض بالمخزن، ولا توجد عناصر ناقصة.</span>
+    `
+    : `
+      <strong>الأصناف غير مضافة بالكامل إلى المخزن</strong>
+      <span>تم ربط ${linkedCount} من أصل ${devicesCount} جهازًا. يوجد ${missingCount} جهاز/أجهزة غير مضافة بالكامل إلى المخزن.</span>
+    `;
+}
+
+function renderStockReview(review, product = null) {
   const wrap = document.getElementById('productStockLinksWrap');
   if (!wrap) return;
 
@@ -282,15 +371,12 @@ function renderStockReview(review) {
 
   CURRENT_EDIT_STOCK_REVIEW = {
     productId: Number(review?.product_id || CURRENT_PRODUCT?.id || 0),
-    devicesCount: Number(review?.devices_count || (linked.length + missing.length) || 0),
+    devicesCount: Number(review?.devices_count || (product?.devices_count || 0) || (linked.length + missing.length) || 0),
     linked,
     missing
   };
 
-  if (!linked.length && !missing.length) {
-    wrap.innerHTML = `<div class="empty-box">لا توجد أجهزة قابلة للمراجعة لهذا المنتج.</div>`;
-    return;
-  }
+  renderStockSummaryBox(CURRENT_EDIT_STOCK_REVIEW, product || CURRENT_PRODUCT);
 
   const rows = [];
 
@@ -299,41 +385,37 @@ function renderStockReview(review) {
       ? 'Exists in stock / not linked yet'
       : 'Linked to product';
 
-    const sourceLabel = item.source_type
-      ? String(item.source_type).toUpperCase()
-      : 'FILENAME';
-
     rows.push(`
-      <div class="link-card linked">
-        <div class="link-title">
+      <div class="pm-link-card linked">
+        <div class="pm-link-title">
           <strong>${escapeHtml(item.raw_title || item.stock_title || 'Linked Device')}</strong>
-          <span class="badge active">Added</span>
+          <span class="pm-badge active">Added</span>
         </div>
 
-        <div class="link-meta">
-          <div class="meta-box">
+        <div class="pm-link-meta">
+          <div class="pm-meta-box">
             <small>Brand</small>
             <span>${escapeHtml(item.brand_name || item.expected_brand_name || '-')}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>Category</small>
             <span>${escapeHtml(item.category_name || '-')}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>Storage</small>
             <span>${escapeHtml(item.storage_value || '-')}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>RAM / Network</small>
             <span>${escapeHtml(item.ram_value || '-')} / ${escapeHtml(item.network_value || '-')}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>Product Relation</small>
             <span>${escapeHtml(relationLabel)}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>Source</small>
-            <span>${escapeHtml(sourceLabel)}</span>
+            <span>${escapeHtml(String(item.source_type || 'LINKED').toUpperCase())}</span>
           </div>
         </div>
       </div>
@@ -346,46 +428,66 @@ function renderStockReview(review) {
     const brandGuess = item.expected_brand_name || item.brand_guess || '-';
 
     rows.push(`
-      <div class="link-card missing">
-        <div class="link-title">
+      <div class="pm-link-card missing">
+        <div class="pm-link-title">
           <strong>${escapeHtml(item.raw_title || 'Missing Device')}</strong>
-          <span class="badge inactive">Not Added</span>
+          <span class="pm-badge inactive">Not Added</span>
         </div>
 
-        <div class="link-meta">
-          <div class="meta-box">
+        <div class="pm-link-meta">
+          <div class="pm-meta-box">
             <small>Brand Guess</small>
             <span>${escapeHtml(brandGuess)}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>Storage</small>
             <span>${escapeHtml(item.storage_value || '-')}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>RAM</small>
             <span>${escapeHtml(item.ram_value || '-')}</span>
           </div>
-          <div class="meta-box">
+          <div class="pm-meta-box">
             <small>Network</small>
             <span>${escapeHtml(item.network_value || '-')}</span>
           </div>
         </div>
 
-        <div class="link-actions">
-          <div class="form-group" style="min-width:220px; margin:0;">
+        <div class="pm-link-actions">
+          <div class="pm-form-group">
             <label for="${selectId}">Choose Category</label>
             <select id="${selectId}">
               ${buildMissingCategoryOptions(expectedCategoryId)}
             </select>
           </div>
 
-          <button type="button" class="btn-success" onclick="addMissingStockItemFromEdit(${Number(item.device_index || 0)})">Add To Stock</button>
+          <button type="button" class="pm-btn pm-btn-success" onclick="addMissingStockItemFromEdit(${Number(item.device_index || 0)})">Add To Stock</button>
         </div>
       </div>
     `);
   });
 
-  wrap.innerHTML = rows.join('');
+  const devicesCount = Number(CURRENT_EDIT_STOCK_REVIEW.devicesCount || 0);
+  const knownCount = linked.length + missing.length;
+  const silentMissingCount = Math.max(devicesCount - knownCount, 0);
+
+  for (let i = 0; i < silentMissingCount; i++) {
+    rows.push(`
+      <div class="pm-link-card missing">
+        <div class="pm-link-title">
+          <strong>جهاز ناقص بالمخزن</strong>
+          <span class="pm-badge inactive">Not Added</span>
+        </div>
+        <div class="pm-helper-note">
+          هذا المنتج ليس مربوطًا بالكامل بالمخزن. إذا أردت تحديد اسم الجهاز الناقص بدقة، استبدل الصورة الحالية بنفس اسم الملف ليتم تحليل الأجهزة وإظهار العناصر الناقصة بالاسم.
+        </div>
+      </div>
+    `);
+  }
+
+  wrap.innerHTML = rows.length
+    ? rows.join('')
+    : `<div class="pm-empty-box">لا توجد أجهزة قابلة للمراجعة لهذا المنتج.</div>`;
 }
 
 async function loadProductForEdit(productId) {
@@ -401,6 +503,14 @@ async function loadProductForEdit(productId) {
 
     CURRENT_PRODUCT = data.product || null;
     const product = data.product || {};
+    const matchingListItem = PRODUCTS_ROWS.find(item => Number(item.id) === Number(product.id));
+    const linked = Array.isArray(data.stock_links) ? data.stock_links : [];
+    const review = {
+      product_id: product.id || 0,
+      devices_count: product.devices_count || 0,
+      linked,
+      missing: []
+    };
 
     document.getElementById('editProductId').value = product.id || '';
     document.getElementById('editProductSlug').value = product.slug || '';
@@ -417,12 +527,15 @@ async function loadProductForEdit(productId) {
     document.getElementById('editProductCategory').innerHTML = buildCategoryOptions(product.category_id || '', true);
     await populateEditBrands(product.category_id || '', product.brand_id || '');
 
-    renderStockReview(data.stock_review || {
-      product_id: product.id || 0,
-      devices_count: product.devices_count || 0,
-      linked: data.stock_links || [],
-      missing: []
-    });
+    if (matchingListItem) {
+      matchingListItem.stock_linked_count = linked.length;
+      matchingListItem.stock_complete = Number(product.devices_count || 0) > 0
+        ? linked.length >= Number(product.devices_count || 0)
+        : false;
+      renderProductsCards();
+    }
+
+    renderStockReview(review, product);
 
     productsSetStatus('success', 'تم تحميل بيانات المنتج بنجاح.');
   } catch (e) {
@@ -454,7 +567,7 @@ async function reviewImageStockFromFilename(file) {
       devices_count: data.devices_count || 0,
       linked: data.linked || [],
       missing: data.missing || []
-    });
+    }, CURRENT_PRODUCT);
   } catch (e) {}
 }
 
@@ -522,25 +635,18 @@ async function saveProductChanges() {
       document.getElementById('editProductPreviewImage').src = data.image_path;
     }
 
-    if (CURRENT_PRODUCT) {
-      CURRENT_PRODUCT.title = document.getElementById('editProductTitle')?.value.trim() || CURRENT_PRODUCT.title;
-      CURRENT_PRODUCT.category_id = Number(document.getElementById('editProductCategory')?.value || CURRENT_PRODUCT.category_id || 0);
-      CURRENT_PRODUCT.brand_id = Number(document.getElementById('editProductBrand')?.value || CURRENT_PRODUCT.brand_id || 0);
-      CURRENT_PRODUCT.devices_count = Number(document.getElementById('editProductDevicesCount')?.value || CURRENT_PRODUCT.devices_count || 1);
-      CURRENT_PRODUCT.image_path = data.image_path || CURRENT_PRODUCT.image_path || '';
-    }
-
     if (data.stock_review) {
       renderStockReview({
         product_id: productId,
         devices_count: data.stock_review.devices_count || 0,
         linked: data.stock_review.linked || [],
         missing: data.stock_review.missing || []
-      });
+      }, CURRENT_PRODUCT);
     }
 
     productsSetStatus('success', data.message || 'تم تحديث المنتج بنجاح.');
     await loadProductsList();
+    await loadProductForEdit(productId);
   } catch (e) {
     productsSetStatus('error', e.message || 'حدث خطأ أثناء تحديث المنتج.');
   }
@@ -608,7 +714,7 @@ async function resolveBrandIdForMissingItem(item, selectedCategoryId) {
     return targetNames.some(name => candidates.includes(name));
   });
 
-  return matched ? Number(matched.id || 0) : (directBrandId > 0 ? directBrandId : 0);
+  return matched ? Number(brand.id || 0) : (directBrandId > 0 ? directBrandId : 0);
 }
 
 async function addMissingStockItemFromEdit(deviceIndex) {
@@ -686,7 +792,14 @@ async function addMissingStockItemFromEdit(deviceIndex) {
       devices_count: CURRENT_EDIT_STOCK_REVIEW.devicesCount,
       linked: CURRENT_EDIT_STOCK_REVIEW.linked,
       missing: CURRENT_EDIT_STOCK_REVIEW.missing
-    });
+    }, CURRENT_PRODUCT);
+
+    const matchingListItem = PRODUCTS_ROWS.find(entry => Number(entry.id) === Number(CURRENT_EDIT_STOCK_REVIEW.productId));
+    if (matchingListItem) {
+      matchingListItem.stock_linked_count = CURRENT_EDIT_STOCK_REVIEW.linked.length;
+      matchingListItem.stock_complete = CURRENT_EDIT_STOCK_REVIEW.linked.length >= Number(matchingListItem.devices_count || 0);
+      renderProductsCards();
+    }
 
     productsSetStatus('success', data.message || 'تمت إضافة الجهاز إلى المخزن بنجاح.');
   } catch (e) {
