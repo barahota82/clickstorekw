@@ -683,97 +683,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         grid-template-columns: 1fr;
       }
     }
-
-    .dashboard-head-note {
-      display: none;
-    }
-
-    .admin-main-tabs {
-      margin-top: 18px;
-    }
-
-    .add-product-toolbar {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 18px;
-    }
-
-    .add-product-save-btn {
-      min-width: 150px;
-      white-space: nowrap;
-    }
-
-    .add-product-toolbar-note {
-      min-height: 54px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 16px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(37,99,235,0.10);
-      color: #dbeafe;
-      line-height: 1.9;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    .add-product-grid {
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 18px;
-    }
-
-    .analysis-panel-box {
-      display: grid;
-      gap: 18px;
-    }
-
-    .analysis-panel-head {
-      display: grid;
-      gap: 8px;
-    }
-
-    .analysis-placeholder-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    .mt-20 {
-      margin-top: 20px;
-    }
-
-    @media (max-width: 1200px) {
-      .admin-main-tabs {
-        grid-template-columns: repeat(4, minmax(160px, 1fr));
-      }
-
-      .analysis-placeholder-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 980px) {
-      .add-product-toolbar {
-        grid-template-columns: 1fr;
-      }
-
-      .add-product-toolbar .panel-title {
-        order: -1;
-      }
-
-      .top-grid,
-      .add-product-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .admin-main-tabs {
-        grid-template-columns: repeat(2, minmax(160px, 1fr));
-      }
-    }
-
   </style>
 </head>
 <body>
@@ -839,7 +748,9 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       <div class="dashboard-head">
         <div>
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
-          <p class="section-desc no-margin dashboard-head-note">
+          <p class="section-desc no-margin">
+            الواجهة الحالية مركزة على: إضافة المنتج من الصورة واسم الملف، ومراجعة ربط أجهزة الصورة بالمخزن، وإدارة الطلبات،
+            مع دمج إدارة الفئات والبراندات والمنتجات والعروض والمخزن والمستخدمين داخل نفس لوحة التحكم.
           </p>
         </div>
 
@@ -876,16 +787,19 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         <button class="admin-tab-btn" data-tab="tab-hot-offers" data-permission="hot_offers_order" id="tabBtnHotOffers" type="button">Hot Offers</button>
       </div>
 
+      <div id="dashboardStatus" class="status-box mt-20"></div>
+
       <div class="admin-tab-panels">
 
         <div id="tab-add-product" class="admin-panel active" data-panel-permission="products_create">
           <div class="add-product-toolbar">
-            <button class="btn btn-primary add-product-save-btn" type="button" id="ocrSaveBtn" data-permission="products_create">Save Product</button>
-            <div class="add-product-toolbar-note">قم برفع الصورة وتحليل اسم الملف ومراجعة المخزن. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.</div>
-            <h3 class="panel-title no-margin">Add Product</h3>
+            <button class="btn btn-primary" type="button" id="ocrSaveBtn" data-permission="products_create">Save Product</button>
+            <div id="addProductStatus" class="status-box add-product-inline-status"></div>
+            <h3 class="panel-title add-product-title">Add Product</h3>
           </div>
+          <p class="panel-desc"></p>
 
-          <div class="top-grid add-product-grid">
+          <div class="top-grid">
             <div class="sub-card">
               <h4 class="sub-title">Display Image</h4>
 
@@ -1150,25 +1064,21 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         
         <div id="tab-analysis" class="admin-panel" data-panel-permission="reports_view">
-          <div class="analysis-panel-box">
-            <div class="analysis-panel-head">
-              <h3 class="panel-title no-margin">Analysis Screen</h3>
-              <p class="panel-desc no-margin">هذه المساحة جاهزة لربط شاشة التحليل والإحصاءات المتقدمة بنفس شكل اللوحة الحالية.</p>
-            </div>
+          <h3 class="panel-title">Analysis Screen</h3>
+          <p class="panel-desc">هذه الشاشة مخصصة للتحليلات السريعة والمؤشرات، وتم فصلها عن شاشة الطلبات حتى يكون العمل أوضح وأخف بصريًا.</p>
 
-            <div class="analysis-placeholder-grid">
-              <div class="placeholder-card">
-                <strong>Sales Overview</strong>
-                <span>ملخص المبيعات والاتجاهات اليومية والأسبوعية.</span>
-              </div>
-              <div class="placeholder-card">
-                <strong>Products Performance</strong>
-                <span>تحليل المنتجات الأعلى طلبًا وحركة العروض داخل الموقع.</span>
-              </div>
-              <div class="placeholder-card">
-                <strong>Stock Insights</strong>
-                <span>تنبيهات قرب النفاد وربط الكميات مع أداء المنتجات.</span>
-              </div>
+          <div class="placeholder-panels">
+            <div class="placeholder-card">
+              <strong>Sales Overview</strong>
+              <span>سيتم هنا عرض مؤشرات المبيعات والإيرادات بشكل مختصر وواضح.</span>
+            </div>
+            <div class="placeholder-card">
+              <strong>Customer Insights</strong>
+              <span>مؤشرات العملاء والطلبات المتكررة وأداء التحويل ستظهر هنا.</span>
+            </div>
+            <div class="placeholder-card">
+              <strong>Top Products</strong>
+              <span>أفضل المنتجات والعروض الأكثر طلبًا ستُعرض داخل هذا القسم.</span>
             </div>
           </div>
         </div>
@@ -1302,8 +1212,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         </div>
 
       </div>
-
-      <div id="dashboardStatus" class="status-box mt-20"></div>
     </section>
   </div>
 </div>
