@@ -387,32 +387,72 @@ button:disabled {
 }
 
 
-/* ===== ADMIN NUMERIC INPUTS WITHOUT SPINNERS ===== */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
+/* ===== Admin visual cleanup ===== */
+.admin-main-tabs {
+  grid-template-columns: repeat(5, minmax(160px, 1fr)) !important;
+}
+
+.add-product-toolbar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.add-product-toolbar .btn {
+  min-width: 150px;
+}
+
+.add-product-title {
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.add-product-inline-status {
+  margin-top: 0;
+  min-height: 54px;
+  align-items: center;
+}
+
+.add-product-inline-status.show {
+  display: flex;
+}
+
+#tab-add-product .panel-desc {
+  display: none;
+}
+
+#tab-add-product .top-grid {
+  align-items: stretch;
+}
+
+#tab-add-product .stack-gap {
+  height: 100%;
+}
+
+#tab-add-product input[type="number"]::-webkit-outer-spin-button,
+#tab-add-product input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-input[type="number"] {
+#tab-add-product input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
-/* ===== SMALL VISUAL TWEAKS FOR DASHBOARD FORMS ===== */
-.dashboard-shell .info-grid {
-  gap: 14px;
-}
+@media (max-width: 1100px) {
+  .add-product-toolbar {
+    grid-template-columns: 1fr;
+  }
 
-.dashboard-shell .info-card {
-  min-height: 88px;
-}
+  .add-product-title {
+    order: -1;
+  }
 
-.dashboard-shell .sub-card {
-  border-radius: 22px;
-}
-
-.dashboard-shell .btn,
-.dashboard-shell button {
-  white-space: nowrap;
+  .add-product-toolbar .btn {
+    width: 100%;
+  }
 }
