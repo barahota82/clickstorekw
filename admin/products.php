@@ -15,30 +15,10 @@ if (!admin_has_permission('products_edit')) {
       <title>Products Manager</title>
       <link rel="stylesheet" href="assets/admin.css">
       <style>
-        body {
-          margin: 0;
-          padding: 24px;
-          font-family: Arial, sans-serif;
-          background: #0f172a;
-          color: #fff;
-        }
-        .panel {
-          max-width: 760px;
-          margin: 40px auto;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 22px;
-          padding: 24px;
-        }
-        h1 {
-          margin: 0 0 12px;
-          font-size: 28px;
-        }
-        p {
-          margin: 0;
-          color: #c8d4ea;
-          line-height: 1.9;
-        }
+        body { margin: 0; padding: 24px; font-family: Arial, sans-serif; background: #0f172a; color: #fff; }
+        .panel { max-width: 760px; margin: 40px auto; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 24px; }
+        h1 { margin: 0 0 12px; font-size: 28px; }
+        p { margin: 0; color: #c8d4ea; line-height: 1.9; }
       </style>
     </head>
     <body>
@@ -60,417 +40,409 @@ if (!admin_has_permission('products_edit')) {
 <title>Products Manager</title>
 <link rel="stylesheet" href="assets/admin.css">
 <style>
-body{
-  margin:0;
-  padding:20px;
-  font-family:Arial,sans-serif;
-  background:#0f172a;
-  color:#fff;
-  overflow-x:hidden;
+html, body {
+  height: 100%;
 }
-.page-title{
-  margin:0 0 18px;
-  font-size:24px;
-  font-weight:800;
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #fff;
+  padding: 20px;
+  overflow: hidden;
 }
-.panel{
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:18px;
-  padding:18px;
-  margin-bottom:18px;
-  box-shadow:0 16px 34px rgba(0,0,0,0.20);
+.page-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 18px;
 }
-.toolbar{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
-  gap:12px;
-  align-items:end;
+.panel {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 22px;
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.22);
 }
-.manager-grid{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:18px;
-  align-items:start;
+.toolbar {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
 }
-.panel-edit{
-  grid-column:1;
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
-.panel-list{
-  grid-column:2;
+.form-group {
+  min-width: 0;
 }
-.panel-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom:14px;
-}
-.panel-head h2{
-  margin:0;
-  font-size:18px;
-  font-weight:800;
-}
-.form-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
-}
-.form-grid-4{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:12px;
-}
-.form-group{
-  min-width:0;
-}
-.form-group label{
-  display:block;
-  margin-bottom:8px;
-  color:#c8d4ea;
-  font-size:13px;
-  font-weight:700;
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #c8d4ea;
+  font-size: 14px;
+  font-weight: 700;
 }
 .form-group input,
 .form-group select,
-.form-group textarea{
-  width:100%;
-  box-sizing:border-box;
-  padding:12px 14px;
-  border-radius:14px;
-  border:1px solid rgba(255,255,255,0.10);
-  background:rgba(255,255,255,0.04);
-  color:#fff;
-  outline:none;
+.form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+  color-scheme: dark;
 }
 .form-group input:focus,
 .form-group select:focus,
-.form-group textarea:focus{
-  border-color:rgba(37,99,235,0.55);
-  box-shadow:0 0 0 4px rgba(37,99,235,0.10);
+.form-group textarea:focus {
+  border-color: rgba(37,99,235,0.55);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+  background: rgba(255,255,255,0.06);
 }
-.form-group textarea{
-  min-height:110px;
-  resize:vertical;
+.form-group textarea {
+  min-height: 110px;
+  resize: vertical;
 }
-.form-group input[readonly]{
-  background:#0a1120;
-  opacity:0.92;
+.form-group select option {
+  background: #14213f;
+  color: #ffffff;
 }
-select{
-  appearance:none;
-  -webkit-appearance:none;
-  -moz-appearance:none;
-  background-image:linear-gradient(45deg,transparent 50%,#fff 50%),linear-gradient(135deg,#fff 50%,transparent 50%);
-  background-position:calc(16px) calc(50% - 3px),calc(10px) calc(50% - 3px);
-  background-size:6px 6px,6px 6px;
-  background-repeat:no-repeat;
-  padding-left:34px !important;
+button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 700;
 }
-select option{
-  background:#0f172a;
-  color:#fff;
+.btn-primary {
+  background: linear-gradient(135deg,#2563eb,#1d4ed8);
+  color: #fff;
 }
-button{
-  padding:12px 16px;
-  border:none;
-  border-radius:14px;
-  cursor:pointer;
-  font-weight:800;
+.btn-success {
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+  color: #fff;
 }
-.btn-primary{
-  background:linear-gradient(135deg,#2563eb,#1d4ed8);
-  color:#fff;
+.btn-danger {
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+  color: #fff;
 }
-.btn-success{
-  background:linear-gradient(135deg,#22c55e,#16a34a);
-  color:#fff;
+.status-box {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  display: none;
 }
-.btn-danger{
-  background:linear-gradient(135deg,#ef4444,#dc2626);
-  color:#fff;
+.status-box.show { display:block; }
+.status-box.info {
+  background: rgba(59,130,246,0.14);
+  border: 1px solid rgba(59,130,246,0.28);
+  color: #dbeafe;
 }
-.status-box{
-  margin-top:14px;
-  padding:14px 16px;
-  border-radius:14px;
-  display:none;
+.status-box.success {
+  background: rgba(34,197,94,0.14);
+  border: 1px solid rgba(34,197,94,0.28);
+  color: #dcfce7;
 }
-.status-box.show{display:block;}
-.status-box.info{
-  background:rgba(59,130,246,0.14);
-  border:1px solid rgba(59,130,246,0.28);
-  color:#dbeafe;
+.status-box.error {
+  background: rgba(239,68,68,0.14);
+  border: 1px solid rgba(239,68,68,0.28);
+  color: #fee2e2;
 }
-.status-box.success{
-  background:rgba(34,197,94,0.14);
-  border:1px solid rgba(34,197,94,0.28);
-  color:#dcfce7;
+.manager-shell {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: 18px;
+  align-items: start;
+  min-height: 760px;
 }
-.status-box.error{
-  background:rgba(239,68,68,0.14);
-  border:1px solid rgba(239,68,68,0.28);
-  color:#fee2e2;
+.editor-pane,
+.list-pane {
+  min-width: 0;
 }
-.empty-box,
-.stock-placeholder{
-  padding:16px;
-  border-radius:14px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  color:#c8d4ea;
-  line-height:1.8;
-  min-height:80px;
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-.stock-placeholder{
-  color:transparent;
+.list-pane {
+  display: flex;
+  flex-direction: column;
+  min-height: 760px;
+  max-height: 760px;
 }
-.products-cards{
+.section-head {
   display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-.product-card-item{
-  display:grid;
-  grid-template-columns:72px minmax(0,1fr) auto;
-  gap:14px;
-  align-items:start;
-  padding:14px;
-  border-radius:18px;
-  border:1px solid rgba(255,255,255,0.08);
-  background:rgba(255,255,255,0.03);
-  min-width:0;
-}
-.product-card-thumb{
-  width:72px;
-  height:72px;
-  border-radius:14px;
-  object-fit:contain;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(255,255,255,0.08);
-  padding:6px;
-}
-.product-card-body{
-  min-width:0;
-}
-.product-card-top{
-  display:flex;
-  align-items:flex-start;
+  align-items:center;
   justify-content:space-between;
-  gap:10px;
-}
-.product-card-title{
-  margin:0 0 8px;
-  font-size:16px;
-  line-height:1.55;
-  font-weight:800;
-  color:#fff;
-  overflow-wrap:anywhere;
-}
-.sku-line{
-  color:#dbe6ff;
-  line-height:1.75;
-  overflow-wrap:anywhere;
-  word-break:break-word;
-  white-space:normal;
-  font-size:14px;
-}
-.sku-line.sku-sm{font-size:13px;}
-.sku-line.sku-xs{font-size:12px;}
-.product-meta-line{
-  margin-top:8px;
-  color:#c8d4ea;
-  font-size:13px;
-  line-height:1.8;
-  overflow-wrap:anywhere;
-}
-.product-card-actions{
-  display:flex;
-  align-items:flex-start;
-  justify-content:flex-end;
-}
-.product-badges{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-top:10px;
-}
-.badge{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:6px 10px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:800;
-}
-.badge.active{
-  background:rgba(34,197,94,0.16);
-  border:1px solid rgba(34,197,94,0.28);
-  color:#dcfce7;
-}
-.badge.inactive{
-  background:rgba(239,68,68,0.16);
-  border:1px solid rgba(239,68,68,0.28);
-  color:#fee2e2;
-}
-.badge.hot{
-  background:rgba(245,158,11,0.16);
-  border:1px solid rgba(245,158,11,0.28);
-  color:#fde68a;
-}
-.badge.stock-complete{
-  background:rgba(34,197,94,0.16);
-  border:1px solid rgba(34,197,94,0.28);
-  color:#dcfce7;
-}
-.badge.stock-incomplete{
-  background:rgba(239,68,68,0.16);
-  border:1px solid rgba(239,68,68,0.28);
-  color:#fee2e2;
-}
-.badge.stock-unknown{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.12);
-  color:#e5eefc;
-}
-.filter-chip{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-height:34px;
-  padding:0 12px;
-  border-radius:999px;
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.12);
-  color:#fff;
-  font-size:12px;
-  font-weight:800;
-  white-space:nowrap;
-}
-.image-box{
-  width:100%;
-  min-height:260px;
-  border:1px dashed rgba(255,255,255,0.14);
-  border-radius:18px;
-  background:rgba(255,255,255,0.03);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  padding:16px;
-  margin-top:16px;
-}
-.image-box img{
-  width:100%;
-  max-height:320px;
-  object-fit:contain;
-}
-.links-wrap{
-  display:flex;
-  flex-direction:column;
   gap:12px;
+  margin-bottom: 12px;
+}
+.section-head h2 {
+  margin:0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.editor-card,
+.list-card,
+.preview-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 16px;
+}
+.preview-card {
+  padding: 14px;
+}
+.image-box {
+  width: 100%;
+  min-height: 240px;
+  border: 1px dashed rgba(255,255,255,0.14);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px;
+}
+.image-box img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  display: block;
+}
+.editor-actions {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
   margin-top:16px;
 }
-.link-card{
-  padding:14px;
-  border-radius:16px;
-  border:1px solid rgba(255,255,255,0.08);
-  background:rgba(255,255,255,0.04);
+.stock-links-grid {
+  display:grid;
+  gap:12px;
 }
-.link-card.missing{
-  border-color:rgba(239,68,68,0.30);
-  background:rgba(239,68,68,0.08);
+.stock-chip-card {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
 }
-.link-card.linked{
-  border-color:rgba(34,197,94,0.30);
-  background:rgba(34,197,94,0.08);
+.stock-chip-card.linked {
+  border-color: rgba(34,197,94,0.30);
+  background: rgba(34,197,94,0.08);
 }
-.link-title{
+.stock-chip-card.missing {
+  border-color: rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.08);
+}
+.stock-chip-head {
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:10px;
   margin-bottom:10px;
 }
-.link-title strong{
-  font-size:15px;
-  line-height:1.7;
-  overflow-wrap:anywhere;
+.stock-chip-head strong {
+  font-size: 14px;
+  line-height: 1.7;
 }
-.link-meta{
+.stock-chip-meta {
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0,1fr));
   gap:10px;
 }
-.meta-box{
+.meta-box {
   padding:10px 12px;
   border-radius:14px;
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.08);
-  min-width:0;
 }
-.meta-box small{
+.meta-box small {
   display:block;
   color:#c8d4ea;
   margin-bottom:4px;
   font-size:12px;
 }
-.meta-box span{
+.meta-box span {
   color:#fff;
   font-size:13px;
   line-height:1.7;
   overflow-wrap:anywhere;
-  word-break:break-word;
 }
-.link-actions{
+.link-actions {
   display:flex;
-  flex-wrap:wrap;
   gap:10px;
+  flex-wrap:wrap;
   align-items:end;
   margin-top:12px;
 }
-.stock-state-chip{
+.list-pane .list-card {
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  flex:1;
+}
+.products-scroll {
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  padding-left:4px;
+}
+.products-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.products-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 999px;
+}
+.product-row-card {
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  border-radius:18px;
+  padding:14px;
+  display:grid;
+  grid-template-columns: 76px 1fr auto;
+  gap:14px;
+  align-items:start;
+}
+.product-row-card.selected {
+  border-color: rgba(37,99,235,0.42);
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.18) inset;
+}
+.product-row-thumb {
+  width:76px;
+  height:76px;
+  border-radius:16px;
+  background: rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  padding:6px;
+  object-fit:contain;
+}
+.product-row-main {
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.product-row-top {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+}
+.product-row-index {
+  color:#c8d4ea;
+  font-size:12px;
+  font-weight:700;
+}
+.product-row-title {
+  font-size:16px;
+  font-weight:800;
+  line-height:1.6;
+  margin:0;
+  color:#fff;
+  overflow-wrap:anywhere;
+}
+.product-row-sku {
+  color:#dfe9ff;
+  line-height:1.65;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  font-size: clamp(11px, 0.95vw, 15px);
+}
+.product-row-meta {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.badge {
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  min-height:36px;
-  padding:0 14px;
+  padding:6px 10px;
   border-radius:999px;
   font-size:12px;
-  font-weight:800;
+  font-weight:700;
   white-space:nowrap;
 }
-.stock-state-chip.complete{
+.badge.active {
   background:rgba(34,197,94,0.16);
   border:1px solid rgba(34,197,94,0.28);
   color:#dcfce7;
 }
-.stock-state-chip.incomplete{
+.badge.inactive {
   background:rgba(239,68,68,0.16);
   border:1px solid rgba(239,68,68,0.28);
   color:#fee2e2;
 }
-.stock-state-chip.neutral{
-  background:rgba(255,255,255,0.08);
-  border:1px solid rgba(255,255,255,0.12);
-  color:#e5eefc;
+.badge.hot {
+  background:rgba(245,158,11,0.16);
+  border:1px solid rgba(245,158,11,0.28);
+  color:#fde68a;
 }
-.action-row{
+.badge.stock-ok {
+  background:rgba(34,197,94,0.16);
+  border:1px solid rgba(34,197,94,0.28);
+  color:#dcfce7;
+}
+.badge.stock-missing {
+  background:rgba(239,68,68,0.16);
+  border:1px solid rgba(239,68,68,0.28);
+  color:#fee2e2;
+}
+.product-row-price {
+  color:#fff;
+  line-height:1.7;
+  overflow-wrap:anywhere;
+}
+.product-row-action {
   display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:16px;
+  align-items:center;
+  justify-content:flex-end;
 }
-.full-col{grid-column:1 / -1;}
-@media (max-width: 1180px){
-  .manager-grid{grid-template-columns:1fr;}
-  .panel-edit,.panel-list{grid-column:auto;}
+.product-row-action .btn-primary {
+  min-width:78px;
 }
-@media (max-width: 860px){
-  .toolbar,.form-grid,.form-grid-4,.link-meta{grid-template-columns:1fr;}
-  .product-card-item{grid-template-columns:60px minmax(0,1fr);}
-  .product-card-actions{grid-column:1 / -1; justify-content:flex-start;}
+.empty-box {
+  padding:16px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  color:#c8d4ea;
+  line-height:1.8;
+}
+.hide-empty:empty {
+  display:none;
+}
+/* remove number spinners */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+@media (max-width: 1200px) {
+  body { overflow:auto; }
+  .manager-shell { grid-template-columns: 1fr; min-height: auto; }
+  .list-pane { min-height: auto; max-height: none; }
+  .products-scroll { max-height: none; overflow: visible; }
+}
+@media (max-width: 760px) {
+  .toolbar, .form-grid, .stock-chip-meta { grid-template-columns: 1fr; }
+  .product-row-card { grid-template-columns: 1fr; }
+  .product-row-action { justify-content: flex-start; }
 }
 </style>
 </head>
@@ -492,111 +464,109 @@ button{
 
     <button type="button" class="btn-primary" id="loadProductsBtn">Load Products</button>
   </div>
-
   <div id="productsStatus" class="status-box"></div>
 </div>
 
-<div class="manager-grid">
-  <div class="panel panel-edit">
-    <div class="panel-head">
-      <h2>Edit Product</h2>
-      <span id="editStockStateBadge" class="stock-state-chip neutral">—</span>
+<div class="panel">
+  <div class="manager-shell">
+    <div class="editor-pane">
+      <div class="editor-card">
+        <div class="section-head">
+          <h2>Edit Product</h2>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="editProductId">Product ID</label>
+            <input id="editProductId" type="text" readonly>
+          </div>
+
+          <div class="form-group">
+            <label for="editProductSlug">Slug</label>
+            <input id="editProductSlug" type="text" readonly>
+          </div>
+
+          <div class="form-group" style="grid-column:1 / -1;">
+            <label for="editProductTitle">Title</label>
+            <input id="editProductTitle" type="text">
+          </div>
+
+          <div class="form-group">
+            <label for="editProductCategory">Category</label>
+            <select id="editProductCategory"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="editProductBrand">Brand</label>
+            <select id="editProductBrand"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="editProductDevicesCount">Devices Count</label>
+            <input id="editProductDevicesCount" type="number" min="1" max="4">
+          </div>
+
+          <div class="form-group">
+            <label for="editProductDuration">Duration Months</label>
+            <input id="editProductDuration" type="number" min="1">
+          </div>
+
+          <div class="form-group">
+            <label for="editProductDownPayment">Down Payment</label>
+            <input id="editProductDownPayment" type="number" min="0" step="0.001">
+          </div>
+
+          <div class="form-group">
+            <label for="editProductMonthly">Monthly Amount</label>
+            <input id="editProductMonthly" type="number" min="0" step="0.001">
+          </div>
+
+          <div class="form-group">
+            <label for="editProductAvailable">Available</label>
+            <select id="editProductAvailable">
+              <option value="1">Yes</option>
+              <option value="0">No</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="editProductHotOffer">Hot Offer</label>
+            <select id="editProductHotOffer">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-card">
+        <div class="image-box">
+          <img id="editProductPreviewImage" src="" alt="">
+        </div>
+
+        <div class="form-group" style="margin-top:14px;">
+          <label for="editProductImageInput">Replace Image</label>
+          <input id="editProductImageInput" type="file" accept=".jpg,.jpeg,.png,.webp">
+        </div>
+
+        <div id="productStockLinksWrap" class="stock-links-grid hide-empty" style="margin-top:14px;"></div>
+
+        <div class="editor-actions">
+          <button type="button" class="btn-danger" id="deleteProductBtn">Delete Product</button>
+          <button type="button" class="btn-success" id="saveProductChangesBtn">Save Changes</button>
+        </div>
+      </div>
     </div>
 
-    <div class="form-grid">
-      <div class="form-group">
-        <label for="editProductId">Product ID</label>
-        <input id="editProductId" type="text" readonly>
+    <div class="list-pane">
+      <div class="list-card">
+        <div class="section-head">
+          <h2>Products List</h2>
+        </div>
+        <div id="productsTableBody" class="products-scroll">
+          <div class="empty-box">&nbsp;</div>
+        </div>
       </div>
-
-      <div class="form-group">
-        <label for="editProductSlug">Slug</label>
-        <input id="editProductSlug" type="text" readonly>
-      </div>
-
-      <div class="form-group full-col">
-        <label for="editProductTitle">Title</label>
-        <input id="editProductTitle" type="text">
-      </div>
-
-      <div class="form-group">
-        <label for="editProductCategory">Category</label>
-        <select id="editProductCategory"></select>
-      </div>
-
-      <div class="form-group">
-        <label for="editProductBrand">Brand</label>
-        <select id="editProductBrand"></select>
-      </div>
-    </div>
-
-    <div class="form-grid-4" style="margin-top:12px;">
-      <div class="form-group">
-        <label for="editProductDevicesCount">Devices Count</label>
-        <input id="editProductDevicesCount" type="number" min="1" max="4">
-      </div>
-
-      <div class="form-group">
-        <label for="editProductDownPayment">Down Payment</label>
-        <input id="editProductDownPayment" type="number" min="0" step="0.001">
-      </div>
-
-      <div class="form-group">
-        <label for="editProductMonthly">Monthly Amount</label>
-        <input id="editProductMonthly" type="number" min="0" step="0.001">
-      </div>
-
-      <div class="form-group">
-        <label for="editProductDuration">Duration Months</label>
-        <input id="editProductDuration" type="number" min="1">
-      </div>
-    </div>
-
-    <div class="form-grid" style="margin-top:12px;">
-      <div class="form-group">
-        <label for="editProductAvailable">Available</label>
-        <select id="editProductAvailable">
-          <option value="1">Yes</option>
-          <option value="0">No</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="editProductHotOffer">Hot Offer</label>
-        <select id="editProductHotOffer">
-          <option value="0">No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="image-box">
-      <img id="editProductPreviewImage" src="" alt="">
-    </div>
-
-    <div class="form-group" style="margin-top:16px;">
-      <label for="editProductImageInput">Replace Image</label>
-      <input id="editProductImageInput" type="file" accept=".jpg,.jpeg,.png,.webp">
-    </div>
-
-    <div id="productStockLinksWrap" class="links-wrap">
-      <div class="stock-placeholder"></div>
-    </div>
-
-    <div class="action-row">
-      <button type="button" class="btn-danger" id="deleteProductBtn">Delete Product</button>
-      <button type="button" class="btn-success" id="saveProductChangesBtn">Save Changes</button>
-    </div>
-  </div>
-
-  <div class="panel panel-list">
-    <div class="panel-head">
-      <h2>Products List</h2>
-      <span id="productsListCount" class="filter-chip">0</span>
-    </div>
-
-    <div id="productsCardsWrap" class="products-cards">
-      <div class="empty-box">اختر Category و Brand ثم اضغط Load Products.</div>
     </div>
   </div>
 </div>
