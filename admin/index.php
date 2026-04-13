@@ -30,7 +30,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
   <link rel="stylesheet" href="/admin/assets/admin.css?v=20260407-1">
   <style>
     .admin-main-tabs {
-      direction: ltr;
       display: grid;
       grid-template-columns: repeat(5, minmax(180px, 1fr));
       gap: 12px;
@@ -82,7 +81,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
     }
 
     .panel-desc {
-      display: none;
       margin: 0 0 22px;
       color: #c8d4ea;
       line-height: 1.9;
@@ -197,7 +195,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
     }
 
     .mini-note {
-      display: none;
       margin-top: 14px;
       padding: 14px 16px;
       border-radius: 16px;
@@ -307,137 +304,11 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
     .orders-toolbar {
       display: grid;
-      grid-template-columns: minmax(280px, 1fr) 180px 180px auto auto;
+      grid-template-columns: 1fr 180px 180px auto auto;
       gap: 12px;
       align-items: end;
       margin-bottom: 18px;
-      direction: ltr;
     }
-
-    .orders-cards-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-top: 18px;
-    }
-
-    .order-row-card {
-      display: grid;
-      grid-template-columns: 110px 130px 150px 120px 70px minmax(260px,1.4fr) minmax(230px,1.15fr) 160px;
-      gap: 14px;
-      align-items: start;
-      padding: 18px;
-      border-radius: 20px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      direction: ltr;
-    }
-
-    .order-row-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: stretch;
-    }
-
-    .order-row-actions .btn {
-      width: 100%;
-      min-width: 0;
-      justify-content: center;
-      padding: 10px 12px;
-      font-size: 13px;
-    }
-
-    .order-col-title {
-      display: block;
-      font-size: 13px;
-      color: #c8d4ea;
-      font-weight: 700;
-      margin-bottom: 8px;
-      text-align: left;
-    }
-
-    .order-row-status,
-    .order-row-date,
-    .order-row-total,
-    .order-row-qty,
-    .order-row-products,
-    .order-row-customer,
-    .order-row-number {
-      min-width: 0;
-      color: #fff;
-      line-height: 1.7;
-      text-align: left;
-    }
-
-    .order-row-date,
-    .order-row-total,
-    .order-row-qty,
-    .order-row-number {
-      font-size: 15px;
-      font-weight: 700;
-    }
-
-    .order-row-products strong,
-    .order-row-customer strong,
-    .order-row-number strong {
-      display: block;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 800;
-      margin-bottom: 6px;
-      line-height: 1.6;
-      overflow-wrap: anywhere;
-    }
-
-    .order-row-products small,
-    .order-row-customer small {
-      display: block;
-      color: #8fa6c9;
-      font-size: 12px;
-      line-height: 1.7;
-      overflow-wrap: anywhere;
-    }
-
-    .order-row-price {
-      margin-top: 8px;
-      font-size: 14px;
-      color: #dce6fb;
-      line-height: 1.8;
-      overflow-wrap: anywhere;
-    }
-
-    .order-status-stack {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .order-reason-chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 800;
-      background: rgba(245,158,11,0.16);
-      border: 1px solid rgba(245,158,11,0.28);
-      color: #fde68a;
-      white-space: nowrap;
-    }
-
-    .orders-empty-inline {
-      padding: 18px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.03);
-      color: #c8d4ea;
-      line-height: 1.9;
-      text-align: center;
-    }
-
 
     .status-chip {
       display: inline-flex;
@@ -797,15 +668,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       .orders-toolbar {
         grid-template-columns: 1fr;
       }
-
-      .order-row-card {
-        grid-template-columns: 1fr;
-      }
-
-      .order-row-actions {
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
     }
 
     @media (max-width: 820px) {
@@ -1144,8 +1006,8 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
           <div class="embedded-admin-wrap">
             <iframe
-              class="embedded-admin-frame" style="min-height: 1280px;"
-              src="/admin/products.php?v=20260414-8"
+              class="embedded-admin-frame"
+              src="/admin/products.php"
               title="Products Manager"
               loading="lazy">
             </iframe>
@@ -1281,14 +1143,14 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
             <div class="orders-toolbar">
               <div class="form-group">
-                <label for="ordersSearchInput">Search</label>
-                <input id="ordersSearchInput" type="text" placeholder="Search by order no, customer or email" data-permission="orders_view">
+                <label for="ordersSearchInput">بحث</label>
+                <input id="ordersSearchInput" type="text" placeholder="ابحث برقم الطلب أو اسم العميل أو الإيميل" data-permission="orders_view">
               </div>
 
               <div class="form-group">
-                <label for="ordersStatusFilter">Status</label>
+                <label for="ordersStatusFilter">حالة الطلب</label>
                 <select id="ordersStatusFilter" data-permission="orders_view">
-                  <option value="">All</option>
+                  <option value="">الكل</option>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
                   <option value="on_the_way">On The Way</option>
@@ -1299,7 +1161,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
               </div>
 
               <div class="form-group">
-                <label for="ordersDateFilter">Date</label>
+                <label for="ordersDateFilter">التاريخ</label>
                 <input id="ordersDateFilter" type="date" data-permission="orders_view">
               </div>
 
@@ -1312,12 +1174,31 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
               </div>
             </div>
 
-            <div id="adminOrdersCards" class="orders-cards-wrap">
-              <div class="orders-empty-inline">Orders have not been loaded yet.</div>
+            <div class="data-table-wrap">
+              <table class="data-table" id="adminOrdersTable">
+                <thead>
+                  <tr>
+                    <th>Order No.</th>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>WhatsApp</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Products</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="adminOrdersTableBody">
+                  <tr>
+                    <td colspan="9" style="text-align:center; color:#c8d4ea;">لم يتم تحميل الطلبات بعد.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             <div id="ordersEmptyBox" class="empty-box" style="display:none;">
-              No matching orders found.
+              لا توجد طلبات مطابقة للفلاتر الحالية.
             </div>
           </div>
 
@@ -1353,6 +1234,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
     brands: <?= json_encode($brands, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
   };
 </script>
-<script src="/admin/assets/admin.js?v=20260414-8"></script>
+<script src="/admin/assets/admin.js?v=20260409-1"></script>
 </body>
 </html>
