@@ -310,6 +310,165 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       margin-bottom: 18px;
     }
 
+    #tab-products-manager .panel-desc {
+      display: none;
+    }
+
+    .embedded-admin-wrap-products {
+      min-height: 900px;
+    }
+
+    .embedded-admin-wrap-products .embedded-admin-frame {
+      min-height: 860px;
+    }
+
+    .orders-list-wrap {
+      margin-top: 12px;
+      overflow: hidden;
+    }
+
+    .orders-list-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .order-card {
+      display: grid;
+      grid-template-columns: 150px 150px 70px 120px minmax(260px, 1.2fr) minmax(230px, 1fr) 160px 160px;
+      gap: 14px;
+      align-items: stretch;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+    }
+
+    .order-card-cell {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .order-card-label {
+      color: #c8d4ea;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .order-card-value {
+      color: #fff;
+      font-size: 15px;
+      line-height: 1.8;
+      overflow-wrap: anywhere;
+    }
+
+    .order-card-order-no {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.15;
+      text-align: center;
+      color: #fff;
+      overflow-wrap: anywhere;
+    }
+
+    .order-card-order-no small {
+      display: block;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #c8d4ea;
+      font-weight: 700;
+    }
+
+    .order-card-total {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #fff;
+    }
+
+    .order-card-total small {
+      display: block;
+      margin-top: 6px;
+      font-size: 13px;
+      color: #c8d4ea;
+      font-weight: 700;
+    }
+
+    .order-card-qty {
+      font-size: 32px;
+      font-weight: 800;
+      text-align: center;
+      color: #fff;
+      line-height: 1.2;
+    }
+
+    .order-card-products,
+    .order-card-customer {
+      gap: 6px;
+    }
+
+    .order-card-products .item-title {
+      color: #fff;
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .order-card-products .item-meta,
+    .order-card-customer .sub-line {
+      color: #c8d4ea;
+      font-size: 13px;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+    }
+
+    .order-card-customer .customer-name {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .order-actions-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .order-actions-panel .order-actions-cell {
+      justify-content: flex-start;
+    }
+
+    .order-actions-panel .order-actions-cell button {
+      min-width: 112px;
+    }
+
+    .order-status-cell {
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .order-date-cell {
+      justify-content: center;
+    }
+
+    @media (max-width: 1450px) {
+      .order-card {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .order-actions-panel {
+        grid-column: 1 / -1;
+      }
+    }
+
+
     .status-chip {
       display: inline-flex;
       align-items: center;
@@ -1000,11 +1159,8 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 
         <div id="tab-products-manager" class="admin-panel" data-panel-permission="products_edit">
           <h3 class="panel-title">Products Manager</h3>
-          <p class="panel-desc">
-            هذه الشاشة مدمجة داخل لوحة التحكم لإدارة المنتجات من نفس الداشبورد بدون الخروج إلى صفحة منفصلة.
-          </p>
 
-          <div class="embedded-admin-wrap">
+          <div class="embedded-admin-wrap embedded-admin-wrap-products">
             <iframe
               class="embedded-admin-frame"
               src="/admin/products.php"
@@ -1174,27 +1330,10 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
               </div>
             </div>
 
-            <div class="data-table-wrap">
-              <table class="data-table" id="adminOrdersTable">
-                <thead>
-                  <tr>
-                    <th>Order No.</th>
-                    <th>Customer</th>
-                    <th>Email</th>
-                    <th>WhatsApp</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                    <th>Products</th>
-                    <th>Total</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="adminOrdersTableBody">
-                  <tr>
-                    <td colspan="9" style="text-align:center; color:#c8d4ea;">لم يتم تحميل الطلبات بعد.</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="orders-list-wrap">
+              <div id="adminOrdersList" class="orders-list-grid">
+                <div class="empty-box">لم يتم تحميل الطلبات بعد.</div>
+              </div>
             </div>
 
             <div id="ordersEmptyBox" class="empty-box" style="display:none;">
