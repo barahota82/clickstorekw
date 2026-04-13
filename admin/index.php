@@ -683,6 +683,97 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
         grid-template-columns: 1fr;
       }
     }
+
+    .dashboard-head-note {
+      display: none;
+    }
+
+    .admin-main-tabs {
+      margin-top: 18px;
+    }
+
+    .add-product-toolbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .add-product-save-btn {
+      min-width: 150px;
+      white-space: nowrap;
+    }
+
+    .add-product-toolbar-note {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(37,99,235,0.10);
+      color: #dbeafe;
+      line-height: 1.9;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .add-product-grid {
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+
+    .analysis-panel-box {
+      display: grid;
+      gap: 18px;
+    }
+
+    .analysis-panel-head {
+      display: grid;
+      gap: 8px;
+    }
+
+    .analysis-placeholder-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .mt-20 {
+      margin-top: 20px;
+    }
+
+    @media (max-width: 1200px) {
+      .admin-main-tabs {
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+      }
+
+      .analysis-placeholder-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .add-product-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .add-product-toolbar .panel-title {
+        order: -1;
+      }
+
+      .top-grid,
+      .add-product-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-main-tabs {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -748,9 +839,7 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       <div class="dashboard-head">
         <div>
           <h2 class="section-title no-margin">مرحبًا بك في لوحة التحكم</h2>
-          <p class="section-desc no-margin">
-            الواجهة الحالية مركزة على: إضافة المنتج من الصورة واسم الملف، ومراجعة ربط أجهزة الصورة بالمخزن، وإدارة الطلبات،
-            مع دمج إدارة الفئات والبراندات والمنتجات والعروض والمخزن والمستخدمين داخل نفس لوحة التحكم.
+          <p class="section-desc no-margin dashboard-head-note">
           </p>
         </div>
 
@@ -775,25 +864,28 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
       </div>
 
       <div class="admin-main-tabs">
-        <button class="admin-tab-btn active" data-tab="tab-add-product" data-permission="products_create" id="tabBtnAddProduct" type="button">Add Product</button>
-        <button class="admin-tab-btn" data-tab="tab-edit-delete" data-permission="products_edit" id="tabBtnEditDelete" type="button">Edit / Delete Product</button>
-        <button class="admin-tab-btn" data-tab="tab-catalog-structure" data-permission="brands_order" id="tabBtnCatalogStructure" type="button">Categories / Brands</button>
-        <button class="admin-tab-btn" data-tab="tab-products-manager" data-permission="products_edit" id="tabBtnProductsManager" type="button">Products Manager</button>
-        <button class="admin-tab-btn" data-tab="tab-hot-offers" data-permission="hot_offers_order" id="tabBtnHotOffers" type="button">Hot Offers</button>
-        <button class="admin-tab-btn" data-tab="tab-brand-order" data-permission="brands_order" id="tabBtnBrandOrder" type="button">Brand Ordering</button>
         <button class="admin-tab-btn" data-tab="tab-product-order" data-permission="products_order" id="tabBtnProductOrder" type="button">Product Ordering</button>
-        <button class="admin-tab-btn" data-tab="tab-stock" data-permission="stock_manage" id="tabBtnStock" type="button">Stock Management</button>
+        <button class="admin-tab-btn" data-tab="tab-brand-order" data-permission="brands_order" id="tabBtnBrandOrder" type="button">Brand Ordering</button>
+        <button class="admin-tab-btn" data-tab="tab-products-manager" data-permission="products_edit" id="tabBtnProductsManager" type="button">Products Manager</button>
+        <button class="admin-tab-btn active" data-tab="tab-add-product" data-permission="products_create" id="tabBtnAddProduct" type="button">Add Product</button>
+        <button class="admin-tab-btn" data-tab="tab-catalog-structure" data-permission="brands_order" id="tabBtnCatalogStructure" type="button">Categories / Brands</button>
         <button class="admin-tab-btn" data-tab="tab-users" data-permission="users_view" id="tabBtnUsers" type="button">User Permissions</button>
+        <button class="admin-tab-btn" data-tab="tab-analysis" data-permission="reports_view" id="tabBtnAnalysis" type="button">Analysis Screen</button>
+        <button class="admin-tab-btn" data-tab="tab-stock" data-permission="stock_manage" id="tabBtnStock" type="button">Stock Management</button>
         <button class="admin-tab-btn" data-tab="tab-stats" data-permission="orders_view" id="tabBtnStats" type="button">Statistics / Orders</button>
+        <button class="admin-tab-btn" data-tab="tab-hot-offers" data-permission="hot_offers_order" id="tabBtnHotOffers" type="button">Hot Offers</button>
       </div>
 
       <div class="admin-tab-panels">
 
         <div id="tab-add-product" class="admin-panel active" data-panel-permission="products_create">
-          <h3 class="panel-title">Add Product</h3>
-          <p class="panel-desc"></p>
+          <div class="add-product-toolbar">
+            <button class="btn btn-primary add-product-save-btn" type="button" id="ocrSaveBtn" data-permission="products_create">Save Product</button>
+            <div class="add-product-toolbar-note">قم برفع الصورة وتحليل اسم الملف ومراجعة المخزن. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.</div>
+            <h3 class="panel-title no-margin">Add Product</h3>
+          </div>
 
-          <div class="top-grid">
+          <div class="top-grid add-product-grid">
             <div class="sub-card">
               <h4 class="sub-title">Display Image</h4>
 
@@ -972,129 +1064,6 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
                 <textarea id="productJsonPreview" class="json-preview-box" readonly placeholder="سيظهر هنا JSON المنتج للمراجعة قبل الحفظ..."></textarea>
               </div>
 
-              <div class="action-row">
-                <button class="btn btn-primary" type="button" id="ocrSaveBtn" data-permission="products_create">Save Product</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="tab-edit-delete" class="admin-panel" data-panel-permission="products_edit">
-          <h3 class="panel-title">Edit / Delete Product</h3>
-          <p class="panel-desc"></p>
-
-          <div class="sub-card">
-            <h4 class="sub-title">Filters</h4>
-
-            <div class="filter-row filters-buffer">
-              <div class="form-group">
-                <label for="editCategory">Category</label>
-                <select id="editCategory">
-                  <option value="">Select Category</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="editBrand">Brand</label>
-                <select id="editBrand">
-                  <option value="">Select Brand</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <button class="btn btn-primary" type="button" id="editLoadProductsBtn" data-permission="products_edit">Load Products</button>
-              </div>
-            </div>
-
-            <div class="data-table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Image</th>
-                    <th>Title</th>
-                    <th>SKU</th>
-                    <th>Price Logic</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><img src="/images/products/sample-product.webp" alt="" class="table-thumb"></td>
-                    <td>Sample Product Title</td>
-                    <td>SAMPLE-SKU</td>
-                    <td>Down / Monthly / Months</td>
-                    <td>
-                      <div class="action-row">
-                        <button class="btn btn-primary secondary-btn" type="button" data-permission="products_edit">Edit</button>
-                        <button class="btn danger-btn" type="button" data-permission="products_delete">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="empty-box">
-              سيتم هنا تحميل المنتجات الفعلية بناءً على Category + Brand.
-            </div>
-          </div>
-
-          <div class="edit-layout">
-            <div class="sub-card">
-              <h4 class="sub-title">Edit Product</h4>
-
-              <div class="form-grid-2">
-                <div class="form-group full-col">
-                  <label for="editTitle">Title</label>
-                  <input id="editTitle" type="text" placeholder="Selected product title">
-                </div>
-
-                <div class="form-group">
-                  <label for="editDownPayment">Down Payment</label>
-                  <input id="editDownPayment" type="number" step="0.001" min="0">
-                </div>
-
-                <div class="form-group">
-                  <label for="editMonthlyAmount">Monthly Amount</label>
-                  <input id="editMonthlyAmount" type="number" step="0.001" min="0">
-                </div>
-
-                <div class="form-group">
-                  <label for="editDurationMonths">Duration Months</label>
-                  <input id="editDurationMonths" type="number" min="1">
-                </div>
-
-                <div class="form-group">
-                  <label for="editHotOffer">Hot Offer</label>
-                  <select id="editHotOffer">
-                    <option value="0" selected>No</option>
-                    <option value="1">Yes</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="action-row">
-                <button class="btn btn-primary" type="button" id="editSaveChangesBtn" data-permission="products_edit">Save Changes</button>
-                <button class="btn danger-btn" type="button" id="editDeleteProductBtn" data-permission="products_delete">Delete Product</button>
-              </div>
-            </div>
-
-            <div class="sub-card">
-              <h4 class="sub-title">Current Image</h4>
-
-              <div class="image-stage">
-                <img id="editPreviewImage" src="/images/products/sample-product.webp" alt="" style="display:block;">
-              </div>
-
-              <input id="editImageInput" type="file" accept=".jpg,.jpeg,.png,.webp" class="hidden">
-
-              <div class="action-row">
-                <button class="btn btn-primary secondary-btn" type="button" id="editChangeImageBtn" data-permission="products_edit">Change Image</button>
-              </div>
-
-              <div class="mini-note">
-                تعديل الصورة هنا يتم يدويًا فقط، والصورة تظهر كاملة داخل المربع بدون قص.
-              </div>
             </div>
           </div>
         </div>
@@ -1179,7 +1148,32 @@ $brands = $brandsStmt ? $brandsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
           </div>
         </div>
 
-        <div id="tab-stock" class="admin-panel" data-panel-permission="stock_manage">
+        
+        <div id="tab-analysis" class="admin-panel" data-panel-permission="reports_view">
+          <div class="analysis-panel-box">
+            <div class="analysis-panel-head">
+              <h3 class="panel-title no-margin">Analysis Screen</h3>
+              <p class="panel-desc no-margin">هذه المساحة جاهزة لربط شاشة التحليل والإحصاءات المتقدمة بنفس شكل اللوحة الحالية.</p>
+            </div>
+
+            <div class="analysis-placeholder-grid">
+              <div class="placeholder-card">
+                <strong>Sales Overview</strong>
+                <span>ملخص المبيعات والاتجاهات اليومية والأسبوعية.</span>
+              </div>
+              <div class="placeholder-card">
+                <strong>Products Performance</strong>
+                <span>تحليل المنتجات الأعلى طلبًا وحركة العروض داخل الموقع.</span>
+              </div>
+              <div class="placeholder-card">
+                <strong>Stock Insights</strong>
+                <span>تنبيهات قرب النفاد وربط الكميات مع أداء المنتجات.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<div id="tab-stock" class="admin-panel" data-panel-permission="stock_manage">
           <h3 class="panel-title">Stock Management</h3>
           <p class="panel-desc">
             هذه الشاشة مدمجة داخل لوحة التحكم لإدارة stock catalog، الحركات، وكميات المنتجات من نفس النظام.
