@@ -363,6 +363,20 @@ function adminClearStatus(id) {
   box.textContent = '';
 }
 
+
+function getAddProductStatusId() {
+  return getEl('addProductStatus') ? 'addProductStatus' : 'dashboardStatus';
+}
+
+function addProductSetStatus(type, message) {
+  adminSetStatus(getAddProductStatusId(), type, message);
+}
+
+function addProductClearStatus() {
+  adminClearStatus(getAddProductStatusId());
+}
+
+
 function normalizeStockText(text) {
   return String(text || '')
     .toLowerCase()
@@ -1080,7 +1094,7 @@ function clearAddProductData(fullReset = false) {
 
   clearStockReview();
   updateProductJsonPreview();
-  adminClearStatus('dashboardStatus');
+  addProductClearStatus();
 }
 
 function bindProductUploadButton() {
@@ -1125,7 +1139,7 @@ function bindProductUploadButton() {
     updateProductJsonPreview();
     await refreshStockReviewFromFilename(file.name);
 
-    adminSetStatus('dashboardStatus', 'info', 'تم رفع الصورة وتحليل اسم الملف ومراجعة المخزن. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.');
+    addProductSetStatus('info', 'تم رفع الصورة وتحليل اسم الملف ومراجعة المخزن. اختر الفئة يدويًا ثم راجع البيانات قبل الحفظ.');
   });
 }
 
@@ -1133,7 +1147,7 @@ async function saveProduct() {
   if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
 
   if (!currentProductImageFile) {
-    adminSetStatus('dashboardStatus', 'error', 'ارفع صورة أولًا.');
+    addProductSetStatus('error', 'ارفع صورة أولًا.');
     return;
   }
 
@@ -1147,24 +1161,24 @@ async function saveProduct() {
   const brandName = String(getEl('ocrBrandFromFilename')?.value || '').trim();
 
   if (!title) {
-    adminSetStatus('dashboardStatus', 'error', 'حقل Title مطلوب.');
+    addProductSetStatus('error', 'حقل Title مطلوب.');
     return;
   }
 
   if (!categoryId) {
-    adminSetStatus('dashboardStatus', 'error', 'اختر Category أولًا.');
+    addProductSetStatus('error', 'اختر Category أولًا.');
     return;
   }
 
   if (!brandName) {
-    adminSetStatus('dashboardStatus', 'error', 'لم يتم التعرف على البراند من اسم الملف.');
+    addProductSetStatus('error', 'لم يتم التعرف على البراند من اسم الملف.');
     return;
   }
 
   const brandRecord = findBootstrapBrandByNameAndCategory(brandName, categoryId);
 
   if (!brandRecord) {
-    adminSetStatus('dashboardStatus', 'error', 'لا يوجد Brand مطابق داخل قاعدة البيانات لهذه الفئة.');
+    addProductSetStatus('error', 'لا يوجد Brand مطابق داخل قاعدة البيانات لهذه الفئة.');
     return;
   }
 
@@ -1180,7 +1194,7 @@ async function saveProduct() {
   fd.append('is_available', '1');
   fd.append('image', currentProductImageFile);
 
-  adminSetStatus('dashboardStatus', 'info', 'جاري حفظ المنتج...');
+  addProductSetStatus('info', 'جاري حفظ المنتج...');
 
   try {
     const res = await fetch('/admin/api/save-product.php', {
@@ -1199,7 +1213,7 @@ async function saveProduct() {
     }
 
     if (!data.ok) {
-      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل حفظ المنتج.');
+      addProductSetStatus('error', data.message || 'فشل حفظ المنتج.');
       return;
     }
 
@@ -1225,14 +1239,13 @@ async function saveProduct() {
       updateProductJsonPreview();
     }
 
-    adminSetStatus(
-      'dashboardStatus',
+    addProductSetStatus(
       'success',
       (data.message || 'تم حفظ المنتج بنجاح.') +
       (data.slug ? ` | slug: ${data.slug}` : '')
     );
   } catch (e) {
-    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء حفظ المنتج.');
+    addProductSetStatus('error', e.message || 'حدث خطأ أثناء حفظ المنتج.');
   }
 }
 
@@ -1249,7 +1262,7 @@ function bindProductClearButton() {
   btn.addEventListener('click', function () {
     if (!requireFrontendPermissionOrWarn('products_create', 'ليس لديك صلاحية إضافة منتج.')) return;
     clearAddProductData(true);
-    adminSetStatus('dashboardStatus', 'info', 'تم تفريغ النموذج.');
+    addProductSetStatus('info', 'تم تفريغ النموذج.');
   });
 }
 
@@ -1259,7 +1272,7 @@ window.addMissingStockItem = async function (deviceIndex) {
   const item = CURRENT_STOCK_REVIEW.missing.find(entry => Number(entry.device_index) === Number(deviceIndex));
 
   if (!item) {
-    adminSetStatus('dashboardStatus', 'error', 'لم يتم العثور على الجهاز المطلوب إضافته.');
+    addProductSetStatus('error', 'لم يتم العثور على الجهاز المطلوب إضافته.');
     return;
   }
 
@@ -1268,16 +1281,16 @@ window.addMissingStockItem = async function (deviceIndex) {
   const resolvedBrandId = Number(item.expected_brand_id || item.brand_id || 0);
 
   if (!selectedCategoryId) {
-    adminSetStatus('dashboardStatus', 'error', 'اختر الفئة أولًا قبل الإضافة.');
+    addProductSetStatus('error', 'اختر الفئة أولًا قبل الإضافة.');
     return;
   }
 
   if (resolvedBrandId <= 0) {
-    adminSetStatus('dashboardStatus', 'error', 'هذا البراند غير مسجل داخل قاعدة البيانات. أضف البراند أولًا من تبويب Categories / Brands.');
+    addProductSetStatus('error', 'هذا البراند غير مسجل داخل قاعدة البيانات. أضف البراند أولًا من تبويب Categories / Brands.');
     return;
   }
 
-  adminSetStatus('dashboardStatus', 'info', 'جاري إضافة الجهاز إلى المخزن...');
+  addProductSetStatus('info', 'جاري إضافة الجهاز إلى المخزن...');
 
   try {
     const { data } = await adminFetchJson('/admin/api/add-missing-stock-item.php', {
@@ -1298,7 +1311,7 @@ window.addMissingStockItem = async function (deviceIndex) {
     });
 
     if (!data.ok) {
-      adminSetStatus('dashboardStatus', 'error', data.message || 'فشل إضافة الجهاز إلى المخزن.');
+      addProductSetStatus('error', data.message || 'فشل إضافة الجهاز إلى المخزن.');
       return;
     }
 
@@ -1330,9 +1343,9 @@ window.addMissingStockItem = async function (deviceIndex) {
       missing: CURRENT_STOCK_REVIEW.missing
     });
 
-    adminSetStatus('dashboardStatus', 'success', data.message || 'تمت إضافة الجهاز إلى المخزن بنجاح.');
+    addProductSetStatus('success', data.message || 'تمت إضافة الجهاز إلى المخزن بنجاح.');
   } catch (e) {
-    adminSetStatus('dashboardStatus', 'error', e.message || 'حدث خطأ أثناء إضافة الجهاز إلى المخزن.');
+    addProductSetStatus('error', e.message || 'حدث خطأ أثناء إضافة الجهاز إلى المخزن.');
   }
 };
 
