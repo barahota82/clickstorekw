@@ -44,35 +44,37 @@ html, body {
   height: 100%;
 }
 body {
+  margin: 0;
+  padding: 18px;
   font-family: Arial, sans-serif;
   background: #0f172a;
   color: #fff;
-  padding: 16px 18px;
   overflow: hidden;
+}
+.page-root {
+  height: calc(100vh - 36px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 16px;
 }
 .page-title {
   font-size: 24px;
   font-weight: 800;
-  margin: 0 0 16px;
+  margin: 0;
 }
 .panel {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 22px;
-  padding: 18px;
-  margin-bottom: 18px;
+  padding: 16px;
   box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+  min-width: 0;
 }
 .toolbar {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
   gap: 14px;
   align-items: end;
-}
-.toolbar .btn-primary {
-  height: 50px;
-  min-width: 140px;
-  align-self: end;
 }
 .form-grid {
   display: grid;
@@ -86,13 +88,14 @@ body {
   display: block;
   margin-bottom: 8px;
   color: #c8d4ea;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
+  min-height: 46px;
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,0.10);
@@ -111,14 +114,15 @@ body {
   background: rgba(255,255,255,0.06);
 }
 .form-group textarea {
-  min-height: 110px;
-  resize: vertical;
+  min-height: 168px;
+  resize: none;
 }
 .form-group select option {
   background: #14213f;
   color: #ffffff;
 }
 button {
+  min-height: 46px;
   padding: 12px 16px;
   border: none;
   border-radius: 14px;
@@ -163,37 +167,18 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
-  align-items: stretch;
-  min-height: calc(100vh - 170px);
-  max-height: calc(100vh - 170px);
+  min-height: 0;
+  height: 100%;
 }
 .editor-pane,
 .list-pane {
   min-width: 0;
+  min-height: 0;
 }
 .editor-pane {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-.list-pane {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  max-height: 100%;
-}
-.section-head {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  margin-bottom: 12px;
-}
-.section-head h2 {
-  margin:0;
-  font-size: 18px;
-  font-weight: 800;
+  gap: 14px;
 }
 .editor-card,
 .list-card,
@@ -202,13 +187,35 @@ button {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
   padding: 16px;
+  min-width: 0;
 }
-.preview-card {
-  padding: 14px;
+.editor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.list-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+.section-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom: 4px;
+}
+.section-head h2 {
+  margin:0;
+  font-size: 18px;
+  font-weight: 800;
 }
 .image-box {
   width: 100%;
   min-height: 190px;
+  max-height: 190px;
   border: 1px dashed rgba(255,255,255,0.14);
   border-radius: 18px;
   background: rgba(255,255,255,0.03);
@@ -216,11 +223,11 @@ button {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 16px;
+  padding: 12px;
 }
 .image-box img {
   width: 100%;
-  max-height: 220px;
+  height: 100%;
   object-fit: contain;
   display: block;
 }
@@ -228,14 +235,14 @@ button {
   display:flex;
   gap:10px;
   flex-wrap:wrap;
-  margin-top:16px;
+  margin-top:12px;
 }
 .stock-links-grid {
   display:grid;
-  gap:12px;
+  gap:10px;
 }
 .stock-chip-card {
-  padding: 14px;
+  padding: 12px;
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.04);
@@ -256,16 +263,16 @@ button {
   margin-bottom:10px;
 }
 .stock-chip-head strong {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.7;
 }
 .stock-chip-meta {
   display:grid;
   grid-template-columns: repeat(2, minmax(0,1fr));
-  gap:10px;
+  gap:8px;
 }
 .meta-box {
-  padding:10px 12px;
+  padding:8px 10px;
   border-radius:14px;
   background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.08);
@@ -274,12 +281,12 @@ button {
   display:block;
   color:#c8d4ea;
   margin-bottom:4px;
-  font-size:12px;
+  font-size:11px;
 }
 .meta-box span {
   color:#fff;
-  font-size:13px;
-  line-height:1.7;
+  font-size:12px;
+  line-height:1.6;
   overflow-wrap:anywhere;
 }
 .link-actions {
@@ -287,22 +294,20 @@ button {
   gap:10px;
   flex-wrap:wrap;
   align-items:end;
-  margin-top:12px;
+  margin-top:10px;
 }
-.list-pane .list-card {
-  display:flex;
-  flex-direction:column;
-  min-height:0;
-  flex:1;
+.list-card .section-head {
+  margin-bottom: 10px;
 }
 .products-scroll {
-  min-height:0;
-  overflow-y:auto;
-  overflow-x:hidden;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   display:flex;
   flex-direction:column;
   gap:12px;
-  padding-left:4px;
+  padding-left: 4px;
 }
 .products-scroll::-webkit-scrollbar {
   width: 8px;
@@ -317,8 +322,8 @@ button {
   border-radius:18px;
   padding:14px;
   display:grid;
-  grid-template-columns: 76px 1fr auto;
-  gap:14px;
+  grid-template-columns: 72px minmax(0,1fr) auto;
+  gap:12px;
   align-items:start;
 }
 .product-row-card.selected {
@@ -326,8 +331,8 @@ button {
   box-shadow: 0 0 0 2px rgba(37,99,235,0.18) inset;
 }
 .product-row-thumb {
-  width:76px;
-  height:76px;
+  width:72px;
+  height:72px;
   border-radius:16px;
   background: rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.08);
@@ -352,19 +357,25 @@ button {
   font-weight:700;
 }
 .product-row-title {
-  font-size:16px;
+  font-size:15px;
   font-weight:800;
-  line-height:1.6;
+  line-height:1.55;
   margin:0;
   color:#fff;
   overflow-wrap:anywhere;
 }
 .product-row-sku {
   color:#dfe9ff;
-  line-height:1.65;
+  line-height:1.55;
   overflow-wrap:anywhere;
   word-break:break-word;
-  font-size: clamp(11px, 0.95vw, 15px);
+  font-size: clamp(10px, 0.8vw, 13px);
+}
+.product-row-price {
+  color:#fff;
+  line-height:1.6;
+  overflow-wrap:anywhere;
+  font-size: 13px;
 }
 .product-row-meta {
   display:flex;
@@ -406,11 +417,6 @@ button {
   border:1px solid rgba(239,68,68,0.28);
   color:#fee2e2;
 }
-.product-row-price {
-  color:#fff;
-  line-height:1.7;
-  overflow-wrap:anywhere;
-}
 .product-row-action {
   display:flex;
   align-items:center;
@@ -427,49 +433,9 @@ button {
   color:#c8d4ea;
   line-height:1.8;
 }
-.stock-summary-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-}
-.stock-summary-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-.stock-summary-pill.ok {
-  background: rgba(34,197,94,0.16);
-  border: 1px solid rgba(34,197,94,0.28);
-  color: #dcfce7;
-}
-.stock-summary-pill.missing {
-  background: rgba(239,68,68,0.16);
-  border: 1px solid rgba(239,68,68,0.28);
-  color: #fee2e2;
-}
-.stock-links-grid {
-  margin-top: 12px;
-}
-.stock-chip-card {
-  padding: 12px;
-}
-.stock-chip-meta {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.link-actions .form-group label {
-  margin-bottom: 6px;
-  font-size: 12px;
-}
 .hide-empty:empty {
   display:none;
 }
-/* remove number spinners */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -480,143 +446,153 @@ input[type="number"] {
   appearance: textfield;
 }
 @media (max-width: 1200px) {
-  body { overflow:auto; }
-  .manager-shell { grid-template-columns: 1fr; min-height: auto; }
-  .list-pane { min-height: auto; max-height: none; }
-  .products-scroll { max-height: none; overflow: visible; }
+  body {
+    overflow: auto;
+  }
+  .page-root {
+    height: auto;
+  }
+  .manager-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .list-card {
+    height: auto;
+  }
+  .products-scroll {
+    max-height: 520px;
+  }
 }
 @media (max-width: 760px) {
-  .toolbar, .form-grid, .stock-chip-meta { grid-template-columns: 1fr; }
-  .product-row-card { grid-template-columns: 1fr; }
-  .product-row-action { justify-content: flex-start; }
+  .toolbar,
+  .form-grid,
+  .stock-chip-meta {
+    grid-template-columns: 1fr;
+  }
+  .product-row-card {
+    grid-template-columns: 1fr;
+  }
+  .product-row-action {
+    justify-content: flex-start;
+  }
 }
 </style>
 </head>
 <body>
+<div class="page-root">
+  <h1 class="page-title">Products Manager</h1>
 
-<h1 class="page-title">Products Manager</h1>
+  <div class="panel">
+    <div class="toolbar">
+      <div class="form-group">
+        <label for="productsCategory">Category</label>
+        <select id="productsCategory"></select>
+      </div>
 
-<div class="panel">
-  <div class="toolbar">
-    <div class="form-group">
-      <label for="productsCategory">Category</label>
-      <select id="productsCategory"></select>
+      <div class="form-group">
+        <label for="productsBrand">Brand</label>
+        <select id="productsBrand"></select>
+      </div>
+
+      <button type="button" class="btn-primary" id="loadProductsBtn">Load Products</button>
     </div>
-
-    <div class="form-group">
-      <label for="productsBrand">Brand</label>
-      <select id="productsBrand"></select>
-    </div>
-
-    <button type="button" class="btn-primary" id="loadProductsBtn">Load Products</button>
+    <div id="productsStatus" class="status-box"></div>
   </div>
-  <div id="productsStatus" class="status-box"></div>
-</div>
 
-<div class="panel">
-  <div class="manager-shell">
-    <div class="editor-pane">
-      <div class="editor-card">
-        <div class="section-head">
-          <h2>Edit Product</h2>
-        </div>
+  <div class="panel" style="min-height:0;">
+    <div class="manager-shell">
+      <div class="editor-pane">
+        <input id="editProductId" type="hidden">
+        <input id="editProductSlug" type="hidden">
 
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="editProductId">Product ID</label>
-            <input id="editProductId" type="text" readonly>
-          </div>
+        <div class="editor-card">
+          <div class="section-head"><h2>Edit Product</h2></div>
 
-          <div class="form-group">
-            <label for="editProductSlug">Slug</label>
-            <input id="editProductSlug" type="text" readonly>
-          </div>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column:1 / -1;">
+              <label for="editProductTitle">Title</label>
+              <input id="editProductTitle" type="text">
+            </div>
 
-          <div class="form-group" style="grid-column:1 / -1;">
-            <label for="editProductTitle">Title</label>
-            <input id="editProductTitle" type="text">
-          </div>
+            <div class="form-group">
+              <label for="editProductCategory">Category</label>
+              <select id="editProductCategory"></select>
+            </div>
 
-          <div class="form-group">
-            <label for="editProductCategory">Category</label>
-            <select id="editProductCategory"></select>
-          </div>
+            <div class="form-group">
+              <label for="editProductBrand">Brand</label>
+              <select id="editProductBrand"></select>
+            </div>
 
-          <div class="form-group">
-            <label for="editProductBrand">Brand</label>
-            <select id="editProductBrand"></select>
-          </div>
+            <div class="form-group">
+              <label for="editProductDevicesCount">Devices Count</label>
+              <input id="editProductDevicesCount" type="number" min="1" max="4">
+            </div>
 
-          <div class="form-group">
-            <label for="editProductDevicesCount">Devices Count</label>
-            <input id="editProductDevicesCount" type="number" min="1" max="4">
-          </div>
+            <div class="form-group">
+              <label for="editProductDuration">Duration Months</label>
+              <input id="editProductDuration" type="number" min="1">
+            </div>
 
-          <div class="form-group">
-            <label for="editProductDuration">Duration Months</label>
-            <input id="editProductDuration" type="number" min="1">
-          </div>
+            <div class="form-group">
+              <label for="editProductDownPayment">Down Payment</label>
+              <input id="editProductDownPayment" type="number" min="0" step="0.001">
+            </div>
 
-          <div class="form-group">
-            <label for="editProductDownPayment">Down Payment</label>
-            <input id="editProductDownPayment" type="number" min="0" step="0.001">
-          </div>
+            <div class="form-group">
+              <label for="editProductMonthly">Monthly Amount</label>
+              <input id="editProductMonthly" type="number" min="0" step="0.001">
+            </div>
 
-          <div class="form-group">
-            <label for="editProductMonthly">Monthly Amount</label>
-            <input id="editProductMonthly" type="number" min="0" step="0.001">
-          </div>
+            <div class="form-group">
+              <label for="editProductAvailable">Available</label>
+              <select id="editProductAvailable">
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label for="editProductAvailable">Available</label>
-            <select id="editProductAvailable">
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="editProductHotOffer">Hot Offer</label>
-            <select id="editProductHotOffer">
-              <option value="0">No</option>
-              <option value="1">Yes</option>
-            </select>
+            <div class="form-group">
+              <label for="editProductHotOffer">Hot Offer</label>
+              <select id="editProductHotOffer">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="preview-card">
-        <div class="image-box">
-          <img id="editProductPreviewImage" src="" alt="">
-        </div>
+        <div class="preview-card">
+          <div class="image-box">
+            <img id="editProductPreviewImage" src="" alt="">
+          </div>
 
-        <div class="form-group" style="margin-top:14px;">
-          <label for="editProductImageInput">Replace Image</label>
-          <input id="editProductImageInput" type="file" accept=".jpg,.jpeg,.png,.webp">
-        </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label for="editProductImageInput">Replace Image</label>
+            <input id="editProductImageInput" type="file" accept=".jpg,.jpeg,.png,.webp">
+          </div>
 
-        <div id="productStockLinksWrap" class="stock-links-grid hide-empty" style="margin-top:14px;"></div>
+          <div id="productStockLinksWrap" class="stock-links-grid hide-empty" style="margin-top:12px;"></div>
 
-        <div class="editor-actions">
-          <button type="button" class="btn-danger" id="deleteProductBtn">Delete Product</button>
-          <button type="button" class="btn-success" id="saveProductChangesBtn">Save Changes</button>
+          <div class="editor-actions">
+            <button type="button" class="btn-danger" id="deleteProductBtn">Delete Product</button>
+            <button type="button" class="btn-success" id="saveProductChangesBtn">Save Changes</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="list-pane">
-      <div class="list-card">
-        <div class="section-head">
-          <h2>Products List</h2>
-        </div>
-        <div id="productsTableBody" class="products-scroll">
-          <div class="empty-box">&nbsp;</div>
+      <div class="list-pane">
+        <div class="list-card">
+          <div class="section-head"><h2>Products List</h2></div>
+          <div id="productsTableBody" class="products-scroll">
+            <div class="empty-box">لا توجد منتجات مطابقة.</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<script src="products-manager.js?v=20260413-2"></script>
+<script src="products-manager.js?v=20260413-3"></script>
 </body>
 </html>
