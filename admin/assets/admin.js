@@ -1794,37 +1794,32 @@ window.closeCustomerProfile = function () {
 };
 
 function renderAdminOrdersTable(orders, apiPermissions = null) {
-  const listWrap = getEl('adminOrdersCards');
+  const wrap = getEl('adminOrdersCards');
   const emptyBox = getEl('ordersEmptyBox');
   const perms = getOrderActionPermissions(apiPermissions);
 
-  if (!listWrap) return;
+  if (!wrap) return;
 
   if (!perms.canViewOrders) {
-    listWrap.innerHTML = `<div class="empty-box">ليس لديك صلاحية عرض الطلبات.</div>`;
-    if (emptyBox) emptyBox.style.display = 'block';
+    wrap.innerHTML = `<div class="orders-empty-inline">You do not have permission to view orders.</div>`;
+    if (emptyBox) emptyBox.style.display = 'none';
     return;
   }
 
   if (!Array.isArray(orders) || orders.length === 0) {
-    listWrap.innerHTML = `<div class="empty-box">لا توجد طلبات مطابقة للفلاتر الحالية.</div>`;
-    if (emptyBox) emptyBox.style.display = 'block';
+    wrap.innerHTML = `<div class="orders-empty-inline">No matching orders found.</div>`;
+    if (emptyBox) emptyBox.style.display = 'none';
     return;
   }
 
   if (emptyBox) emptyBox.style.display = 'none';
 
-  listWrap.innerHTML = orders.map(order => {
+  wrap.innerHTML = orders.map(order => {
     const groupedItems = groupOrderItems(order.items || []);
-    const titles = groupedItems.map(item => `${escapeHtml(item.title)}${item.quantity > 1 ? ` × ${item.quantity}` : ''}`).join(' + ');
-    const plans = groupedItems.map(item => {
-      return [item.down_payment, item.monthly, item.duration].filter(Boolean).join(' / ');
-    }).filter(Boolean).join(' | ');
-    const totalQty = groupedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-
     const rawStatus = String(order.raw_status || '').toLowerCase();
     const statusClass = getAdminOrderStatusClass(rawStatus);
-    const statusLabel = formatAdminOrderStatus(rawStatus, order.rejection_reason || '');
+    const statusLabel = formatAdminOrderStatus(rawStatus, '');
+    const reasonLabel = rawStatus === 'rejected' ? 'Not matching conditions' : '';
 
     const canApprove = perms.canApprove && !['approved', 'on_the_way', 'completed', 'cancelled'].includes(rawStatus);
     const canOnTheWay = perms.canOnTheWay && ['pending', 'approved'].includes(rawStatus);
@@ -1833,36 +1828,65 @@ function renderAdminOrdersTable(orders, apiPermissions = null) {
     const canPending = perms.canPending && !['pending', 'cancelled', 'completed'].includes(rawStatus);
     const canHistory = perms.canViewHistory;
 
+    const firstItem = groupedItems[0] || null;
+    const productsTitle = groupedItems.map(item => `${item.title}${item.quantity > 1 ? ` × ${item.quantity}` : ''}`).join(' + ');
+    const pricingLine = firstItem
+      ? `${firstItem.down_payment || '0 KD Down Payment'} / ${firstItem.monthly || '-'} / ${firstItem.duration || '-'}`
+      : '-';
+    const customerTypeText = order.is_guest ? 'Guest Order' : 'Registered';
+    const totalQty = groupedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+
     return `
-      <div class="order-line-card">
-        <div class="order-line-order-number">${escapeHtml(order.order_number || '')}</div>
-
-        <div class="order-line-customer">
-          ${renderCustomerCell(order)}
-        </div>
-
-        <div class="order-line-products">
-          <div class="order-line-products-title">${titles || '-'}</div>
-          <div class="order-line-products-plan">${plans || '-'}</div>
-        </div>
-
-        <div class="order-line-qty">${totalQty || 0}</div>
-
-        <div class="order-line-total">${Number(order.total_amount || 0).toFixed(3)} ${escapeHtml(order.currency_code || 'KWD')}</div>
-
-        <div class="order-line-date">${escapeHtml(order.created_at || '')}</div>
-
-        <div class="order-line-status">
-          <span class="status-chip ${statusClass}">${escapeHtml(statusLabel)}</span>
-        </div>
-
-        <div class="order-line-actions">
+      <div class="order-row-card">
+        <div class="order-row-actions">
           ${canApprove ? `<button class="btn btn-primary secondary-btn" type="button" onclick="approveAdminOrder('${String(order.order_number || '').replace(/'/g, "\'")}')">Approve</button>` : ''}
           ${canOnTheWay ? `<button class="btn btn-primary secondary-btn" type="button" onclick="markOrderOnTheWay('${String(order.order_number || '').replace(/'/g, "\'")}')">On The Way</button>` : ''}
           ${canPending ? `<button class="btn btn-primary secondary-btn" type="button" onclick="setOrderPending('${String(order.order_number || '').replace(/'/g, "\'")}')">Pending</button>` : ''}
           ${canDeliver ? `<button class="btn success-btn" type="button" onclick="markOrderDelivered('${String(order.order_number || '').replace(/'/g, "\'")}')">Delivered</button>` : ''}
           ${canReject ? `<button class="btn warning-btn" type="button" onclick="rejectAdminOrder('${String(order.order_number || '').replace(/'/g, "\'")}')">Reject</button>` : ''}
           ${canHistory ? `<button class="btn btn-primary secondary-btn" type="button" onclick="openOrderHistory('${String(order.order_number || '').replace(/'/g, "\'")}')">History</button>` : ''}
+        </div>
+
+        <div class="order-row-status">
+          <span class="order-col-title">Status</span>
+          <div class="order-status-stack">
+            <span class="status-chip ${statusClass}">${escapeHtml(statusLabel)}</span>
+            ${reasonLabel ? `<span class="order-reason-chip">${escapeHtml(reasonLabel)}</span>` : ''}
+          </div>
+        </div>
+
+        <div class="order-row-date">
+          <span class="order-col-title">Date</span>
+          ${escapeHtml(order.created_at || '')}
+        </div>
+
+        <div class="order-row-total">
+          <span class="order-col-title">Total</span>
+          ${Number(order.total_amount || 0).toFixed(3)} ${escapeHtml(order.currency_code || 'KWD')}
+        </div>
+
+        <div class="order-row-qty">
+          <span class="order-col-title">Qty</span>
+          ${totalQty}
+        </div>
+
+        <div class="order-row-products">
+          <span class="order-col-title">Products</span>
+          <strong>${escapeHtml(productsTitle || '-')}</strong>
+          <div class="order-row-price">${escapeHtml(pricingLine)}</div>
+        </div>
+
+        <div class="order-row-customer">
+          <span class="order-col-title">Customer</span>
+          <strong>${escapeHtml(order.customer_name || '-')}</strong>
+          <small>${escapeHtml(customerTypeText)}</small>
+          <small>Email: ${escapeHtml(order.customer_email || '-')}</small>
+          <small>WhatsApp: ${escapeHtml(order.customer_whatsapp || '-')}</small>
+        </div>
+
+        <div class="order-row-number">
+          <span class="order-col-title">Order No.</span>
+          <strong>${escapeHtml(order.order_number || '')}</strong>
         </div>
       </div>
     `;
@@ -1883,9 +1907,9 @@ function renderOrdersSummary(summary) {
 
 async function loadOrdersManagement() {
   if (!requireFrontendPermissionOrWarn('orders_view', 'ليس لديك صلاحية لعرض الطلبات.')) {
-    const listWrap = getEl('adminOrdersCards');
-    if (listWrap) {
-      listWrap.innerHTML = `<div class="empty-box">ليس لديك صلاحية عرض الطلبات.</div>`;
+    const wrap = getEl('adminOrdersCards');
+    if (wrap) {
+      wrap.innerHTML = `<div class="orders-empty-inline">You do not have permission to view orders.</div>`;
     }
 
     renderOrdersSummary({ all: 0, pending: 0, delivered: 0, rejected_cancelled: 0 });
