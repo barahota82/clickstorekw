@@ -155,26 +155,30 @@ button {
   color: #fee2e2;
 }
 .manager-shell {
-  display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  display: flex;
   gap: 18px;
-  align-items: start;
-  min-height: 760px;
+  align-items: stretch;
+  height: calc(100vh - 220px);
+  min-height: 0;
 }
 .editor-pane,
 .list-pane {
   min-width: 0;
+  flex: 0 0 calc(50% - 9px);
+  max-width: calc(50% - 9px);
 }
 .editor-pane {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  order: 2;
 }
 .list-pane {
   display: flex;
   flex-direction: column;
-  min-height: 760px;
-  max-height: 760px;
+  min-height: 0;
+  max-height: none;
+  order: 1;
 }
 .section-head {
   display:flex;
@@ -195,6 +199,11 @@ button {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
   padding: 16px;
+}
+.editor-card,
+.preview-card,
+.list-card {
+  min-height: 0;
 }
 .preview-card {
   padding: 14px;
@@ -287,6 +296,7 @@ button {
   flex-direction:column;
   min-height:0;
   flex:1;
+  height:100%;
 }
 .products-scroll {
   min-height:0;
@@ -435,8 +445,18 @@ input[type="number"] {
 }
 @media (max-width: 1200px) {
   body { overflow:auto; }
-  .manager-shell { grid-template-columns: 1fr; min-height: auto; }
-  .list-pane { min-height: auto; max-height: none; }
+  .manager-shell {
+    display:block;
+    height:auto;
+  }
+  .editor-pane,
+  .list-pane {
+    max-width:none;
+    width:100%;
+  }
+  .list-pane {
+    margin-top:18px;
+  }
   .products-scroll { max-height: none; overflow: visible; }
 }
 @media (max-width: 760px) {
