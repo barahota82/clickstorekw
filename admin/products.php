@@ -42,7 +42,6 @@ if (!admin_has_permission('products_edit')) {
 <style>
 html, body {
   height: 100%;
-  margin: 0;
 }
 body {
   font-family: Arial, sans-serif;
@@ -50,20 +49,11 @@ body {
   color: #fff;
   padding: 20px;
   overflow: hidden;
-  box-sizing: border-box;
-  min-height: 100vh;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-*, *::before, *::after {
-  box-sizing: border-box;
 }
 .page-title {
   font-size: 24px;
   font-weight: 800;
   margin: 0 0 18px;
-  flex: 0 0 auto;
 }
 .panel {
   background: rgba(255,255,255,0.04);
@@ -72,14 +62,6 @@ body {
   padding: 18px;
   margin-bottom: 18px;
   box-shadow: 0 18px 40px rgba(0,0,0,0.22);
-  flex: 0 0 auto;
-}
-.main-manager-panel {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 0;
 }
 .toolbar {
   display: grid;
@@ -173,30 +155,26 @@ button {
   color: #fee2e2;
 }
 .manager-shell {
-  display: flex;
-  direction: ltr;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
   gap: 18px;
-  align-items: stretch;
-  min-height: 0;
-  height: 100%;
+  align-items: start;
+  min-height: 760px;
 }
 .editor-pane,
 .list-pane {
   min-width: 0;
-  width: calc(50% - 9px);
-  flex: 0 0 calc(50% - 9px);
 }
 .editor-pane {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: 0;
 }
 .list-pane {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  height: 100%;
+  min-height: 760px;
+  max-height: 760px;
 }
 .section-head {
   display:flex;
@@ -217,14 +195,9 @@ button {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
   padding: 16px;
-  min-width: 0;
 }
 .preview-card {
   padding: 14px;
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 .image-box {
   width: 100%;
@@ -313,19 +286,16 @@ button {
   display:flex;
   flex-direction:column;
   min-height:0;
-  flex:1 1 auto;
-  height: 100%;
+  flex:1;
 }
 .products-scroll {
   min-height:0;
-  flex: 1 1 auto;
   overflow-y:auto;
   overflow-x:hidden;
   display:flex;
   flex-direction:column;
   gap:12px;
   padding-left:4px;
-  max-height: 100%;
 }
 .products-scroll::-webkit-scrollbar {
   width: 8px;
@@ -464,35 +434,10 @@ input[type="number"] {
   appearance: textfield;
 }
 @media (max-width: 1200px) {
-  body {
-    overflow: auto;
-    height: auto;
-    min-height: 100vh;
-    display: block;
-  }
-  .main-manager-panel {
-    display: block;
-  }
-  .manager-shell {
-    display: block;
-    direction: rtl;
-    height: auto;
-    min-height: auto;
-  }
-  .editor-pane,
-  .list-pane {
-    width: 100%;
-    flex: none;
-  }
-  .list-pane {
-    min-height: auto;
-    height: auto;
-    margin-top: 18px;
-  }
-  .products-scroll {
-    max-height: none;
-    overflow: visible;
-  }
+  body { overflow:auto; }
+  .manager-shell { grid-template-columns: 1fr; min-height: auto; }
+  .list-pane { min-height: auto; max-height: none; }
+  .products-scroll { max-height: none; overflow: visible; }
 }
 @media (max-width: 760px) {
   .toolbar, .form-grid, .stock-chip-meta { grid-template-columns: 1fr; }
@@ -522,7 +467,7 @@ input[type="number"] {
   <div id="productsStatus" class="status-box"></div>
 </div>
 
-<div class="panel main-manager-panel">
+<div class="panel">
   <div class="manager-shell">
     <div class="editor-pane">
       <div class="editor-card">
