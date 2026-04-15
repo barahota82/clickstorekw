@@ -192,7 +192,43 @@ function clearEditForm() {
   document.getElementById('editProductHotOffer').value = '0';
   document.getElementById('editProductPreviewImage').src = '';
   document.getElementById('editProductImageInput').value = '';
-  document.getElementById('productStockLinksWrap').innerHTML = '';
+  document.getElementById('productStockLinksWrap').innerHTML = `<div class="empty-box">اختر منتجًا أولًا لتحميل مراجعة الأجهزة والربط مع المخزن.</div>`;
+}
+
+function buildProductCard(product, index) {
+  const availabilityBadge = product.is_available
+    ? '<span class="badge active">Available</span>'
+    : '<span class="badge inactive">Out of Stock</span>';
+
+  const hotBadge = product.is_hot_offer
+    ? '<span class="badge hot">Hot Offer</span>'
+    : '';
+
+  const devicesBadge = `<span class="badge info">Devices ${Number(product.devices_count || 1)}</span>`;
+  const priceLogic = escapeHtml(product.price_logic || '-');
+
+  return `
+    <div class="pm-product-card">
+      <img class="pm-product-thumb" src="${escapeHtml(product.image_path || '')}" alt="">
+
+      <div class="pm-product-main">
+        <h3 class="pm-product-title">${escapeHtml(product.title)}</h3>
+        <p class="pm-product-sku">SKU ${escapeHtml(product.sku || '-')}</p>
+        <p class="pm-product-price">${priceLogic}</p>
+
+        <div class="pm-product-chips">
+          ${availabilityBadge}
+          ${hotBadge}
+          ${devicesBadge}
+        </div>
+      </div>
+
+      <div class="pm-product-side">
+        <span class="badge info pm-no-wrap">No.${index + 1}</span>
+        <button type="button" class="btn-primary pm-action-btn" onclick="loadProductForEdit(${product.id})">Edit</button>
+      </div>
+    </div>
+  `;
 }
 
 function renderProductsTable() {
@@ -204,61 +240,7 @@ function renderProductsTable() {
     return;
   }
 
-  const rows = PRODUCTS_ROWS.map((product, index) => {
-    const availabilityBadge = product.is_available
-      ? '<span class="badge active">Available</span>'
-      : '<span class="badge inactive">Out of Stock</span>';
-
-    const hotBadge = product.is_hot_offer
-      ? '<span class="badge hot">Hot Offer</span>'
-      : '';
-
-    const isSelected = Number(CURRENT_PRODUCT?.id || 0) === Number(product.id || 0);
-    let stockBadge = '';
-
-    if (isSelected && CURRENT_EDIT_STOCK_REVIEW.productId) {
-      const fullyLinked = CURRENT_EDIT_STOCK_REVIEW.missing.length === 0 && CURRENT_EDIT_STOCK_REVIEW.linked.length > 0;
-      stockBadge = fullyLinked
-        ? '<span class="badge stock-ok">الأصناف مضافة إلى المخزن</span>'
-        : '<span class="badge stock-missing">الأصناف غير مضافة بالكامل</span>';
-    }
-
-    return `
-      <div class="product-row-card ${isSelected ? 'selected' : ''}">
-        <div class="product-row-main">
-          <div class="product-row-top">
-            <span class="product-row-index">No.${index + 1}</span>
-          </div>
-
-          <div class="product-row-sku"><span class="product-row-label">SKU</span> ${escapeHtml(product.sku || '')}</div>
-          <div class="product-row-devices"><span class="product-row-label">Devices</span> ${Number(product.devices_count || 1)}</div>
-          <div class="product-row-price"><span class="product-row-label">Price</span> ${escapeHtml(product.price_logic || '-')}</div>
-
-          <div class="product-row-meta">
-            ${availabilityBadge}
-            ${hotBadge}
-            ${stockBadge}
-          </div>
-        </div>
-
-        <div class="product-row-action">
-          <button type="button" class="btn-primary" onclick="loadProductForEdit(${product.id})">Edit</button>
-        </div>
-      </div>
-    `;
-  });
-
-  if (CURRENT_EDIT_STOCK_REVIEW.productId && CURRENT_EDIT_STOCK_REVIEW.missing.length > 0) {
-    rows.push(`
-      <div class="products-hint-card">
-        <div class="products-hint-arrow">→</div>
-        <span class="badge stock-missing">الأصناف غير مضافة بالكامل إلى المخزن</span>
-        <p>عند الضغط عليها تظهر شاشة لإضافة الصنف الناقص غير مضاف إلى المخزن ليتم إضافته وهذه الشاشة تظهر فوق الشاشة دي بحيث أضف وأغلقها</p>
-      </div>
-    `);
-  }
-
-  wrap.innerHTML = rows.join('');
+  wrap.innerHTML = PRODUCTS_ROWS.map((product, index) => buildProductCard(product, index)).join('');
 }
 
 async function loadProductsList() {
@@ -282,6 +264,12 @@ async function loadProductsList() {
 
     PRODUCTS_ROWS = Array.isArray(data.products) ? data.products : [];
     renderProductsTable();
+
+    const productsScroll = document.querySelector('.pm-products-scroll');
+    if (productsScroll) {
+      productsScroll.scrollTop = 0;
+    }
+
     productsSetStatus('success', 'تم تحميل المنتجات بنجاح.');
   } catch (e) {
     productsSetStatus('error', e.message || 'حدث خطأ أثناء تحميل المنتجات.');
@@ -316,25 +304,53 @@ function renderStockReview(review) {
   };
 
   if (!linked.length && !missing.length) {
-    wrap.innerHTML = '';
-    renderProductsTable();
+    wrap.innerHTML = `<div class="empty-box">لا توجد أجهزة قابلة للمراجعة لهذا المنتج.</div>`;
     return;
   }
 
   const rows = [];
 
   linked.forEach(item => {
+    const relationLabel = item.product_linked === false
+      ? 'Exists in stock / not linked yet'
+      : 'Linked to product';
+
+    const sourceLabel = item.source_type
+      ? String(item.source_type).toUpperCase()
+      : 'FILENAME';
+
     rows.push(`
-      <div class="stock-chip-card linked">
-        <div class="stock-chip-head">
+      <div class="link-card linked">
+        <div class="link-title">
           <strong>${escapeHtml(item.raw_title || item.stock_title || 'Linked Device')}</strong>
-          <span class="badge stock-ok">مضاف إلى المخزن</span>
+          <span class="badge active">Added</span>
         </div>
-        <div class="stock-chip-meta">
-          <div class="meta-box"><small>Category</small><span>${escapeHtml(item.category_name || '-')}</span></div>
-          <div class="meta-box"><small>Brand</small><span>${escapeHtml(item.brand_name || item.expected_brand_name || '-')}</span></div>
-          <div class="meta-box"><small>Storage</small><span>${escapeHtml(item.storage_value || '-')}</span></div>
-          <div class="meta-box"><small>RAM / Network</small><span>${escapeHtml(item.ram_value || '-')} / ${escapeHtml(item.network_value || '-')}</span></div>
+
+        <div class="link-meta">
+          <div class="meta-box">
+            <small>Brand</small>
+            <span>${escapeHtml(item.brand_name || item.expected_brand_name || '-')}</span>
+          </div>
+          <div class="meta-box">
+            <small>Category</small>
+            <span>${escapeHtml(item.category_name || '-')}</span>
+          </div>
+          <div class="meta-box">
+            <small>Storage</small>
+            <span>${escapeHtml(item.storage_value || '-')}</span>
+          </div>
+          <div class="meta-box">
+            <small>RAM / Network</small>
+            <span>${escapeHtml(item.ram_value || '-')} / ${escapeHtml(item.network_value || '-')}</span>
+          </div>
+          <div class="meta-box">
+            <small>Product Relation</small>
+            <span>${escapeHtml(relationLabel)}</span>
+          </div>
+          <div class="meta-box">
+            <small>Source</small>
+            <span>${escapeHtml(sourceLabel)}</span>
+          </div>
         </div>
       </div>
     `);
@@ -343,19 +359,34 @@ function renderStockReview(review) {
   missing.forEach(item => {
     const selectId = `editMissingCategory_${Number(item.device_index || 0)}`;
     const expectedCategoryId = String(item.expected_category_id || '').trim();
+    const brandGuess = item.expected_brand_name || item.brand_guess || '-';
 
     rows.push(`
-      <div class="stock-chip-card missing">
-        <div class="stock-chip-head">
+      <div class="link-card missing">
+        <div class="link-title">
           <strong>${escapeHtml(item.raw_title || 'Missing Device')}</strong>
-          <span class="badge stock-missing">غير مضاف بالكامل</span>
+          <span class="badge inactive">Not Added</span>
         </div>
-        <div class="stock-chip-meta">
-          <div class="meta-box"><small>Brand</small><span>${escapeHtml(item.expected_brand_name || item.brand_guess || '-')}</span></div>
-          <div class="meta-box"><small>Storage</small><span>${escapeHtml(item.storage_value || '-')}</span></div>
-          <div class="meta-box"><small>RAM</small><span>${escapeHtml(item.ram_value || '-')}</span></div>
-          <div class="meta-box"><small>Network</small><span>${escapeHtml(item.network_value || '-')}</span></div>
+
+        <div class="link-meta">
+          <div class="meta-box">
+            <small>Brand Guess</small>
+            <span>${escapeHtml(brandGuess)}</span>
+          </div>
+          <div class="meta-box">
+            <small>Storage</small>
+            <span>${escapeHtml(item.storage_value || '-')}</span>
+          </div>
+          <div class="meta-box">
+            <small>RAM</small>
+            <span>${escapeHtml(item.ram_value || '-')}</span>
+          </div>
+          <div class="meta-box">
+            <small>Network</small>
+            <span>${escapeHtml(item.network_value || '-')}</span>
+          </div>
         </div>
+
         <div class="link-actions">
           <div class="form-group" style="min-width:220px; margin:0;">
             <label for="${selectId}">Choose Category</label>
@@ -363,6 +394,7 @@ function renderStockReview(review) {
               ${buildMissingCategoryOptions(expectedCategoryId)}
             </select>
           </div>
+
           <button type="button" class="btn-success" onclick="addMissingStockItemFromEdit(${Number(item.device_index || 0)})">Add To Stock</button>
         </div>
       </div>
@@ -370,7 +402,6 @@ function renderStockReview(review) {
   });
 
   wrap.innerHTML = rows.join('');
-  renderProductsTable();
 }
 
 async function loadProductForEdit(productId) {
@@ -385,7 +416,6 @@ async function loadProductForEdit(productId) {
     }
 
     CURRENT_PRODUCT = data.product || null;
-    renderProductsTable();
     const product = data.product || {};
 
     document.getElementById('editProductId').value = product.id || '';
